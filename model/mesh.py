@@ -24,7 +24,8 @@ from .base import BaseModel
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 import shared_modules
-#from model.mesh_utils.mesh_renderer import Renderer
+
+# from model.mesh_utils.mesh_renderer import Renderer
 from .dc_pbr import skip
 
 from k_utils.image_utils import save_tensor, pil_to_torch
@@ -196,9 +197,7 @@ class PaintitMeshModel(BaseModel):
         self.load(self.cfg.mesh_path)
 
     def load(self, path: str) -> None:
-        f_idx, v_pos, v_uv = load_obj_uv(
-            obj_path=path, device=self.cfg.device
-        )
+        f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
         self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
 
         self.mesh = unit_size(self.mesh)
@@ -221,8 +220,46 @@ class PaintitMeshModel(BaseModel):
             self.cfg
         )
 
-    def render(self, camera) -> torch.Tensor:
+    # def render(self, camera) -> torch.Tensor:
 
+    #     net_output = self.net(self.network_input)  # [B, 3, H, W]
+    #     texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
+
+    #     pred_material = Material(
+    #         {
+    #             "bsdf": "kd",
+    #             "kd": Texture2D(texture),
+    #         }
+    #     )
+    #     self.mesh.material = pred_material
+
+    #     render_pkg = render_mesh(
+    #         glctx,
+    #         self.mesh,
+    #         camera["mvp"],
+    #         camera["campos"],
+    #         None,
+    #         camera["resolution"],
+    #         msaa=True,
+    #         background=None
+    #     )
+    #     image = (
+    #         render_pkg["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
+    #     )  # [B, 3, H, W]
+    #     alpha = render_pkg["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
+
+    #     return {
+    #         "image": image,
+    #         "alpha": alpha.detach(),
+    #     }
+    def render(self, camera):
+        c2ws, Ks, width, height, fov = (
+            camera["c2w"],
+            camera["K"],
+            camera["width"],
+            camera["height"],
+            camera["fov"],
+        )
         net_output = self.net(self.network_input)  # [B, 3, H, W]
         texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
 
@@ -234,17 +271,24 @@ class PaintitMeshModel(BaseModel):
         )
         self.mesh.material = pred_material
 
+        proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
+            self.cfg.device
+        )
+        mv = c2ws.inverse()
+        mvp = proj_mtx @ mv
+
+        campos = c2ws[:, :3, 3]
+        print(mvp.shape, campos.shape)
+
         render_pkg = render_mesh(
             glctx,
             self.mesh,
-            camera["mvp"],
-            camera["campos"],
+            mvp,  # B 4 4
+            campos,  # B 3
             None,
-            camera["resolution"],
-            spp=camera["spp"],
+            [height, width],
             msaa=True,
             background=None,
-            bsdf="kd",
         )
         image = (
             render_pkg["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()

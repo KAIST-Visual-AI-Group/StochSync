@@ -191,168 +191,168 @@ class SeqTurnaroundCameraDataset(Dataset):
         return data
     
 
-from model.nvdiff_render.mesh import *
-from model.nvdiff_render.render import *
-from model.nvdiff_render.texture import *
-from model.nvdiff_render.material import *
-from model.nvdiff_render.obj import *
-class NVDiffrastCameraDataset(InfiniteDataset):
-    @ignore_kwargs
-    @dataclass
-    class Config:
-        width: int = 512
-        height: int = 512
-        dist_range: Tuple[float, float] = (1.8, 2.2)
-        elev_range: Tuple[float, float] = (-5, 40)
-        azim_range: Tuple[float, float] = (0, 360)
-        fov: float = 72
-        up_vec: Literal["x", "y", "z", "-x", "-y", "-z"] = "z"
-        convention: Literal[
-            "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
-        ] = "RDF"
-        batch_size: int = 1
-        device: str = "cuda"
+# from model.nvdiff_render.mesh import *
+# from model.nvdiff_render.render import *
+# from model.nvdiff_render.texture import *
+# from model.nvdiff_render.material import *
+# from model.nvdiff_render.obj import *
+# class NVDiffrastCameraDataset(InfiniteDataset):
+#     @ignore_kwargs
+#     @dataclass
+#     class Config:
+#         width: int = 512
+#         height: int = 512
+#         dist_range: Tuple[float, float] = (1.8, 2.2)
+#         elev_range: Tuple[float, float] = (-5, 40)
+#         azim_range: Tuple[float, float] = (0, 360)
+#         fov: float = 72
+#         up_vec: Literal["x", "y", "z", "-x", "-y", "-z"] = "z"
+#         convention: Literal[
+#             "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
+#         ] = "RDF"
+#         batch_size: int = 1
+#         device: str = "cuda"
 
-    def __init__(self, cfg) -> None:
-        super().__init__()
-        self.cfg = self.Config(**cfg)
+#     def __init__(self, cfg) -> None:
+#         super().__init__()
+#         self.cfg = self.Config(**cfg)
 
-    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        spp = 1
-        cam_near_far=[0.1, 1000.0]
-        iter_res = [self.cfg.height, self.cfg.width]
-        fovy = np.deg2rad(45)
-        proj_mtx = util.perspective(fovy, iter_res[1] / iter_res[0], cam_near_far[0], cam_near_far[1])
+#     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+#         spp = 1
+#         cam_near_far=[0.1, 1000.0]
+#         iter_res = [self.cfg.height, self.cfg.width]
+#         fovy = np.deg2rad(45)
+#         proj_mtx = util.perspective(fovy, iter_res[1] / iter_res[0], cam_near_far[0], cam_near_far[1])
 
-        # Random rotation/translation matrix for optimization.
-        mv_list, mvp_list, campos_list, direction_list = [], [], [], []
-        for view_i in range(self.cfg.batch_size):
-            cam_radius = np.random.uniform(self.cfg.dist_range[0], self.cfg.dist_range[1])
-            angle_x = np.random.uniform(self.cfg.elev_range[0] * np.pi / 180, self.cfg.elev_range[1] * np.pi / 180)
-            angle_y = np.random.uniform(self.cfg.azim_range[0] * np.pi / 180, self.cfg.azim_range[1] * np.pi / 180)
+#         # Random rotation/translation matrix for optimization.
+#         mv_list, mvp_list, campos_list, direction_list = [], [], [], []
+#         for view_i in range(self.cfg.batch_size):
+#             cam_radius = np.random.uniform(self.cfg.dist_range[0], self.cfg.dist_range[1])
+#             angle_x = np.random.uniform(self.cfg.elev_range[0] * np.pi / 180, self.cfg.elev_range[1] * np.pi / 180)
+#             angle_y = np.random.uniform(self.cfg.azim_range[0] * np.pi / 180, self.cfg.azim_range[1] * np.pi / 180)
 
-            # direction
-            # 0 = front, 1 = side, 2 = back, 3 = overhead
-            if angle_x < -np.pi / 4:
-                direction = 3
-            else:
-                if 0 <= angle_y <= np.pi / 4 or angle_y > 7 * np.pi / 4:
-                    direction = 0
-                elif np.pi / 4 < angle_y <= 3 * np.pi / 4:
-                    direction = 1
-                elif 3 * np.pi / 4 < angle_y <= 5 * np.pi / 4:
-                    direction = 2
-                elif 5 * np.pi / 4 < angle_y <= 7 * np.pi / 4:
-                    direction = 1
+#             # direction
+#             # 0 = front, 1 = side, 2 = back, 3 = overhead
+#             if angle_x < -np.pi / 4:
+#                 direction = 3
+#             else:
+#                 if 0 <= angle_y <= np.pi / 4 or angle_y > 7 * np.pi / 4:
+#                     direction = 0
+#                 elif np.pi / 4 < angle_y <= 3 * np.pi / 4:
+#                     direction = 1
+#                 elif 3 * np.pi / 4 < angle_y <= 5 * np.pi / 4:
+#                     direction = 2
+#                 elif 5 * np.pi / 4 < angle_y <= 7 * np.pi / 4:
+#                     direction = 1
 
-            # for object, hard to tell front, back. so, perform prompt augment for only overhead view
-            # If the results do not look good, you may use this direction prompts.
-            # if angle_x < -np.pi / 4:
-            #     direction = 1
-            # else:
-            #     direction = 0
+#             # for object, hard to tell front, back. so, perform prompt augment for only overhead view
+#             # If the results do not look good, you may use this direction prompts.
+#             # if angle_x < -np.pi / 4:
+#             #     direction = 1
+#             # else:
+#             #     direction = 0
 
-            mv = util.translate(0, 0, -cam_radius) @ (util.rotate_x(angle_x) @ util.rotate_y(angle_y))
-            mvp = proj_mtx @ mv
-            campos = torch.linalg.inv(mv)[:3, 3]
-            mv_list.append(mv[None, ...].cuda())
-            mvp_list.append(mvp[None, ...].cuda())
-            campos_list.append(campos[None, ...].cuda())
-            direction_list.append(direction)
+#             mv = util.translate(0, 0, -cam_radius) @ (util.rotate_x(angle_x) @ util.rotate_y(angle_y))
+#             mvp = proj_mtx @ mv
+#             campos = torch.linalg.inv(mv)[:3, 3]
+#             mv_list.append(mv[None, ...].cuda())
+#             mvp_list.append(mvp[None, ...].cuda())
+#             campos_list.append(campos[None, ...].cuda())
+#             direction_list.append(direction)
 
-        cam = {
-            'mv': torch.cat(mv_list, dim=0),
-            'mvp': torch.cat(mvp_list, dim=0),
-            'campos': torch.cat(campos_list, dim=0),
-            'direction': np.array(direction_list, dtype=np.int32),
-            'resolution': iter_res,
-            'spp': spp,
-            'batch_size': self.cfg.batch_size
-        }
-        return cam
+#         cam = {
+#             'mv': torch.cat(mv_list, dim=0),
+#             'mvp': torch.cat(mvp_list, dim=0),
+#             'campos': torch.cat(campos_list, dim=0),
+#             'direction': np.array(direction_list, dtype=np.int32),
+#             'resolution': iter_res,
+#             'spp': spp,
+#             'batch_size': self.cfg.batch_size
+#         }
+#         return cam
 
-class NVDiffrastMVDreamCameraDataset(InfiniteDataset):
-    @ignore_kwargs
-    @dataclass
-    class Config:
-        width: int = 512
-        height: int = 512
-        dist_range: Tuple[float, float] = (1.8, 2.2)
-        elev_range: Tuple[float, float] = (-5, 40)
-        azim_range: Tuple[float, float] = (0, 360)
-        fov: float = 72
-        up_vec: Literal["x", "y", "z", "-x", "-y", "-z"] = "z"
-        convention: Literal[
-            "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
-        ] = "RDF"
-        batch_size: int = 1
-        device: str = "cuda"
+# class NVDiffrastMVDreamCameraDataset(InfiniteDataset):
+#     @ignore_kwargs
+#     @dataclass
+#     class Config:
+#         width: int = 512
+#         height: int = 512
+#         dist_range: Tuple[float, float] = (1.8, 2.2)
+#         elev_range: Tuple[float, float] = (-5, 40)
+#         azim_range: Tuple[float, float] = (0, 360)
+#         fov: float = 72
+#         up_vec: Literal["x", "y", "z", "-x", "-y", "-z"] = "z"
+#         convention: Literal[
+#             "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
+#         ] = "RDF"
+#         batch_size: int = 1
+#         device: str = "cuda"
 
-    def __init__(self, cfg) -> None:
-        super().__init__()
-        self.cfg = self.Config(**cfg)
-        assert self.cfg.batch_size % 4 == 0, "Batch size must be a multiple of 4"
+#     def __init__(self, cfg) -> None:
+#         super().__init__()
+#         self.cfg = self.Config(**cfg)
+#         assert self.cfg.batch_size % 4 == 0, "Batch size must be a multiple of 4"
 
-    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        spp = 1
-        cam_near_far=[0.1, 1000.0]
-        iter_res = [self.cfg.height, self.cfg.width]
-        fovy = np.deg2rad(45)
-        proj_mtx = util.perspective(fovy, iter_res[1] / iter_res[0], cam_near_far[0], cam_near_far[1])
+#     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+#         spp = 1
+#         cam_near_far=[0.1, 1000.0]
+#         iter_res = [self.cfg.height, self.cfg.width]
+#         fovy = np.deg2rad(45)
+#         proj_mtx = util.perspective(fovy, iter_res[1] / iter_res[0], cam_near_far[0], cam_near_far[1])
         
-        elevs = np.random.uniform(*self.cfg.elev_range, self.cfg.batch_size // 4)
-        azims = np.random.uniform(*self.cfg.azim_range, self.cfg.batch_size // 4)
+#         elevs = np.random.uniform(*self.cfg.elev_range, self.cfg.batch_size // 4)
+#         azims = np.random.uniform(*self.cfg.azim_range, self.cfg.batch_size // 4)
 
-        elevs = np.concatenate([elevs, elevs, elevs, elevs])
-        azims = np.concatenate([azims, azims + 90, azims + 180, azims + 270])
+#         elevs = np.concatenate([elevs, elevs, elevs, elevs])
+#         azims = np.concatenate([azims, azims + 90, azims + 180, azims + 270])
 
-        # Random rotation/translation matrix for optimization.
-        mv_list, mvp_list, campos_list, direction_list = [], [], [], []
-        for view_i in range(self.cfg.batch_size):
-            cam_radius = np.random.uniform(self.cfg.dist_range[0], self.cfg.dist_range[1])
-            #angle_x = np.random.uniform(self.cfg.elev_range[0] * np.pi / 180, self.cfg.elev_range[1] * np.pi / 180)
-            #angle_y = np.random.uniform(self.cfg.azim_range[0] * np.pi / 180, self.cfg.azim_range[1] * np.pi / 180)
-            angle_x = elevs[view_i] * np.pi / 180
-            angle_y = azims[view_i] * np.pi / 180
+#         # Random rotation/translation matrix for optimization.
+#         mv_list, mvp_list, campos_list, direction_list = [], [], [], []
+#         for view_i in range(self.cfg.batch_size):
+#             cam_radius = np.random.uniform(self.cfg.dist_range[0], self.cfg.dist_range[1])
+#             #angle_x = np.random.uniform(self.cfg.elev_range[0] * np.pi / 180, self.cfg.elev_range[1] * np.pi / 180)
+#             #angle_y = np.random.uniform(self.cfg.azim_range[0] * np.pi / 180, self.cfg.azim_range[1] * np.pi / 180)
+#             angle_x = elevs[view_i] * np.pi / 180
+#             angle_y = azims[view_i] * np.pi / 180
 
-            # direction
-            # 0 = front, 1 = side, 2 = back, 3 = overhead
-            if angle_x < -np.pi / 4:
-                direction = 3
-            else:
-                if 0 <= angle_y <= np.pi / 4 or angle_y > 7 * np.pi / 4:
-                    direction = 0
-                elif np.pi / 4 < angle_y <= 3 * np.pi / 4:
-                    direction = 1
-                elif 3 * np.pi / 4 < angle_y <= 5 * np.pi / 4:
-                    direction = 2
-                elif 5 * np.pi / 4 < angle_y <= 7 * np.pi / 4:
-                    direction = 1
+#             # direction
+#             # 0 = front, 1 = side, 2 = back, 3 = overhead
+#             if angle_x < -np.pi / 4:
+#                 direction = 3
+#             else:
+#                 if 0 <= angle_y <= np.pi / 4 or angle_y > 7 * np.pi / 4:
+#                     direction = 0
+#                 elif np.pi / 4 < angle_y <= 3 * np.pi / 4:
+#                     direction = 1
+#                 elif 3 * np.pi / 4 < angle_y <= 5 * np.pi / 4:
+#                     direction = 2
+#                 elif 5 * np.pi / 4 < angle_y <= 7 * np.pi / 4:
+#                     direction = 1
 
-            # for object, hard to tell front, back. so, perform prompt augment for only overhead view
-            # If the results do not look good, you may use this direction prompts.
-            # if angle_x < -np.pi / 4:
-            #     direction = 1
-            # else:
-            #     direction = 0
+#             # for object, hard to tell front, back. so, perform prompt augment for only overhead view
+#             # If the results do not look good, you may use this direction prompts.
+#             # if angle_x < -np.pi / 4:
+#             #     direction = 1
+#             # else:
+#             #     direction = 0
 
-            mv = util.translate(0, 0, -cam_radius) @ (util.rotate_x(angle_x) @ util.rotate_y(angle_y))
-            mvp = proj_mtx @ mv
-            campos = torch.linalg.inv(mv)[:3, 3]
-            mv_list.append(mv[None, ...].cuda())
-            mvp_list.append(mvp[None, ...].cuda())
-            campos_list.append(campos[None, ...].cuda())
-            direction_list.append(direction)
+#             mv = util.translate(0, 0, -cam_radius) @ (util.rotate_x(angle_x) @ util.rotate_y(angle_y))
+#             mvp = proj_mtx @ mv
+#             campos = torch.linalg.inv(mv)[:3, 3]
+#             mv_list.append(mv[None, ...].cuda())
+#             mvp_list.append(mvp[None, ...].cuda())
+#             campos_list.append(campos[None, ...].cuda())
+#             direction_list.append(direction)
 
-        cam = {
-            'mv': torch.cat(mv_list, dim=0),
-            'mvp': torch.cat(mvp_list, dim=0),
-            'campos': torch.cat(campos_list, dim=0),
-            'direction': np.array(direction_list, dtype=np.int32),
-            'resolution': iter_res,
-            'spp': spp,
-            'batch_size': self.cfg.batch_size,
-            'elevation': elevs,
-            'azimuth': azims
-        }
-        return cam
+#         cam = {
+#             'mv': torch.cat(mv_list, dim=0),
+#             'mvp': torch.cat(mvp_list, dim=0),
+#             'campos': torch.cat(campos_list, dim=0),
+#             'direction': np.array(direction_list, dtype=np.int32),
+#             'resolution': iter_res,
+#             'spp': spp,
+#             'batch_size': self.cfg.batch_size,
+#             'elevation': elevs,
+#             'azimuth': azims
+#         }
+#         return cam
