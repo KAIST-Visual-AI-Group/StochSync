@@ -1,0 +1,135 @@
+from math import log, pi
+from dataclasses import fields
+import importlib
+import torch
+from torch.nn.functional import interpolate
+
+
+def rescale_tensor(tensor, width, height):
+    assert tensor.dim() == 3 and tensor.shape[0] == 3, "tensor must be 3xHxW"
+    tensor = tensor.unsqueeze(0)
+    tensor = interpolate(tensor, (height, width), mode="bilinear", align_corners=False)
+    return tensor.squeeze(0)
+
+
+def tensor(*v, dtype=torch.float32, device=None):
+    return torch.tensor(v, dtype=dtype, device=device)
+
+
+def ishomo(points):
+    if points.dim() == 1:
+        return points.shape[0] == 4
+    elif points.dim() == 2:
+        return points.shape[1] == 4
+    return False
+
+
+def homo(points):
+    if points.dim() == 1:
+        if points.shape[0] == 4:
+            return points
+        elif points.shape[0] == 3:
+            return torch.cat(
+                [points, torch.tensor([1], dtype=points.dtype, device=points.device)]
+            )
+    elif points.dim() == 2:
+        if points.shape[1] == 4:
+            return points
+        if points.shape[1] == 3:
+            return torch.cat(
+                [
+                    points,
+                    torch.ones(
+                        (points.shape[0], 1), dtype=points.dtype, device=points.device
+                    ),
+                ]
+            )
+
+    raise ValueError(f"points does not match with any valid shapes. {points.shape}")
+
+
+def unhomo(points):
+    if points.dim() == 1:
+        if points.shape[0] == 3:
+            return points
+        elif points.shape[0] == 4:
+            return points[:3] / (points[3])
+    elif points.dim() == 2:
+        if points.shape[1] == 3:
+            return points
+        if points.shape[1] == 4:
+            return points[:, 3] / (points[:, 3])
+
+    raise ValueError(f"points does not match with any valid shapes. {points.shape}")
+
+
+def inverse_sigmoid(x):
+    if isinstance(x, float):
+        return -log(1 / x - 1)
+    return torch.log(x / (1 - x))
+
+
+def attach_direction_prompt(prompt, elevs, azims):
+    if type(elevs) == float:
+        elevs = [elevs]
+    if type(azims) == float:
+        azims = [azims]
+
+    output_prompts = []
+
+    for elev, azim in zip(elevs, azims):
+        direction_prompt = ""
+        # elev 60~: top view
+        # azim -45~45: front view
+        # azim 45~135: right view
+        # azim 135~225: back view
+        # azim 225~315: left view
+        if elev > 60:
+            direction_prompt = "top view"
+        elif azim < 45 or azim > 315:
+            direction_prompt = "front view"
+        elif azim < 135:
+            direction_prompt = "right view"
+        elif azim < 225:
+            direction_prompt = "back view"
+        else:
+            direction_prompt = "left view"
+        output_prompts.append(f"{prompt}, {direction_prompt}")
+
+    return output_prompts
+
+
+def ignore_kwargs(cls):
+    original_init = cls.__init__
+
+    def init(self, *args, **kwargs):
+        expected_fields = {field.name for field in fields(cls)}
+        expected_kwargs = {
+            key: value for key, value in kwargs.items() if key in expected_fields
+        }
+        original_init(self, *args, **expected_kwargs)
+
+    cls.__init__ = init
+    return cls
+
+
+def get_class_filename(cls):
+    """
+    Get the filename of the module containing the given class.
+
+    Args:
+    cls (type): The class for which to find the filename.
+
+    Returns:
+    str: The filename of the module containing the class.
+    """
+    # Get the module name where the class is defined
+    module_name = cls.__module__
+
+    # Import the module dynamically
+    module = importlib.import_module(module_name)
+
+    # Retrieve the filename of the module
+    filename = module.__file__
+
+    return filename

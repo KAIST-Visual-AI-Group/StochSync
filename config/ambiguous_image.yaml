@@ -1,0 +1,32 @@
+root_dir: "./test/ambiguous_image_gen"
+output: "result.pt"
+max_steps: 301
+
+#prior: angle_sd
+prior: angle_sd
+guidance_scale: 15
+angle_prompts: {
+  0: "a watercolor painting of a truck",
+  180: "a watercolor painting of a deer"
+}
+text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
+# angle_prompts: {
+#   0: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes"
+# }
+
+dataset: rotate_batch_image
+batch_size: 2
+angles: [0, 180]
+# angles: [0]
+
+model: latent_image
+width: 64
+height: 64
+
+sampler: sds
+reduction: mean
+
+background: black_white
+
+logger: simple_latent
+log_interval: 50

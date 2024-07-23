@@ -1,0 +1,20 @@
+root_dir: "./results/gs_sd"
+text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
+max_steps: 1000
+batch_size: 1
+xyz_lr: 0.0001
+scale_lr: 0.004
+quat_lr: 0.0003
+opacity_lr: 0.04
+feature_lr: 0.02
+dataset: random
+background: black_white
+model: gs
+prior: mvdream
+sampler: dreamtime
+logger: simple
+height: 512
+width: 512
+refine_start_iter: 50
+refine_stop_iter: 30000
+refine_every: 50
