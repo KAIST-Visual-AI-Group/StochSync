@@ -99,12 +99,10 @@ class StableDiffusionPrior(Prior):
         noise_preds = self.pipeline.unet(x_t_stack, timestep, **self.cond).sample
         noise_pred_uncond, noise_pred_text = noise_preds.chunk(2)
         guidance_scale = guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
-        noise_preds = noise_pred_text + guidance_scale * (
+        
+        noise_preds = noise_pred_uncond + guidance_scale * (
             noise_pred_text - noise_pred_uncond
         )
-        # noise_preds = noise_pred_uncond + guidance_scale * (
-        #     noise_pred_text - noise_pred_uncond
-        # )
 
         return noise_preds
 

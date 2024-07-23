@@ -28,7 +28,6 @@ class SDSSampler(DistillationSampler):
 
     def __call__(self, camera, images, step):
         prior = shared_modules.prior
-        print(images.shape)
         if images.shape[1] == 3:
             latent = prior.encode_image(images)
         else:

@@ -11,7 +11,7 @@ import torch
 import torch.nn.functional as F
 from torch import Tensor
 from PIL import Image
-from pytorch3d.renderer import FoVPerspectiveCameras, TexturesUV
+import trimesh
 
 from .nvdiff_render.mesh import *
 from .nvdiff_render.render import *
@@ -24,13 +24,14 @@ from .base import BaseModel
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 import shared_modules
-from model.mesh_utils.mesh_renderer import Renderer
+#from model.mesh_utils.mesh_renderer import Renderer
 from .dc_pbr import skip
 
 from k_utils.image_utils import save_tensor, pil_to_torch
-from k_utils.print_utils import print_info
+from k_utils.print_utils import print_info, print_warning
 
 glctx = dr.RasterizeCudaContext()
+
 
 class MeshModel(BaseModel):
     """
@@ -42,7 +43,7 @@ class MeshModel(BaseModel):
     class Config:
         root_dir: str = "./results/default"
         device: str = "cuda"
-        mesh_path: str = ""
+        mesh_path: str = "bird.obj"
         texture_size: int = 1024
         mesh_scale: float = 1.0
         sampling_mode: str = "nearest"
@@ -66,10 +67,10 @@ class MeshModel(BaseModel):
         self.load(self.cfg.mesh_path)
 
     def load(self, path: str) -> None:
-        obj_f_uv, obj_v_uv, obj_f, obj_v = load_obj_uv(obj_path=self.cfg.mesh_path, device=self.cfg.device)
+        print_warning("This code is only for debugging. Fix this first.")
+        f_idx, v_pos, v_uv = load_obj_uv(obj_path="bird.obj", device="cuda")
 
-        # initialize template mesh
-        self.mesh = Mesh(obj_v, obj_f, v_tex=obj_v_uv, t_tex_idx=obj_f_uv)
+        self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
         self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
         self.mesh = compute_tangents(self.mesh)
@@ -78,34 +79,63 @@ class MeshModel(BaseModel):
         pass
 
     def prepare_optimization(self) -> None:
-        self.texture = torch.full((1, self.cfg.texture_size, self.cfg.texture_size, 3), 0.5, device=self.cfg.device, requires_grad=True)
-        self.optimizer = torch.optim.Adam([self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay)
+        self.texture = torch.full(
+            (1, self.cfg.texture_size, self.cfg.texture_size, 3),
+            0.5,
+            device=self.cfg.device,
+            requires_grad=True,
+        )
+
+        print("For debugging")
+        self.texture = Image.open("bird.png")
+        self.texture = self.texture.resize(
+            (self.cfg.texture_size, self.cfg.texture_size)
+        )
+        self.texture = (
+            pil_to_torch(self.texture).to(self.cfg.device).permute(0, 2, 3, 1)
+        )
+
+        self.optimizer = torch.optim.Adam(
+            [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
+        )
 
     def render(self, camera) -> torch.Tensor:
 
         kd_min = [0.0, 0.0, 0.0, 0.0]  # Limits for kd
         kd_max = [1.0, 1.0, 1.0, 1.0]
-        kd_min, kd_max = torch.tensor(kd_min, dtype=torch.float32, device='cuda'), torch.tensor(kd_max, dtype=torch.float32, device='cuda')
+        kd_min, kd_max = torch.tensor(
+            kd_min, dtype=torch.float32, device="cuda"
+        ), torch.tensor(kd_max, dtype=torch.float32, device="cuda")
 
-        pred_material = Material({
-            # 'bsdf': 'pbr',
-            'bsdf': 'kd', # Jaihoon
-            'kd': Texture2D(self.texture, min_max=[kd_min, kd_max]),
-        })
-        #pred_material['kd'].clamp_()
+        pred_material = Material(
+            {
+                "bsdf": "kd",  # Jaihoon
+                "kd": Texture2D(self.texture, min_max=[kd_min, kd_max]),
+            }
+        )
 
         self.mesh.material = pred_material
 
-        buffers = render_mesh(glctx, self.mesh, camera['mvp'], camera['campos'], None, camera['resolution'],
-                                spp=camera['spp'], msaa=True, background=None, bsdf='kd')
-        pred_obj_rgb = buffers['shaded'][..., 0:3].permute(0, 3, 1, 2).contiguous()  # [B, 3, H, W]
-        pred_obj_ws = buffers['shaded'][..., 3].unsqueeze(1)  # [B, 1, H, W]
+        buffers = render_mesh(
+            glctx,
+            self.mesh,
+            camera["mvp"],
+            camera["campos"],
+            None,
+            camera["resolution"],
+            spp=camera["spp"],
+            msaa=True,
+            background=None,
+            bsdf="kd",
+        )
+        pred_obj_rgb = (
+            buffers["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
+        )  # [B, 3, H, W]
+        pred_obj_ws = buffers["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
         obj_image = pred_obj_rgb
-
 
         return {
             "image": obj_image,
-            #"alpha": torch.ones_like(pred_obj_ws),
             "alpha": pred_obj_ws.detach(),
         }
 
@@ -113,13 +143,23 @@ class MeshModel(BaseModel):
         self.optimizer.step()
         self.optimizer.zero_grad()
 
-from pytorch3d.io import load_obj, save_obj
+
 def load_obj_uv(obj_path, device):
-    vert, face, aux = load_obj(obj_path, device=device)
-    vt = aux.verts_uvs
-    ft = face.textures_idx
-    vt = torch.cat((vt[:, [0]], 1.0 - vt[:, [1]]), dim=1)
-    return ft, vt, face.verts_idx, vert
+    # Load the obj file using trimesh
+    mesh = trimesh.load(obj_path, process=False)
+
+    # Extract vertex positions
+    v_coords = torch.tensor(mesh.vertices, device=device).float()
+
+    # Extract face indices
+    faces = torch.tensor(mesh.faces, dtype=torch.int64, device=device)
+
+    # Extract texture UV coordinates
+    uv_coords = torch.tensor(mesh.visual.uv, device=device).float()
+    uv_coords = torch.cat((uv_coords[:, [0]], 1.0 - uv_coords[:, [1]]), dim=1)
+
+    return faces, v_coords, uv_coords
+
 
 class PaintitMeshModel(BaseModel):
     """
@@ -156,10 +196,11 @@ class PaintitMeshModel(BaseModel):
         self.load(self.cfg.mesh_path)
 
     def load(self, path: str) -> None:
-        obj_f_uv, obj_v_uv, obj_f, obj_v = load_obj_uv(obj_path=self.cfg.mesh_path, device=self.cfg.device)
+        f_idx, v_pos, v_uv = load_obj_uv(
+            obj_path=path, device=self.cfg.device
+        )
+        self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
 
-        # initialize template mesh
-        self.mesh = Mesh(obj_v, obj_f, v_tex=obj_v_uv, t_tex_idx=obj_f_uv)
         self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
         self.mesh = compute_tangents(self.mesh)
@@ -168,7 +209,9 @@ class PaintitMeshModel(BaseModel):
         pass
 
     def prepare_optimization(self) -> None:
-        input_uv_ = torch.randn((3, self.cfg.texture_size, self.cfg.texture_size), device=self.cfg.device)
+        input_uv_ = torch.randn(
+            (3, self.cfg.texture_size, self.cfg.texture_size), device=self.cfg.device
+        )
         input_uv = (
             input_uv_ - torch.mean(input_uv_, dim=(1, 2)).reshape(-1, 1, 1)
         ) / torch.std(input_uv_, dim=(1, 2)).reshape(-1, 1, 1)
@@ -177,72 +220,43 @@ class PaintitMeshModel(BaseModel):
         self.net, self.optimizer, activate_scheduler, self.lr_scheduler = get_model(
             self.cfg
         )
-        print("For debugging")
-        self.texture = Image.open("bird.png")
-        # resize
-        self.texture = self.texture.resize((self.cfg.texture_size, self.cfg.texture_size))
-        self.texture = pil_to_torch(self.texture).to(self.cfg.device).permute(0, 2, 3, 1)
 
     def render(self, camera) -> torch.Tensor:
 
-        kd_min = [0.0, 0.0, 0.0, 0.0]  # Limits for kd
-        kd_max = [1.0, 1.0, 1.0, 1.0]
-        #ks_min = [0.0, 0.08, 0.0]  # Limits for ks
-        #ks_max = [1.0, 1.0, 1.0]
-        #nrm_min = [-0.1, -0.1, 0.0]  # Limits for normal map
-        #nrm_max = [0.1, 0.1, 1.0]
-        kd_min, kd_max = torch.tensor(kd_min, dtype=torch.float32, device='cuda'), torch.tensor(kd_max, dtype=torch.float32, device='cuda')
-        #ks_min, ks_max = torch.tensor(ks_min, dtype=torch.float32, device='cuda'), torch.tensor(ks_max, dtype=torch.float32, device='cuda')
-        #nrm_min, nrm_max = torch.tensor(nrm_min, dtype=torch.float32, device='cuda'), torch.tensor(nrm_max, dtype=torch.float32, device='cuda')
-        #nrm_t = get_template_normal(h=self.cfg.texture_size, w=self.cfg.texture_size)
+        net_output = self.net(self.network_input)  # [B, 3, H, W]
+        texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
 
-        net_output = self.net(self.network_input)  # [B, 9, H, W]
-        pred_tex = net_output.permute(0, 2, 3, 1)
-        pred_kd = pred_tex[..., :-6]
-        #pred_ks = pred_tex[..., -6:-3]
-        #pred_n = F.normalize((pred_tex[..., -3:] * 2.0 - 1.0) + nrm_t, dim=-1)
-
-        pred_material = Material({
-            # 'bsdf': 'pbr',
-            'bsdf': 'kd', # Jaihoon
-            #'kd': Texture2D(self.texture + 0*pred_kd, min_max=[kd_min, kd_max]),
-            'kd': Texture2D(pred_kd, min_max=[kd_min, kd_max]),
-            #'ks': Texture2D(pred_ks, min_max=[ks_min, ks_max]),
-            #'normal': Texture2D(pred_n, min_max=[nrm_min, nrm_max])
-        })
-        pred_material['kd'].clamp_()
-        #pred_material['ks'].clamp_()
-        #pred_material['normal'].clamp_()
-
-        # Texture settings
-        # net_output = self.net(self.network_input)  # [B, 3, H, W]
-        # net_output = net_output.permute(0, 2, 3, 1).contiguous()
-        # print(net_output.shape)
-
-
-        # pred_material = Material({
-        #     'bsdf': 'kd',
-        #     'kd': Texture2D(net_output, min_max=[torch.Tensor([0.0, 0.0, 0.0, 0.0]).to(net_output.device), torch.Tensor([1.0, 1.0, 1.0, 1.0]).to(net_output.device)])
-        # })
-
-        #with torch.no_grad():
-        #    mesh = copy.deepcopy(self.mesh)
+        pred_material = Material(
+            {
+                "bsdf": "kd",
+                "kd": Texture2D(texture),
+            }
+        )
         self.mesh.material = pred_material
 
-        buffers = render_mesh(glctx, self.mesh, camera['mvp'], camera['campos'], None, camera['resolution'],
-                                spp=camera['spp'], msaa=True, background=None, bsdf='kd')
-        pred_obj_rgb = buffers['shaded'][..., 0:3].permute(0, 3, 1, 2).contiguous()  # [B, 3, H, W]
-        pred_obj_ws = buffers['shaded'][..., 3].unsqueeze(1)  # [B, 1, H, W]
-        obj_image = pred_obj_rgb
-
+        render_pkg = render_mesh(
+            glctx,
+            self.mesh,
+            camera["mvp"],
+            camera["campos"],
+            None,
+            camera["resolution"],
+            spp=camera["spp"],
+            msaa=True,
+            background=None,
+            bsdf="kd",
+        )
+        image = (
+            render_pkg["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
+        )  # [B, 3, H, W]
+        alpha = render_pkg["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
 
         return {
-            "image": obj_image,
-            "alpha": pred_obj_ws.detach(),
+            "image": image,
+            "alpha": alpha.detach(),
         }
 
     def optimize(self, step: int) -> None:
-        #print(self.optimizer)
         torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=10.0)
         self.optimizer.step()
         self.lr_scheduler.step()
@@ -253,7 +267,7 @@ def get_model(cfg):
     # MLP Settings
     net = skip(
         3,
-        9,
+        3,
         num_channels_down=[128] * 5,
         num_channels_up=[128] * 5,
         num_channels_skip=[128] * 5,
@@ -269,18 +283,11 @@ def get_model(cfg):
 
     params = list(net.parameters())
 
-
     optim = torch.optim.Adam(params, cfg.learning_rate, weight_decay=cfg.decay)
-    activate_scheduler = (
-        cfg.lr_decay < 1 and cfg.decay_step > 0 and not cfg.lr_plateau
-    )
+    activate_scheduler = cfg.lr_decay < 1 and cfg.decay_step > 0 and not cfg.lr_plateau
     if activate_scheduler:
         lr_scheduler = torch.optim.lr_scheduler.StepLR(
             optim, step_size=cfg.decay_step, gamma=cfg.lr_decay
         )
-    
-    return net, optim, activate_scheduler, lr_scheduler
 
-def get_template_normal(h=512, w=512):
-    return torch.cat([torch.zeros((h, w, 1), device="cuda"), torch.zeros((h, w, 1), device="cuda"),
-                      torch.ones((h, w, 1), device="cuda")], dim=-1)[None, ...]
+    return net, optim, activate_scheduler, lr_scheduler
