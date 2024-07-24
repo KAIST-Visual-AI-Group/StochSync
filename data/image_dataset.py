@@ -44,7 +44,7 @@ class RotateImageDataset(InfiniteDataset):
         angles = choices(self.cfg.angles, k=self.cfg.batch_size)
         tfs = [transforms.RandomRotation((angle, angle)) for angle in angles]
         return {
-            "batch_size": self.cfg.batch_size,
+            "num": self.cfg.batch_size,
             "width": self.cfg.width,
             "height": self.cfg.height,
             "transforms": tfs,
@@ -70,7 +70,7 @@ class RotateBatchImageDataset(InfiniteDataset):
         angles = self.cfg.angles
         tfs = [transforms.RandomRotation((angle, angle)) for angle in angles]
         return {
-            "batch_size": self.cfg.batch_size,
+            "num": self.cfg.batch_size,
             "width": self.cfg.width,
             "height": self.cfg.height,
             "transforms": tfs,

@@ -63,7 +63,7 @@ class DeepFloydPrior(Prior):
         return latent
 
     def prepare_cond(self, camera):
-        text_prompts = [self.cfg.text_prompt] * camera["batch_size"]
+        text_prompts = [self.cfg.text_prompt] * camera["num"]
 
         neg_embeds, pos_embeds = [], []
         for prompt in text_prompts:

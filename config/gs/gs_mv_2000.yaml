@@ -13,7 +13,7 @@ background: black_white
 model: gs
 prior: mvdream
 sampler: dreamtime
-logger: simple
+logger: procedure
 height: 256
 width: 256
 refine_start_iter: 50

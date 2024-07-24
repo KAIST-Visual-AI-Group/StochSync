@@ -63,7 +63,7 @@ class StableDiffusionPrior(Prior):
         self.pipeline.text_encoder.requires_grad_(False)
 
     def prepare_cond(self, camera):
-        text_prompts = [self.cfg.text_prompt] * camera["batch_size"]
+        text_prompts = [self.cfg.text_prompt] * camera["num"]
 
         neg_embeds, pos_embeds = [], []
         for prompt in text_prompts:
@@ -160,7 +160,7 @@ class AngleDependentStableDiffusionPrior(StableDiffusionPrior):
         self.cfg = self.Config(**cfg)
 
     def prepare_cond(self, camera):
-        text_prompts = [self.cfg.angle_prompts[angle] for angle in camera["batch_size"]]
+        text_prompts = [self.cfg.angle_prompts[angle] for angle in camera["num"]]
 
         neg_embeds, pos_embeds = [], []
         for prompt in text_prompts:

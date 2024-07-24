@@ -75,7 +75,6 @@ class Trainer(ABC):
         r_pkg = sm.model.render(camera)
         bg = sm.background()
         images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
-        #save_tensor(images[:,:3] * 0.5 + 0.5, os.path.join(self.cfg.root_dir, "debug", f"x_{step}.png"))
 
         # Sample the score and calculate the loss
         opt_loss = sm.sampler(camera, images, step)
@@ -86,18 +85,8 @@ class Trainer(ABC):
         total_loss.backward()
         sm.model.optimize(step)
 
-        # Render additional requirements from the logger
-        cameras_for_logging = [camera]
-        images_for_logging = [images]
-        # for camera in sm.logger.get_extra_cameras(step):
-        #     r_pkg = sm.model.render(camera)
-        #     bg = sm.background()
-        #     images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
-        #     cameras_for_logging.append(camera)
-        #     images_for_logging.append(images)
-
         # Log the result
-        sm.logger(step, cameras_for_logging, images_for_logging)
+        sm.logger(step, camera, images)
 
         return total_loss
 

@@ -9,6 +9,7 @@ from k_utils.print_utils import print_info, print_warning, print_error
 from utils.extra_utils import ignore_kwargs
 from utils.camera_utils import generate_camera, merge_camera
 import shared_modules
+from data.camera_dataset import CameraDataset
 
 
 class BaseLogger(ABC):
@@ -48,9 +49,7 @@ class SimpleLogger(BaseLogger):
         self.training_dir = os.path.join(
             self.cfg.root_dir, f"{self.cfg.prefix}_training"
         )
-        self.debug_dir = os.path.join(
-            self.cfg.root_dir, f"debug"
-        )
+        self.debug_dir = os.path.join(self.cfg.root_dir, f"debug")
         self.post_processor = lambda x: x
 
         os.makedirs(self.cfg.root_dir, exist_ok=True)
@@ -64,7 +63,7 @@ class SimpleLogger(BaseLogger):
             return
         if isinstance(images, list):
             images = torch.cat(images, dim=0)
-        
+
         with torch.no_grad():
             images = self.post_processor(images)
         save_tensor(
@@ -72,7 +71,7 @@ class SimpleLogger(BaseLogger):
             os.path.join(self.training_dir, f"training_{step:05d}.png"),
             save_type="cat_image",
         )
-    
+
     def log_debug(self, images, name):
         if isinstance(images, list):
             images = torch.cat(images, dim=0)
@@ -95,7 +94,9 @@ class SimpleLatentLogger(SimpleLogger):
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
         self.post_processor = shared_modules.prior.decode_latent
-        print_info(f"Detected SimpleLatentLogger. Overriding post-processor for latent decoding.")
+        print_info(
+            f"Detected SimpleLatentLogger. Overriding post-processor for latent decoding."
+        )
 
 
 class ProcedureLogger(BaseLogger):
@@ -108,7 +109,7 @@ class ProcedureLogger(BaseLogger):
     class Config:
         root_dir: str = "./results/default"
         log_interval: int = 50
-        dists: tuple = (2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0)
+        dist_range: tuple = (1.8, 2.2)
         elevs: tuple = (0, 0, 0, 0, 30, 30, 30, 30)
         azims: tuple = (0, 90, 180, 270, 45, 135, 225, 315)
         batch_size: int = 1
@@ -122,17 +123,13 @@ class ProcedureLogger(BaseLogger):
         self.training_dir = os.path.join(
             self.cfg.root_dir, f"{self.cfg.prefix}_training"
         )
-        extra_cameras = [
-            generate_camera(
-                dist, elev, azim, 72, self.cfg.height, self.cfg.height, device="cuda"
-            )
-            for dist, elev, azim in zip(
-                self.cfg.dists,
-                self.cfg.elevs,
-                self.cfg.azims,
-            )
-        ]
-        self.extra_cameras = merge_camera(extra_cameras)
+        
+        dists = [sum(self.cfg.dist_range) / 2] * len(self.cfg.elevs)
+        self.cameras = CameraDataset(cfg).generate_sample(
+            dists,
+            self.cfg.elevs,
+            self.cfg.azims,
+        )
 
         os.makedirs(self.cfg.root_dir, exist_ok=True)
         os.makedirs(self.training_dir, exist_ok=True)
@@ -144,8 +141,10 @@ class ProcedureLogger(BaseLogger):
         if step % self.cfg.log_interval != 0:
             return
 
-        if isinstance(images, list):
-            images = torch.cat(images[self.cfg.batch_size:], dim=0)
+        r_pkg = shared_modules.model.render(self.cameras)
+        bg = shared_modules.background()
+        images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
+
         save_tensor(
             images,
             os.path.join(
@@ -154,11 +153,6 @@ class ProcedureLogger(BaseLogger):
             ),
             save_type="cat_image",
         )
-
-    def get_extra_cameras(self, step):
-        if step % self.cfg.log_interval == 0:
-            return [self.extra_cameras]
-        return []
 
     def end_logging(self):
         convert_to_video(
@@ -202,6 +196,7 @@ class RendererLogger(BaseLogger):
             fps=self.cfg.fps,
         )
 
+
 class LatentRendererLogger(RendererLogger):
     """
     A simple logger class with decoding latent
@@ -210,4 +205,6 @@ class LatentRendererLogger(RendererLogger):
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
         self.post_processor = shared_modules.prior.decode_latent
-        print_info(f"Detected RendererLatentLogger. Overriding post-processor for latent decoding.")
+        print_info(
+            f"Detected RendererLatentLogger. Overriding post-processor for latent decoding."
+        )
