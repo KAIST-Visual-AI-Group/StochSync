@@ -80,6 +80,8 @@ class SDISampler(SDSSampler):
         scale_factor: float = 1.0
         max_steps: int = 10000
         reduction: str = "sum"
+        opt_steps: int = 0
+        opt_lr: float = 0.01
 
     def __init__(self, cfg):
         super().__init__(cfg)
@@ -94,44 +96,41 @@ class SDISampler(SDSSampler):
 
     def sample_noise(self, camera, images, t):
         tau = randint(0, 33)
+        t += tau
+
+        ts_prev = len(shared_modules.prior.scheduler.timesteps)
+        shared_modules.prior.scheduler.set_timesteps(10)
         noisy_sample = shared_modules.prior.ddim_loop(
-            camera, images, 0, t + tau, guidance_scale=-7.5
+            camera, images, 0, t, guidance_scale=-7.5
         )
-        alpha_prod_t = shared_modules.prior.scheduler.alphas_cumprod[t + tau]
-        renoise_eps = (noisy_sample - (alpha_prod_t**0.5) * images) / (
+        shared_modules.prior.scheduler.set_timesteps(ts_prev)
+
+        alpha_prod_t = shared_modules.prior.scheduler.alphas_cumprod[t]
+        inverted_eps = (noisy_sample - (alpha_prod_t**0.5) * images) / (
             1 - alpha_prod_t
         ) ** 0.5
-        return renoise_eps
 
-    def __call__(self, camera, images, step):
-        prior = shared_modules.prior
+        def fixed_point_loss(img, eps, t):
+            assert img.dtype == eps.dtype
+            data_dtype = img.dtype
+            model_dtype = shared_modules.prior.pipeline.dtype
+            noisy_sample = shared_modules.prior.get_noisy_sample(img, eps, t)
+            noise_pred = shared_modules.prior.predict(camera, noisy_sample.to(model_dtype), t).to(data_dtype)
+            return F.mse_loss(noise_pred, eps)
+        
+        if self.cfg.opt_steps > 0:
+            print("Optimizing for fixed point")
+            images = images.float().detach()
+            inverted_eps = inverted_eps.float().detach().requires_grad_()
+            opt = torch.optim.Adam([inverted_eps], lr=self.cfg.opt_lr)
+            for _ in range(self.cfg.opt_steps):
+                opt.zero_grad()
+                loss = fixed_point_loss(images, inverted_eps, t)
+                print(loss.item())
+                loss.backward()
+                opt.step()
+            inverted_eps = inverted_eps.detach().to(shared_modules.prior.pipeline.dtype)
 
-        if images.shape[1] == 3:
-            latent = prior.encode_image(images)
-        else:
-            latent = images
+        h = 0.3 * (1 - alpha_prod_t) ** 0.5 * torch.randn_like(inverted_eps)
 
-        # Encode latents
-        t = self.sample_timestep(step)
-        noise = self.sample_noise(camera, latent, t)
-        latent_noisy = prior.add_noise(latent, t, noise=noise)
-
-        # Calculate u-net loss and backprop
-        with torch.no_grad():
-            noise_preds = prior.predict(camera, latent_noisy, t)
-
-        if step % 100 == 0:
-            shared_modules.logger.log_debug(
-                shared_modules.prior.tweedie(latent_noisy, noise_preds, t),
-                f"tweedies_{step}",
-            )
-
-        w = 1 - prior.pipeline.scheduler.alphas_cumprod[t].to(latent)
-        grad = w * (noise_preds - noise)
-        target = (latent - grad).detach()
-        if self.cfg.reduction == "mean":
-            loss = 0.5 * F.mse_loss(latent, target, reduction="mean")
-        else:
-            loss = 0.5 * F.mse_loss(latent, target, reduction="sum") / latent.shape[0]
-
-        return loss * self.cfg.scale_factor
+        return inverted_eps + h

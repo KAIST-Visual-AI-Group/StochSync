@@ -49,7 +49,9 @@ class StableDiffusionPrior(Prior):
         super().__init__()
         self.cfg = self.Config(**cfg)
 
-        self.scheduler = DDIMScheduler.from_pretrained(self.cfg.model_name, subfolder="scheduler")
+        self.scheduler = DDIMScheduler.from_pretrained(
+            self.cfg.model_name, subfolder="scheduler"
+        )
         self.pipeline = StableDiffusionPipeline.from_pretrained(
             self.cfg.model_name,
             scheduler=self.scheduler,
@@ -88,95 +90,30 @@ class StableDiffusionPrior(Prior):
             ).images
         return images
 
-    def predict(self, camera, x_t, timestep, guidance_scale=None):
+    def predict(self, camera, x_t, timestep, guidance_scale=None, return_dict=False):
         # Predict the noise using the UNet model
         if x_t.shape[1] == 3:
             x_t = self.encode_image(x_t)
-        x_t_stack = torch.cat([x_t] * 2)
 
         self.prepare_cond(camera)
+        guidance_scale = (
+            guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
+        )
 
-        noise_preds = self.pipeline.unet(x_t_stack, timestep, **self.cond).sample
-        noise_pred_uncond, noise_pred_text = noise_preds.chunk(2)
-        guidance_scale = guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
-        
-        noise_preds = noise_pred_uncond + guidance_scale * (
+        x_t_stack = torch.cat([x_t] * 2)
+        noise_pred = self.pipeline.unet(x_t_stack, timestep, **self.cond).sample
+        noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+        noise_pred = noise_pred_uncond + guidance_scale * (
             noise_pred_text - noise_pred_uncond
         )
 
-        return noise_preds
-
-    def move_step(self, sample, denoise_eps, src_t, tgt_t, renoise_eps=None):
-        renoise_eps = renoise_eps if renoise_eps is not None else denoise_eps
-
-        alpha_prod_t_src = self.scheduler.alphas_cumprod[src_t]
-        alpha_prod_t_tgt = self.scheduler.alphas_cumprod[tgt_t]
-        beta_prod_t = 1 - alpha_prod_t_src
-        pred_original_sample = (
-            sample - beta_prod_t**0.5 * denoise_eps
-        ) / alpha_prod_t_src**0.5
-        src_direction = (1 - alpha_prod_t_tgt) ** 0.5 * renoise_eps
-        next_sample = (
-            alpha_prod_t_tgt**0.5 * pred_original_sample + src_direction
-        )
-        return next_sample
-
-    @torch.no_grad()
-    def ddim_loop(self, camera, x_t, src_t, tgt_t, mode="cfg", guidance_scale=None):
-        # make sure src_t is int (if tensor, convert to int)
-        if isinstance(src_t, torch.Tensor):
-            src_t = src_t.item()
-        if isinstance(tgt_t, torch.Tensor):
-            tgt_t = tgt_t.item()
-
-        x_t = x_t.clone().detach()
-        if src_t == tgt_t:
-            return x_t
-        elif src_t < tgt_t:
-            timesteps = reversed(self.scheduler.timesteps)
-            from_idx = torch.where(timesteps > src_t)[0][0]
-            to_idx = torch.where(timesteps < tgt_t)[0]
-            to_idx = to_idx[-1] if len(to_idx) > 0 else -1
-            timesteps = torch.cat([torch.tensor([src_t]), timesteps[from_idx:to_idx+1], torch.tensor([tgt_t])])
-        elif src_t > tgt_t:
-            timesteps = self.scheduler.timesteps
-            from_idx = torch.where(timesteps < src_t)[0][0]
-            to_idx = torch.where(timesteps > tgt_t)[0]
-            to_idx = to_idx[-1] if len(to_idx) > 0 else -1
-            timesteps = torch.cat([torch.tensor([src_t]), timesteps[from_idx:to_idx+1], torch.tensor([tgt_t])])
-        
-
-        print(' '.join([str(i.item()) for i in timesteps]))
-        for i in range(len(timesteps) - 1):
-            t_src = timesteps[i]
-            t_tgt = timesteps[i + 1]
-
-            noise_pred = self.predict(camera, x_t, t_src, guidance_scale=guidance_scale)
-
-            if mode == "cfg":
-                renoise_eps = noise_pred
-            elif mode == "sds":
-                renoise_eps = torch.randn_like(noise_pred)
-            elif mode == "sdi":
-                print(f"performing SDI at t=0 -> {t_tgt}")
-
-                self.scheduler.set_timesteps(10)
-                alpha_prod_t_src = self.scheduler.alphas_cumprod[t_src]
-                alpha_prod_t_tgt = self.scheduler.alphas_cumprod[t_tgt]
-                beta_prod_t_src = 1 - alpha_prod_t_src
-                beta_prod_t_tgt = 1 - alpha_prod_t_tgt
-                pred_original_sample = (
-                    x_t - beta_prod_t_src**0.5 * noise_pred
-                ) / alpha_prod_t_src**0.5
-
-                noise_sample = self.ddim_loop(pred_original_sample, 0, t_tgt, guidance_scale=-7.5, mode="cfg")
-                renoise_eps = (noise_sample - (alpha_prod_t_tgt**0.5) * pred_original_sample) / (beta_prod_t_tgt)**0.5
-                self.scheduler.set_timesteps(30)
-
-            x_t = self.move_step(x_t, noise_pred, t_src, t_tgt, renoise_eps=renoise_eps)
-        return x_t
-
-    
+        if return_dict:
+            return {
+                "noise_pred": noise_pred,
+                "noise_pred_uncond": noise_pred_uncond,
+                "noise_pred_text": noise_pred_text,
+            }
+        return noise_pred
 
 
 class ViewDependentStableDiffusionPrior(StableDiffusionPrior):
@@ -204,6 +141,7 @@ class ViewDependentStableDiffusionPrior(StableDiffusionPrior):
         self.cond = {"encoder_hidden_states": text_embeddings}
         return self.cond
 
+
 class AngleDependentStableDiffusionPrior(StableDiffusionPrior):
     @ignore_kwargs
     @dataclass
@@ -222,9 +160,7 @@ class AngleDependentStableDiffusionPrior(StableDiffusionPrior):
         self.cfg = self.Config(**cfg)
 
     def prepare_cond(self, camera):
-        text_prompts = [
-            self.cfg.angle_prompts[angle] for angle in camera["batch_size"]
-        ]
+        text_prompts = [self.cfg.angle_prompts[angle] for angle in camera["batch_size"]]
 
         neg_embeds, pos_embeds = [], []
         for prompt in text_prompts:
@@ -262,11 +198,19 @@ class MVDreamPrior(Prior):
         super().__init__()
         self.cfg = self.Config(**cfg)
 
+        self.scheduler = DDIMScheduler.from_pretrained(
+            self.cfg.model_name, subfolder="scheduler"
+        )
         self.pipeline = MVDreamPipeline.from_pretrained(
             self.cfg.model_name,
             torch_dtype=torch.float16 if self.cfg.mixed_precision else torch.float32,
+            scheduler=self.scheduler,
             trust_remote_code=True,
         ).to("cuda")
+        self.scheduler.set_timesteps(30)
+        self.pipeline.unet.requires_grad_(False)
+        self.pipeline.vae.requires_grad_(False)
+        self.pipeline.text_encoder.requires_grad_(False)
 
     def prepare_cond(self, camera, mv_camera):
         assert self.cfg.batch_size == len(camera["elevation"]) == len(mv_camera), (
@@ -314,52 +258,57 @@ class MVDreamPrior(Prior):
             )
         return images
 
-    def predict(self, camera, x_t, timestep):
+    def predict(self, camera, x_t, timestep, guidance_scale=None, return_dict=False):
+        # Predict the noise using the UNet model
+        if x_t.shape[1] == 3:
+            x_t = self.encode_image(x_t)
+
         # Get camera
         mv_camera = get_camera_specified(
             elevations=camera["elevation"], azimuths=camera["azimuth"], extra_view=False
         ).to(dtype=x_t.dtype, device=x_t.device)
         mv_camera = mv_camera.repeat_interleave(1, dim=0)
-
-        # Predict the noise using the UNet model
-        if x_t.shape[1] == 3:
-            x_t = self.encode_image(x_t)
-        x_t_stack = torch.cat([x_t] * 2)
-        # print_info(f"x_t shape: {x_t_stack.shape}")
-
+                                                
         self.prepare_cond(camera, mv_camera)
-        # print_info(f"context shape: {self.cond['context'].shape}")
-        # print_info(f"camera shape: {self.cond['camera'].shape}")
+        guidance_scale = (
+            guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
+        )
 
-        timesteps = torch.stack([timestep] * self.cfg.batch_size * 2)
-        # print_info(f"timesteps shape: {timesteps.shape}")
+        x_t_stack = torch.cat([x_t] * 2)
 
-        noise_preds = self.pipeline.unet(x_t_stack, timesteps, **self.cond)
-        noise_pred_uncond, noise_pred_text = noise_preds.chunk(2)
-        noise_preds = noise_pred_uncond + self.cfg.guidance_scale * (
+        timesteps = torch.stack([timestep] * self.cfg.batch_size * 2).to(x_t.device)
+        noise_pred = self.pipeline.unet(x_t_stack, timesteps, **self.cond)
+        noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+        noise_pred = noise_pred_uncond + guidance_scale * (
             noise_pred_text - noise_pred_uncond
         )
 
-        return noise_preds
+        if return_dict:
+            return {
+                "noise_pred": noise_pred,
+                "noise_pred_uncond": noise_pred_uncond,
+                "noise_pred_text": noise_pred_text,
+            }
+        return noise_pred
+
 
 class MarigoldPrior(Prior):
-    def __init__(self, model_name="prs-eth/marigold-depth-lcm-v1-0", condition_parameters=None):
+    def __init__(
+        self, model_name="prs-eth/marigold-depth-lcm-v1-0", condition_parameters=None
+    ):
         super().__init__()
-        self.pipeline = MarigoldDepthPipeline.from_pretrained(
-            model_name
-        ).to("cuda")
+        self.pipeline = MarigoldDepthPipeline.from_pretrained(model_name).to("cuda")
 
         self.condition_parameters = condition_parameters
 
     def sample(self, image, num_samples=1):
         with torch.no_grad():
-            res = self.pipeline(
-                image
-            )
+            res = self.pipeline(image)
         return res
 
     def predict(self, x_t, timestep, text_prompt, condition_images):
         pass
+
 
 class ControlNetPrior(Prior):
     def __init__(self, model_name="controlnet/controlnet", condition_parameters=None):
@@ -470,6 +419,3 @@ class AniMaginePrior(Prior):
             x_t, timestep, encoder_hidden_states=text_embeddings
         ).sample
         return noise_pred
-
-
-

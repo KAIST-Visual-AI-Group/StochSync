@@ -7,12 +7,14 @@ from trainer import Trainer
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 from k_utils.print_utils import print_with_box, print_info
+from k_utils.random_utils import seed_everything
 
 @ignore_kwargs
 @dataclass
 class Config:
     root_dir: str = "./results/default"
     save_source: bool = True
+    seed: int = 0
 
 def main():
     parser = argparse.ArgumentParser()
@@ -26,6 +28,7 @@ def main():
         max_len=88,
     )
     main_cfg = Config(**cfg)
+    seed_everything(main_cfg.seed)
 
     # save the config to a file
     os.makedirs(main_cfg.root_dir, exist_ok=True)

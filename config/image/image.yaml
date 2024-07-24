@@ -1,17 +1,14 @@
 root_dir: "./results7/image_gen"
 output: "result.png"
 text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
-max_steps: 301
+max_steps: 500
 batch_size: 1
 dataset: random
 background: black_white
-model: latent_image
+model: image
 prior: sd
-sampler: sds
-logger: simple_latent
+sampler: dreamtime
+logger: simple
 use_view_dependent_prompt: false
 guidance_scale: 7.5
 reduction: sum
-width: 64
-height: 64
-log_interval: 20
