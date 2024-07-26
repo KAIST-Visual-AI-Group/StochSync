@@ -162,7 +162,7 @@ class Prior(ABC):
                 ]
             )
 
-        print(" ".join([str(i.item()) for i in timesteps]))
+        # print(" ".join([str(i.item()) for i in timesteps]))
 
         for t_curr, t_next in zip(timesteps[:-1], timesteps[1:]):
             noise_pred_dict = self.predict(

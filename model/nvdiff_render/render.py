@@ -66,8 +66,9 @@ def shade(
     # perturbed_nrm = material['normal']
 
     # Separate kd into alpha and color, default alpha = 1
-    alpha = kd[..., 3:4] if kd.shape[-1] == 4 else torch.ones_like(kd[..., 0:1]) 
-    kd = kd[..., 0:3]
+    #alpha = kd[..., 3:4] if kd.shape[-1] == 4 else torch.ones_like(kd[..., 0:1]) 
+    #kd = kd[..., 0:3]
+    alpha = torch.ones_like(kd[..., 0:1])
 
     ################################################################################
     # Normal perturbation & normal bend
@@ -206,7 +207,8 @@ def render_mesh(
         num_layers  = 1, # always 1
         msaa        = False,
         background  = None, 
-        bsdf        = None
+        bsdf        = None,
+        channels    = 3
     ):
 
     def prepare_input_vector(x):
@@ -247,7 +249,7 @@ def render_mesh(
             background = util.scale_img_nhwc(background, full_res, mag='nearest', min='nearest')
         background = torch.cat((background, torch.zeros_like(background[..., 0:1])), dim=-1)
     else:
-        background = torch.zeros(1, full_res[0], full_res[1], 4, dtype=torch.float32, device='cuda')
+        background = torch.zeros(1, full_res[0], full_res[1], channels + 1, dtype=torch.float32, device='cuda')
 
     # Composite layers front-to-back
     out_buffers = {}

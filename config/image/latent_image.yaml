@@ -9,6 +9,8 @@ width: 64
 height: 64
 
 model: latent_image
+initialization: random
+learning_rate: 0.1
 
 prior: sd
 guidance_scale: 7.5

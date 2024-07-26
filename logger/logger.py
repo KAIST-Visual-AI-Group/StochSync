@@ -85,7 +85,17 @@ class SimpleLogger(BaseLogger):
             save_type="cat_image",
         )
 
+class SimpleLatentRawLogger(SimpleLogger):
+    """
+    A simple logger class with decoding latent
+    """
 
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.post_processor = lambda x: (0.5 * (x[:,:3] + 1)).clamp(0, 1)
+        print_info(
+            f"Detected SimpleLatentRawLogger. Overriding post-processor for latent clipping."
+        )
 class SimpleLatentLogger(SimpleLogger):
     """
     A simple logger class with decoding latent

@@ -20,8 +20,8 @@ mesh_path: "face.obj"
 texture_size: 512
 mesh_scale: 1.0
 sampling_mode: "bilinear"
-initialization: "gray"
-learning_rate: 0.0005
+initialization: "random"
+learning_rate: 0.00001
 decay:  0
 lr_decay:  0.9
 decay_step: 100

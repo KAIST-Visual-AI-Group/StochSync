@@ -48,7 +48,7 @@ class MeshModel(BaseModel):
         texture_size: int = 1024
         mesh_scale: float = 1.0
         sampling_mode: str = "nearest"
-        initialization: str = "gray"  # random, zero
+        initialization: str = "random"  # random, zero
         channels: int = 3
 
         learning_rate: float = 0.0005
@@ -60,7 +60,6 @@ class MeshModel(BaseModel):
     def __init__(self, cfg={}):
         super().__init__()
         self.cfg = self.Config(**cfg)
-        self.renderer = None
         self.optimizer = None
 
         self.texture = None
@@ -68,9 +67,7 @@ class MeshModel(BaseModel):
         self.load(self.cfg.mesh_path)
 
     def load(self, path: str) -> None:
-        print_warning("This code is only for debugging. Fix this first.")
-        f_idx, v_pos, v_uv = load_obj_uv(obj_path="bird.obj", device="cuda")
-
+        f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
         self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
         self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
@@ -80,64 +77,73 @@ class MeshModel(BaseModel):
         pass
 
     def prepare_optimization(self) -> None:
-        self.texture = torch.full(
-            (1, self.cfg.texture_size, self.cfg.texture_size, 3),
-            0.5,
-            device=self.cfg.device,
-            requires_grad=True,
-        )
+        shape = (1, self.cfg.channels, self.cfg.texture_size, self.cfg.texture_size)
+        if self.cfg.initialization == "random":
+            self.texture = torch.randn(shape, device=self.cfg.device, requires_grad=True)
+        elif self.cfg.initialization == "zero":
+            self.texture = torch.zeros(shape, device=self.cfg.device, requires_grad=True)
+        elif self.cfg.initialization == "gray":
+            self.texture = torch.full(shape, 0.5, device=self.cfg.device, requires_grad=True)
+        else:
+            raise ValueError(f"Invalid initialization: {self.cfg.initialization}")
 
-        print("For debugging")
-        self.texture = Image.open("bird.png")
-        self.texture = self.texture.resize(
-            (self.cfg.texture_size, self.cfg.texture_size)
-        )
-        self.texture = (
-            pil_to_torch(self.texture).to(self.cfg.device).permute(0, 2, 3, 1)
-        )
+        # print("For debugging")
+        # self.texture = Image.open("bird.png")
+        # self.texture = self.texture.resize(
+        #     (self.cfg.texture_size, self.cfg.texture_size)
+        # )
+        # self.texture = (
+        #     pil_to_torch(self.texture).to(self.cfg.device).permute(0, 2, 3, 1)
+        # )
 
         self.optimizer = torch.optim.Adam(
             [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
         )
 
     def render(self, camera) -> torch.Tensor:
+        c2ws, Ks, width, height, fov = (
+            camera["c2w"],
+            camera["K"],
+            camera["width"],
+            camera["height"],
+            camera["fov"],
+        )
+        proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
+            self.cfg.device
+        )
+        mv = c2ws.inverse()
+        mvp = proj_mtx @ mv
+        campos = c2ws[:, :3, 3]
 
-        kd_min = [0.0, 0.0, 0.0, 0.0]  # Limits for kd
-        kd_max = [1.0, 1.0, 1.0, 1.0]
-        kd_min, kd_max = torch.tensor(
-            kd_min, dtype=torch.float32, device="cuda"
-        ), torch.tensor(kd_max, dtype=torch.float32, device="cuda")
-
+        texture = self.texture.permute(0, 2, 3, 1)#.clamp(0, 1)
         pred_material = Material(
             {
-                "bsdf": "kd",  # Jaihoon
-                "kd": Texture2D(self.texture, min_max=[kd_min, kd_max]),
+                "bsdf": "kd",
+                "kd": Texture2D(texture),
             }
         )
 
         self.mesh.material = pred_material
 
-        buffers = render_mesh(
+        render_pkg = render_mesh(
             glctx,
             self.mesh,
-            camera["mvp"],
-            camera["campos"],
+            mvp,  # B 4 4
+            campos,  # B 3
             None,
-            camera["resolution"],
-            spp=camera["spp"],
+            [height, width],
             msaa=True,
             background=None,
-            bsdf="kd",
+            channels=self.cfg.channels,
         )
-        pred_obj_rgb = (
-            buffers["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
+        image = (
+            render_pkg["shaded"][..., :-1].permute(0, 3, 1, 2).contiguous()
         )  # [B, 3, H, W]
-        pred_obj_ws = buffers["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
-        obj_image = pred_obj_rgb
+        alpha = render_pkg["shaded"][..., -1].unsqueeze(1)  # [B, 1, H, W]
 
         return {
-            "image": obj_image,
-            "alpha": pred_obj_ws.detach(),
+            "image": image,
+            "alpha": alpha.detach(),
         }
 
     def optimize(self, step: int) -> None:
@@ -188,7 +194,6 @@ class PaintitMeshModel(BaseModel):
     def __init__(self, cfg={}):
         super().__init__()
         self.cfg = self.Config(**cfg)
-        self.renderer = None
         self.optimizer = None
 
         self.network_input = None
@@ -199,7 +204,6 @@ class PaintitMeshModel(BaseModel):
     def load(self, path: str) -> None:
         f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
         self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
-
         self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
         self.mesh = compute_tangents(self.mesh)
@@ -220,38 +224,6 @@ class PaintitMeshModel(BaseModel):
             self.cfg
         )
 
-    # def render(self, camera) -> torch.Tensor:
-
-    #     net_output = self.net(self.network_input)  # [B, 3, H, W]
-    #     texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
-
-    #     pred_material = Material(
-    #         {
-    #             "bsdf": "kd",
-    #             "kd": Texture2D(texture),
-    #         }
-    #     )
-    #     self.mesh.material = pred_material
-
-    #     render_pkg = render_mesh(
-    #         glctx,
-    #         self.mesh,
-    #         camera["mvp"],
-    #         camera["campos"],
-    #         None,
-    #         camera["resolution"],
-    #         msaa=True,
-    #         background=None
-    #     )
-    #     image = (
-    #         render_pkg["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
-    #     )  # [B, 3, H, W]
-    #     alpha = render_pkg["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
-
-    #     return {
-    #         "image": image,
-    #         "alpha": alpha.detach(),
-    #     }
     def render(self, camera):
         c2ws, Ks, width, height, fov = (
             camera["c2w"],
@@ -260,9 +232,15 @@ class PaintitMeshModel(BaseModel):
             camera["height"],
             camera["fov"],
         )
+        proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
+            self.cfg.device
+        )
+        mv = c2ws.inverse()
+        mvp = proj_mtx @ mv
+        campos = c2ws[:, :3, 3]
+
         net_output = self.net(self.network_input)  # [B, 3, H, W]
         texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
-
         pred_material = Material(
             {
                 "bsdf": "kd",
@@ -270,15 +248,6 @@ class PaintitMeshModel(BaseModel):
             }
         )
         self.mesh.material = pred_material
-
-        proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
-            self.cfg.device
-        )
-        mv = c2ws.inverse()
-        mvp = proj_mtx @ mv
-
-        campos = c2ws[:, :3, 3]
-        print(mvp.shape, campos.shape)
 
         render_pkg = render_mesh(
             glctx,
@@ -289,11 +258,12 @@ class PaintitMeshModel(BaseModel):
             [height, width],
             msaa=True,
             background=None,
+            channels=self.cfg.channels,
         )
         image = (
-            render_pkg["shaded"][..., 0:3].permute(0, 3, 1, 2).contiguous()
+            render_pkg["shaded"][..., :-1].permute(0, 3, 1, 2).contiguous()
         )  # [B, 3, H, W]
-        alpha = render_pkg["shaded"][..., 3].unsqueeze(1)  # [B, 1, H, W]
+        alpha = render_pkg["shaded"][..., -1].unsqueeze(1)  # [B, 1, H, W]
 
         return {
             "image": image,
