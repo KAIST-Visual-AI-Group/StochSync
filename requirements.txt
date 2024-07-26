@@ -1,0 +1,20 @@
+--find-links https://download.pytorch.org/whl/torch_stable.html
+torch==2.0.1+cu118
+torchvision==0.15.2+cu118
+torchaudio==2.0.2+cu118
+cupy-cuda11x
+accelerate
+transformers
+xformers==0.0.20
+xatlas
+scikit-learn
+einops
+plyfile
+imageio
+opencv-python
+omegaconf
+ipython
+kiui
+#third_party/gsplat
+#third_party/nvdiffrast
+
