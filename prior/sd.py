@@ -1,6 +1,6 @@
 import os
 from functools import lru_cache
-from typing import Dict
+from typing import Dict, Literal
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
@@ -20,10 +20,11 @@ from diffusers import (
     AutoencoderKL,
     DDIMScheduler,
 )
-from third_party.mvdream_diffusers.mv_unet import get_camera, get_camera_specified
-from third_party.mvdream_diffusers.pipeline_mvdream import MVDreamPipeline
+#from third_party.mvdream_diffusers.mv_unet import get_camera, get_camera_specified
+from third_party.mvdream.pipeline_mvdream import MVDreamPipeline
 
 from .base import Prior, NEGATIVE_PROMPT
+from utils.camera_utils import generate_camera_params, convert_camera_convention
 from utils.extra_utils import (
     attach_direction_prompt,
     ignore_kwargs,
@@ -194,6 +195,10 @@ class MVDreamPrior(Prior):
         elevation: int = 0
         mixed_precision: bool = False
 
+        convention: Literal[
+            "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
+        ] = "RDF"
+
     def __init__(self, cfg):
         super().__init__()
         self.cfg = self.Config(**cfg)
@@ -246,9 +251,6 @@ class MVDreamPrior(Prior):
         if text_prompt is None:
             text_prompt = self.cfg.text_prompt
 
-        if camera is None:
-            camera = get_camera(4, elevation=self.cfg.elevation)
-
         with torch.no_grad():
             images = self.pipeline(
                 [text_prompt],
@@ -264,10 +266,13 @@ class MVDreamPrior(Prior):
             x_t = self.encode_image(x_t)
 
         # Get camera
-        mv_camera = get_camera_specified(
-            elevations=camera["elevation"], azimuths=camera["azimuth"], extra_view=False
-        ).to(dtype=x_t.dtype, device=x_t.device)
-        mv_camera = mv_camera.repeat_interleave(1, dim=0)
+        mv_camera = convert_camera_convention(camera["c2w"].cpu().numpy(), self.cfg.convention, "OpenGL")  # B 4 4
+        #mv_camera = torch.tensor(mv_camera, dtype=torch.float32, device=x_t.device)
+        mv_camera = torch.from_numpy(mv_camera).to(x_t.device)
+        print(mv_camera.dtype)
+        mv_camera[:, 0:3, 3] /= (mv_camera[:, 0:3, 3].norm(dim=-1, keepdim=True) + 1e-8)
+        mv_camera = mv_camera.view(-1, 16)  # B 16
+        #mv_camera = mv_camera.repeat_interleave(1, dim=0)
                                                 
         self.prepare_cond(camera, mv_camera)
         guidance_scale = (

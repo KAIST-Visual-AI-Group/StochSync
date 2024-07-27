@@ -19,8 +19,6 @@ from diffusers import (
     AutoencoderKL,
     DDIMScheduler,
 )
-from third_party.mvdream_diffusers.mv_unet import get_camera, get_camera_specified
-from third_party.mvdream_diffusers.pipeline_mvdream import MVDreamPipeline
 
 from .base import Prior, NEGATIVE_PROMPT
 from utils.extra_utils import (

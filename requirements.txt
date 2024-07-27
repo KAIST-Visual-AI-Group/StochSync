@@ -3,18 +3,20 @@ torch==2.0.1+cu118
 torchvision==0.15.2+cu118
 torchaudio==2.0.2+cu118
 cupy-cuda11x
+diffusers==0.29.2
 accelerate
 transformers
 xformers==0.0.20
 xatlas
 scikit-learn
 einops
+trimesh
 plyfile
 imageio
 opencv-python
 omegaconf
 ipython
-kiui
+#kiui
 #third_party/gsplat
 #third_party/nvdiffrast
 
