@@ -1,13 +1,39 @@
-root_dir: "./results7/mvdream_image_gen"
+# root_dir: "./results/latent_image"
+# text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
+# max_steps: 500
+# batch_size: 4
+# dataset: random_mv
+# azim_range: [0, 0]
+# background: black_white
+# model: mvdream_image
+# prior: mvdream
+# sampler: dreamtime
+# logger: procedure
+# height: 256
+# width: 256
+
+root_dir: "./results/mvdream_image"
+output: "result.png"
 text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
-max_steps: 500
-batch_size: 4
+max_steps: 301
+
 dataset: random_mv
-azim_range: [0, 0]
-background: black_white
-model: mvdream_image
-prior: mvdream
-sampler: dreamtime
-logger: procedure
+batch_size: 4
 height: 256
 width: 256
+
+model: mvdream_image
+initialization: random
+learning_rate: 0.1
+
+prior: mvdream
+guidance_scale: 7.5
+
+sampler: dreamtime
+reduction: sum
+
+logger: simple_latent
+log_interval: 20
+
+background: solid
+rgb: [0, 0, 0, 0]

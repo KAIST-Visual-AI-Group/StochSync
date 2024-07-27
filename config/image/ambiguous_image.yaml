@@ -1,4 +1,4 @@
-root_dir: "./test/ambiguous_image_gen"
+root_dir: "./results/ambiguous_image"
 output: "result.pt"
 max_steps: 301
 

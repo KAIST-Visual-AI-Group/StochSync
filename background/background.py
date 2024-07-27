@@ -4,8 +4,10 @@ from dataclasses import dataclass
 from .base import BaseBackground
 from utils.extra_utils import ignore_kwargs
 import shared_modules
+
 # lru cache
 from functools import lru_cache
+
 
 class SolidBackground(BaseBackground):
     @ignore_kwargs
@@ -18,16 +20,13 @@ class SolidBackground(BaseBackground):
 
     def __init__(self, cfg) -> None:
         self.cfg = self.Config(**cfg)
-        self.background = (
-            torch.tensor(self.cfg.rgb, device=self.cfg.device)
-            .unsqueeze(0)
-            .unsqueeze(-1)
-            .unsqueeze(-1)
-            .repeat(1, 1, self.cfg.height, self.cfg.width)
+        self.background = torch.tensor(self.cfg.rgb, device=self.cfg.device).view(
+            1, -1, 1, 1
         )
 
     def __call__(self) -> torch.Tensor:
         return self.background
+
 
 class LatentSolidBackground(BaseBackground):
     @ignore_kwargs
@@ -52,6 +51,7 @@ class LatentSolidBackground(BaseBackground):
     def __call__(self) -> torch.Tensor:
         # encode and return
         return shared_modules.prior.encode_image(self.background)
+
 
 class RandomSolidBackground(BaseBackground):
     @ignore_kwargs

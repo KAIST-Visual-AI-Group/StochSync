@@ -102,7 +102,7 @@ class SDISampler(SDSSampler):
         ts_prev = len(shared_modules.prior.scheduler.timesteps)
         shared_modules.prior.scheduler.set_timesteps(10)
         noisy_sample = shared_modules.prior.ddim_loop(
-            camera, images, 0, t_tau, guidance_scale=self.cfg.inversion_guidance_scale, mode="cfg++"
+            camera, images, 0, t_tau, guidance_scale=self.cfg.inversion_guidance_scale, mode="cfg"
         )
         shared_modules.prior.scheduler.set_timesteps(ts_prev)
 

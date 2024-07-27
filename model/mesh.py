@@ -31,8 +31,6 @@ from .dc_pbr import skip
 from k_utils.image_utils import save_tensor, pil_to_torch
 from k_utils.print_utils import print_info, print_warning
 
-glctx = dr.RasterizeCudaContext()
-
 
 class MeshModel(BaseModel):
     """
@@ -62,6 +60,7 @@ class MeshModel(BaseModel):
         self.cfg = self.Config(**cfg)
         self.optimizer = None
 
+        self.glctx = dr.RasterizeCudaContext()
         self.texture = None
         self.mesh = None
         self.load(self.cfg.mesh_path)
@@ -79,11 +78,17 @@ class MeshModel(BaseModel):
     def prepare_optimization(self) -> None:
         shape = (1, self.cfg.channels, self.cfg.texture_size, self.cfg.texture_size)
         if self.cfg.initialization == "random":
-            self.texture = torch.randn(shape, device=self.cfg.device, requires_grad=True)
+            self.texture = torch.randn(
+                shape, device=self.cfg.device, requires_grad=True
+            )
         elif self.cfg.initialization == "zero":
-            self.texture = torch.zeros(shape, device=self.cfg.device, requires_grad=True)
+            self.texture = torch.zeros(
+                shape, device=self.cfg.device, requires_grad=True
+            )
         elif self.cfg.initialization == "gray":
-            self.texture = torch.full(shape, 0.5, device=self.cfg.device, requires_grad=True)
+            self.texture = torch.full(
+                shape, 0.5, device=self.cfg.device, requires_grad=True
+            )
         else:
             raise ValueError(f"Invalid initialization: {self.cfg.initialization}")
 
@@ -115,7 +120,7 @@ class MeshModel(BaseModel):
         mvp = proj_mtx @ mv
         campos = c2ws[:, :3, 3]
 
-        texture = self.texture.permute(0, 2, 3, 1)#.clamp(0, 1)
+        texture = self.texture.permute(0, 2, 3, 1)  # .clamp(0, 1)
         pred_material = Material(
             {
                 "bsdf": "kd",
@@ -126,7 +131,7 @@ class MeshModel(BaseModel):
         self.mesh.material = pred_material
 
         render_pkg = render_mesh(
-            glctx,
+            self.glctx,
             self.mesh,
             mvp,  # B 4 4
             campos,  # B 3
@@ -196,6 +201,7 @@ class PaintitMeshModel(BaseModel):
         self.cfg = self.Config(**cfg)
         self.optimizer = None
 
+        self.glctx = dr.RasterizeCudaContext()
         self.network_input = None
         self.net = None
         self.mesh = None
@@ -250,7 +256,7 @@ class PaintitMeshModel(BaseModel):
         self.mesh.material = pred_material
 
         render_pkg = render_mesh(
-            glctx,
+            self.glctx,
             self.mesh,
             mvp,  # B 4 4
             campos,  # B 3

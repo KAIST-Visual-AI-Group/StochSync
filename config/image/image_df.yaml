@@ -1,4 +1,4 @@
-root_dir: "./results7/image_gen"
+root_dir: "./results/image_df"
 output: "result.pt"
 text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
 max_steps: 1000
