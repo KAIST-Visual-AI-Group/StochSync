@@ -5,8 +5,8 @@ from .base import BaseBackground
 from utils.extra_utils import ignore_kwargs
 import shared_modules
 
-# lru cache
-from functools import lru_cache
+# Using weak_lru to avoid memory leaks in class methods
+from utils.extra_utils import weak_lru
 
 
 class SolidBackground(BaseBackground):
@@ -47,7 +47,7 @@ class LatentSolidBackground(BaseBackground):
             .repeat(1, 1, self.cfg.height * 8, self.cfg.width * 8)
         )
 
-    @lru_cache(maxsize=1)
+    @weak_lru(maxsize=1)
     def __call__(self) -> torch.Tensor:
         # encode and return
         return shared_modules.prior.encode_image(self.background)

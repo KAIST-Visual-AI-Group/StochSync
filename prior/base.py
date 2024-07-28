@@ -1,5 +1,3 @@
-from functools import lru_cache
-
 from abc import ABC, abstractmethod
 import torch
 from diffusers import (
@@ -13,6 +11,8 @@ from diffusers import (
     EulerAncestralDiscreteScheduler,
     AutoencoderKL,
 )
+
+from utils.extra_utils import weak_lru
 
 
 #NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
@@ -42,7 +42,7 @@ class Prior(ABC):
         """
         pass
 
-    @lru_cache(maxsize=10)
+    @weak_lru(maxsize=10)
     def encode_text(self, prompt, negative_prompt=None):
         """
         Encode a text prompt into a feature vector.

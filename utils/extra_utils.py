@@ -3,6 +3,8 @@ from dataclasses import fields
 import importlib
 import torch
 from torch.nn.functional import interpolate
+import functools
+import weakref
 
 
 def rescale_tensor(tensor, width, height):
@@ -133,3 +135,21 @@ def get_class_filename(cls):
     filename = module.__file__
 
     return filename
+
+
+def weak_lru(maxsize=128, typed=False):
+    'LRU Cache decorator that keeps a weak reference to "self"'
+
+    def wrapper(func):
+
+        @functools.lru_cache(maxsize, typed)
+        def _func(_self, *args, **kwargs):
+            return func(_self(), *args, **kwargs)
+
+        @functools.wraps(func)
+        def inner(self, *args, **kwargs):
+            return _func(weakref.ref(self), *args, **kwargs)
+
+        return inner
+
+    return wrapper
