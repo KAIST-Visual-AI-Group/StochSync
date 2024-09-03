@@ -79,7 +79,7 @@ class Renderer:
 
             # Render the 3D shape from the sampled camera position
             r_pkg = sm.model.render(camera)
-            bg = sm.background()
+            bg = sm.background(camera)
             images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
 
             # Log the result

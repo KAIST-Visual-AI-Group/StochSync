@@ -24,7 +24,7 @@ class SolidBackground(BaseBackground):
             1, -1, 1, 1
         )
 
-    def __call__(self) -> torch.Tensor:
+    def __call__(self, camera) -> torch.Tensor:
         return self.background
 
 
@@ -48,7 +48,7 @@ class LatentSolidBackground(BaseBackground):
         )
 
     @weak_lru(maxsize=1)
-    def __call__(self) -> torch.Tensor:
+    def __call__(self, camera) -> torch.Tensor:
         # encode and return
         return shared_modules.prior.encode_image(self.background)
 
@@ -68,7 +68,7 @@ class RandomSolidBackground(BaseBackground):
     def __init__(self, cfg) -> None:
         self.cfg = self.Config(**cfg)
 
-    def __call__(self) -> torch.Tensor:
+    def __call__(self, camera) -> torch.Tensor:
         if self.cfg.mode == "rgb":
             color = (
                 torch.rand(3, device=self.cfg.device)
@@ -155,7 +155,7 @@ class BlackWhiteBackground(BaseBackground):
     def __init__(self, cfg) -> None:
         self.cfg = self.Config(**cfg)
 
-    def __call__(self) -> torch.Tensor:
+    def __call__(self, camera) -> torch.Tensor:
         color = (torch.rand(1) < self.cfg.white_prob).float().to(self.cfg.device)
 
         background = (
@@ -165,3 +165,75 @@ class BlackWhiteBackground(BaseBackground):
             .repeat(1, 1, self.cfg.height, self.cfg.width)
         )
         return background
+
+class NeRFBackground(BaseBackground):
+    @ignore_kwargs
+    @dataclass
+    class Config:
+        width: int = 512
+        height: int = 512
+        device: str = "cuda"
+
+    def __init__(self, cfg) -> None:
+        self.cfg = self.Config(**cfg)
+
+        # Initialize the Directional NeRF model
+        self.model = torch.nn.Sequential(
+            torch.nn.Linear(3, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 128),
+            torch.nn.ReLU(),
+            torch.nn.Linear(128, 3),
+            torch.nn.Sigmoid(),
+        ).to(self.cfg.device)
+        self.model.train()
+        self.optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-2)
+
+    
+    def __call__(self, camera) -> torch.Tensor:
+        c2ws, Ks, width, height = (
+            camera["c2w"],
+            camera["K"],
+            camera["width"],
+            camera["height"],
+        )
+
+        images = []
+        for i in range(camera["num"]):
+            # Generate rays
+            # origins = c2ws[i:i+1, :3, 3] # (1, 3)
+            # origins = origins.view(1, 1, 3).expand(height, width, -1)  # (H, W, 3)
+
+            pixel_coords = torch.stack(
+                torch.meshgrid(
+                    torch.linspace(0, height - 1, height),
+                    torch.linspace(0, width - 1, width),
+                    indexing='ij',
+                ),
+                dim=-1,
+            ).flip([2]).to(Ks.device)  # (H, W, 2)
+            pixel_coords = pixel_coords.reshape(-1, 2)  # (H*W, 2)
+
+            dirs = Ks[i:i+1].inverse().squeeze() @ torch.cat(
+                [
+                    pixel_coords,
+                    torch.ones(pixel_coords.shape[0], 1).to(pixel_coords.device),
+                ],
+                dim=1,
+            ).T  # (3, 512*512)
+            dirs = dirs / torch.norm(dirs, dim=0, keepdim=True)  # (3, H*W)
+            # convert to world space
+            dirs = c2ws[i:i+1, :3, :3] @ dirs.unsqueeze(0)  # (1, 3, H*W)
+            dirs = dirs.squeeze(0).permute(1, 0).view(height, width, 3)  # (H, W, 3)
+
+            # Inference
+            rgb = self.model(dirs)
+            images.append(rgb)
+        images = torch.stack(images, dim=0).permute(0, 3, 1, 2)  # [N, 3, H, W]
+        return images
+    
+    def optimize(self, step):
+        self.optimizer.step()
+        self.optimizer.zero_grad()

@@ -1,0 +1,31 @@
+root_dir: "./results/img_wide"
+text_prompt: "Skyline of New York City"
+max_steps: 30
+
+dataset: image_wide
+height: 64
+width: 64
+y_scale: 1
+x_scale: 4
+batch_size: 15
+
+model: image_wide
+learning_rate: 2.0
+channels: 4
+
+prior: sd
+guidance_scale: 7.5
+
+background: solid
+rgb: [0, 0, 0, 0]
+
+logger: simple
+log_interval: 1
+
+sampler: sds
+linear_annealing: true
+
+recon_steps: 400
+use_cached_noise: true
+recon_type: latent
+try_closed_form: true

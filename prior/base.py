@@ -13,16 +13,29 @@ from diffusers import (
 )
 
 from utils.extra_utils import weak_lru
+from k_utils.print_utils import print_info, print_warning
 
 
-#NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
-NEGATIVE_PROMPT = "deformed, extra digit, fewer digits, cropped, worst quality, low quality, smoke"
+# NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
+NEGATIVE_PROMPT = (
+    "deformed, extra digit, fewer digits, cropped, worst quality, low quality, smoke"
+)
 
 
 class Prior(ABC):
     def __init__(self):
         super().__init__()
         self.pipeline = None
+
+    @property
+    @abstractmethod
+    def rgb_res(self):
+        pass
+
+    @property
+    @abstractmethod
+    def latent_res(self):
+        pass
 
     @abstractmethod
     def prepare_cond(self, camera):
@@ -55,6 +68,10 @@ class Prior(ABC):
         text_embeddings = torch.cat([text_embeddings[1], text_embeddings[0]])
         return text_embeddings
 
+    @property
+    def device(self):
+        return self.pipeline.device
+
     def encode_image(self, img_tensor):
         assert self.pipeline is not None, "Pipeline not initialized"
         vae = self.pipeline.vae
@@ -81,21 +98,26 @@ class Prior(ABC):
             x = x.squeeze(0)
         return x
 
+    def encode_image_if_needed(self, img_tensor):
+        if img_tensor.shape[-3] == 3:
+            return self.encode_image(img_tensor)
+        return img_tensor
+    
+    def decode_latent_if_needed(self, latent):
+        if latent.shape[-3] == 4:
+            return self.decode_latent(latent)
+        return latent
+
     def add_noise(self, x, t, noise=None):
         if noise is None:
             noise = torch.randn_like(x)
-        noisy_sample = self.pipeline.scheduler.add_noise(x, noise, t)
         alpha_t = self.pipeline.scheduler.alphas_cumprod[t].to(x)
-        beta_t = 1 - alpha_t
-        noisy_sample_2 = alpha_t**0.5 * x + beta_t**0.5 * noise
-        assert torch.allclose(noisy_sample, noisy_sample_2), f"{torch.max(torch.abs(noisy_sample - noisy_sample_2))}"
+        noisy_sample = alpha_t**0.5 * x + (1 - alpha_t)**0.5 * noise
+
+        # assert torch.allclose(
+        #     noisy_sample, noisy_sample
+        # ), f"{torch.max(torch.abs(noisy_sample - noisy_sample))}"
         return noisy_sample
-    
-    # def tweedie(self, x_t, eps_t, t):
-    #     alpha_t = self.pipeline.scheduler.alphas_cumprod[t].to(x_t)
-    #     beta_t = 1 - alpha_t
-    #     x_0 = (x_t - beta_t**0.5 * eps_t) / alpha_t**0.5
-    #     return x_0
 
     def get_tweedie(self, noisy_sample, eps_pred, t):
         alpha = self.pipeline.scheduler.alphas_cumprod[t]
@@ -107,9 +129,24 @@ class Prior(ABC):
         eps = (noisy_sample - (alpha**0.5) * tweedie) / (1 - alpha) ** 0.5
         return eps
 
-    def get_noisy_sample(self, pred_original_sample, eps, t):
+    def get_noisy_sample(self, pred_original_sample, eps, t, eta=0, t_next=None, noise=None):
+        if t_next is None:
+            interval = 1000 // self.pipeline.scheduler.num_inference_steps
+            t_next = min(t + interval, 999)
+        
         alpha = self.pipeline.scheduler.alphas_cumprod[t]
-        noisy_sample = (alpha**0.5) * pred_original_sample + eps * (1 - alpha) ** 0.5
+        alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
+        sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
+
+        tweedie_coeff = alpha ** 0.5
+        eps_coeff = (1 - alpha - sigma**2) ** 0.5
+        noise_coeff = sigma
+
+        noisy_sample = tweedie_coeff * pred_original_sample + eps_coeff * eps
+        if eta > 0:
+            noise = torch.randn_like(eps) if noise is None else noise
+            noisy_sample = noisy_sample + noise_coeff * noise
+
         return noisy_sample
 
     def move_step(self, sample, denoise_eps, src_t, tgt_t, renoise_eps=None):
@@ -118,15 +155,24 @@ class Prior(ABC):
         pred_original_sample = self.get_tweedie(sample, denoise_eps, src_t)
         next_sample = self.get_noisy_sample(pred_original_sample, renoise_eps, tgt_t)
         return next_sample
-    
+
     @torch.no_grad()
-    def ddim_loop(self, camera, x_t, src_t, tgt_t, mode="cfg", guidance_scale=None):
-        # make sure src_t is int (if tensor, convert to int)
+    def ddim_loop(
+        self,
+        camera,
+        x_t,
+        src_t,
+        tgt_t,
+        mode="cfg",
+        guidance_scale=None,
+        inv_guidance_scale=None,
+        **kwargs,
+    ):
         if isinstance(src_t, torch.Tensor):
             src_t = src_t.item()
         if isinstance(tgt_t, torch.Tensor):
             tgt_t = tgt_t.item()
-        
+
         guidance_scale = (
             guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
         )
@@ -162,11 +208,9 @@ class Prior(ABC):
                 ]
             )
 
-        # print(" ".join([str(i.item()) for i in timesteps]))
-
         for t_curr, t_next in zip(timesteps[:-1], timesteps[1:]):
             noise_pred_dict = self.predict(
-                camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True
+                camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )
             noise_pred, noise_pred_uncond, noise_pred_text = (
                 noise_pred_dict["noise_pred"],
@@ -181,16 +225,22 @@ class Prior(ABC):
             elif mode == "cfg++":
                 renoise_eps = noise_pred_uncond
             elif mode == "sdi":
-                print(f"performing SDI at t=0 -> {t_next}")
+                print_info(f"performing SDI at t=0 -> {t_next}")
+                print_warning(f"Modifying timesteps of the scheduler. It would not be restored.")
 
                 pred_original_sample = self.get_tweedie(x_t, noise_pred, t_curr)
                 self.scheduler.set_timesteps(10)
+                inv_guidance_scale = (
+                    inv_guidance_scale
+                    if inv_guidance_scale is not None
+                    else -guidance_scale
+                )
                 noisy_sample = self.ddim_loop(
                     camera,
                     pred_original_sample,
                     0,
                     t_curr,
-                    guidance_scale=-guidance_scale,
+                    guidance_scale=inv_guidance_scale,
                     mode="cfg",
                 )
                 self.scheduler.set_timesteps(30)
@@ -207,4 +257,5 @@ class Prior(ABC):
             x_t = self.move_step(
                 x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps
             )
+
         return x_t

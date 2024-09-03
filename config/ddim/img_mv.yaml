@@ -1,0 +1,30 @@
+root_dir: "./results/img_mv"
+text_prompt: "a zoomed out DSLR photo of a baby dragon"
+max_steps: 30
+
+dataset: random_mv
+height: 256
+width: 256
+convention: RUF
+batch_size: 4
+dist_range: [1.5, 1.5]
+elev_range: [0.1, 0.1]
+azim_range: [0.1, 0.1]
+
+model: image_mv
+learning_rate: 0.2
+
+prior: mvdream
+guidance_scale: 7.5
+
+background: solid
+
+logger: simple
+log_interval: 1
+
+sampler: sds
+linear_annealing: true
+
+recon_steps: 100
+use_cached_noise: true
+recon_type: latent

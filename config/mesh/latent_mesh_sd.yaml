@@ -11,8 +11,8 @@ up_vec: y
 #dist_range: [2.8, 3.0]
 #elev_range: [-10, 30]
 dist_range: [3.0, 3.0]
-elev_range: [15, 15]
-azim_range: [0, 0]
+# elev_range: [15, 15]
+# azim_range: [0, 0]
 fov: 45
 
 background: latent_solid
@@ -31,10 +31,11 @@ decay_step: 100
 lr_plateau: false
 
 prior: sd
-guidance_scale: 7.5
+# guidance_scale: 7.5
+guidance_scale: 35.5
 
-
-sampler: dreamtime
+sampler: sds
+linear_annealing: true
 
 logger: simple_latent
 log_interval: 10

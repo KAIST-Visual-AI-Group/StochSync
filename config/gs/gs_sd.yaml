@@ -11,8 +11,9 @@ dataset: random
 background: black_white
 model: gs
 prior: mvdream
-sampler: dreamtime
-logger: simple
+sampler: sds
+linear_annealing: true
+logger: self
 height: 512
 width: 512
 refine_start_iter: 50

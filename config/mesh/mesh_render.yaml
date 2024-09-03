@@ -4,7 +4,8 @@ convention: Pytorch3D
 background: solid
 model: latent_mesh
 prior: sd
-sampler: dreamtime
+sampler: sds
+linear_annealing: true
 logger: simple_latent
 height: 64
 width: 64

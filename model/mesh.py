@@ -55,6 +55,8 @@ class MeshModel(BaseModel):
         decay_step: int = 100
         lr_plateau: bool = False
 
+        ddim_style_generation: bool = False
+
     def __init__(self, cfg={}):
         super().__init__()
         self.cfg = self.Config(**cfg)
@@ -92,18 +94,14 @@ class MeshModel(BaseModel):
         else:
             raise ValueError(f"Invalid initialization: {self.cfg.initialization}")
 
-        # print("For debugging")
-        # self.texture = Image.open("bird.png")
-        # self.texture = self.texture.resize(
-        #     (self.cfg.texture_size, self.cfg.texture_size)
-        # )
-        # self.texture = (
-        #     pil_to_torch(self.texture).to(self.cfg.device).permute(0, 2, 3, 1)
-        # )
-
-        self.optimizer = torch.optim.Adam(
-            [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
-        )
+        if not self.cfg.ddim_style_generation and False:
+            self.optimizer = torch.optim.Adam(
+                [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
+            )
+        else:
+            self.optimizer = torch.optim.SGD(
+                [self.texture], self.cfg.learning_rate
+            )
 
     def render(self, camera) -> torch.Tensor:
         c2ws, Ks, width, height, fov = (
@@ -151,10 +149,28 @@ class MeshModel(BaseModel):
             "alpha": alpha.detach(),
         }
 
+
+
     def optimize(self, step: int) -> None:
+        self.schedule_lr(step)
         self.optimizer.step()
         self.optimizer.zero_grad()
 
+    def schedule_lr(self, step):
+        """
+        Adjust the learning rate (optional).
+        """
+        if not self.cfg.ddim_style_generation:
+            return
+        timestep = shared_modules.sampler.sample_timestep(step)
+        for _ in range(10):
+            assert timestep == shared_modules.sampler.sample_timestep(step), "timestep sampling must be deterministic for DDIM-style generation."
+        
+        alphas = shared_modules.prior.scheduler.alphas_cumprod
+        lr = 1 / (alphas[timestep] * (1 - alphas[timestep]))**0.5
+
+        for group in self.optimizer.param_groups:
+            group['lr'] = lr * self.cfg.learning_rate
 
 def load_obj_uv(obj_path, device):
     # Load the obj file using trimesh
@@ -195,6 +211,8 @@ class PaintitMeshModel(BaseModel):
         lr_decay: float = 0.9
         decay_step: int = 100
         lr_plateau: bool = False
+        
+        ddim_style_generation: bool = False
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -278,9 +296,13 @@ class PaintitMeshModel(BaseModel):
 
     def optimize(self, step: int) -> None:
         torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=10.0)
+        self.schedule_lr(step)
         self.optimizer.step()
-        self.lr_scheduler.step()
         self.optimizer.zero_grad()
+    
+    def schedule_lr(self, step):
+        if self.lr_scheduler is not None:
+            self.lr_scheduler.step()
 
 
 def get_model(cfg):
@@ -309,5 +331,16 @@ def get_model(cfg):
         lr_scheduler = torch.optim.lr_scheduler.StepLR(
             optim, step_size=cfg.decay_step, gamma=cfg.lr_decay
         )
+
+    if not cfg.ddim_style_generation:
+        optim = torch.optim.Adam(params, cfg.learning_rate, weight_decay=cfg.decay)
+        activate_scheduler = cfg.lr_decay < 1 and cfg.decay_step > 0 and not cfg.lr_plateau
+        if activate_scheduler:
+            lr_scheduler = torch.optim.lr_scheduler.StepLR(
+                optim, step_size=cfg.decay_step, gamma=cfg.lr_decay
+            )
+    else:
+        optim = torch.optim.SGD(params, cfg.learning_rate)
+        lr_scheduler = None
 
     return net, optim, activate_scheduler, lr_scheduler

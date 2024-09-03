@@ -13,16 +13,6 @@ def focal_length_to_fov(focal_length, hole_rad=0.5):
     return 2 * atan(hole_rad / focal_length)
 
 
-def dfov_to_focal_length(dfov):
-    fov = dfov * pi / 180
-    return 0.5 / tan(fov / 2)
-
-
-def focal_length_to_dfov(focal_length):
-    fov = 2 * atan(0.5 / focal_length)
-    return fov * 180 / pi
-
-
 CAM_TRANSFORMATIONS = {
     "RUF": np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
     "Unity": np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]]),
@@ -117,15 +107,14 @@ def generate_camera_params(
     R = np.stack([right, up, lookat], axis=1)
     R = convert_camera_convention(R, "RUF", convention)
 
-    invert_y = not(convention == "RDF" or convention == "OpenCV")
+    invert_y = not (convention == "RDF" or convention == "OpenCV")
 
     c2w = np.eye(4)
     c2w[:3, :3] = R
     c2w[:3, 3] = cam_pos
 
     focal_length = fov_to_focal_length(fov)
-    fx = focal_length * width
-    fy = focal_length * height
+    fx = fy = focal_length * height
     cx = width / 2.0
     cy = height / 2.0
 

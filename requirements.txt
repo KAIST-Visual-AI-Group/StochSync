@@ -1,12 +1,12 @@
 --find-links https://download.pytorch.org/whl/torch_stable.html
-torch==2.0.1+cu118
-torchvision==0.15.2+cu118
-torchaudio==2.0.2+cu118
+torch==2.1.0+cu121
+torchvision==0.16.0+cu121
+torchaudio==2.2.1+cu121
 cupy-cuda11x
 diffusers==0.29.2
 accelerate
 transformers
-xformers==0.0.20
+xformers==0.0.22
 xatlas
 scikit-learn
 einops
@@ -16,7 +16,7 @@ imageio
 opencv-python
 omegaconf
 ipython
+git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
 #kiui
 #third_party/gsplat
 #third_party/nvdiffrast
-

@@ -5,6 +5,10 @@ import torch
 from torch.nn.functional import interpolate
 import functools
 import weakref
+import sys
+import contextlib
+from tqdm.contrib import DummyTqdmFile
+import tqdm
 
 
 def rescale_tensor(tensor, width, height):
@@ -71,6 +75,23 @@ def inverse_sigmoid(x):
     return torch.log(x / (1 - x))
 
 
+def accumulate_tensor(tensor, index, value):
+    assert (
+        tensor.shape[:-1] == value.shape[:-1]
+    ), "tensor and value must have the same shape, except for the last dimension"
+    assert (
+        index.shape == value.shape[-1:]
+    ), "index must be a 1D tensor with the same length as the last dimension of value"
+
+    accumulated_tensor = torch.zeros_like(tensor)
+    counter = torch.zeros_like(tensor)
+
+    accumulated_tensor.index_add_(-1, index, value)
+    counter.index_add_(-1, index, torch.ones_like(value))
+
+    return tensor + accumulated_tensor, counter
+
+
 def attach_direction_prompt(prompt, elevs, azims):
     if type(elevs) == float:
         elevs = [elevs]
@@ -96,6 +117,40 @@ def attach_direction_prompt(prompt, elevs, azims):
             direction_prompt = "back view"
         else:
             direction_prompt = "left view"
+        output_prompts.append(f"{prompt}, {direction_prompt}")
+
+    return output_prompts
+
+
+def attach_elevation_prompt(prompt, elevs):
+    if type(elevs) == float:
+        elevs = [elevs]
+
+    output_prompts = []
+
+    for elev in elevs:
+        direction_prompt = ""
+        # elev -90~-80: "viewed from directly above"
+        # elev -80~-45: "high-angle downward view"
+        # elev -45~-10: "elevated downward view"
+        # elev -10~10: "eye-level view"
+        # elev 10~45: "low-angle upward view"
+        # elev 45~80: "steep upward view"
+        # elev 80~: "viewed from directly below"
+        if elev < -80:
+            direction_prompt = "viewed from directly above"
+        elif elev < -45:
+            direction_prompt = "high-angle downward view"
+        elif elev < -10:
+            direction_prompt = "elevated downward view"
+        elif elev < 10:
+            direction_prompt = "eye-level view"
+        elif elev < 45:
+            direction_prompt = "low-angle upward view"
+        elif elev < 80:
+            direction_prompt = "steep upward view"
+        else:
+            direction_prompt = "viewed from directly below"
         output_prompts.append(f"{prompt}, {direction_prompt}")
 
     return output_prompts
@@ -153,3 +208,48 @@ def weak_lru(maxsize=128, typed=False):
         return inner
 
     return wrapper
+
+
+@contextlib.contextmanager
+def redirect_stdout_to_tqdm():
+    orig_out_err = sys.stdout, sys.stderr
+    try:
+        sys.stdout, sys.stderr = map(DummyTqdmFile, orig_out_err)
+        yield orig_out_err[0]
+    # Relay exceptions
+    except Exception as exc:
+        raise exc
+    # Always restore sys.stdout/err if necessary
+    finally:
+        sys.stdout, sys.stderr = orig_out_err
+
+
+ORIG_STDOUT = sys.stdout
+ORIG_STDERR = sys.stderr
+
+
+def redirected_tqdm(*args, **kwargs):
+    return tqdm.tqdm(*args, file=ORIG_STDOUT, **kwargs)
+
+
+def redirected_trange(*args, **kwargs):
+    return tqdm.trange(*args, file=ORIG_STDOUT, **kwargs)
+
+
+if __name__ == "__main__":
+
+    def dummy():
+        print("dummy")
+
+    def dummy_loop():
+        for j in redirected_trange(3, desc="inner", leave=False, position=1):
+            print(i, j)
+            sleep(0.5)
+            dummy()
+            sleep(0.5)
+
+    from time import sleep
+
+    with redirect_stdout_to_tqdm():
+        for i in redirected_trange(2, desc="outer", leave=False, position=0):
+            dummy_loop()

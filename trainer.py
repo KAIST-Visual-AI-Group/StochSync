@@ -39,6 +39,7 @@ class Trainer(ABC):
         output: str = "output.ply"
         prefix: str = ""
         save_source: bool = True
+        disable_debug: bool = False
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -73,7 +74,7 @@ class Trainer(ABC):
 
         # Render the model and the background
         r_pkg = sm.model.render(camera)
-        bg = sm.background()
+        bg = sm.background(camera)
         images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
 
         # Sample the score and calculate the loss
@@ -86,7 +87,8 @@ class Trainer(ABC):
         sm.model.optimize(step)
 
         # Log the result
-        sm.logger(step, camera, images)
+        if not self.cfg.disable_debug:
+            sm.logger(step, camera, images)
 
         return total_loss
 

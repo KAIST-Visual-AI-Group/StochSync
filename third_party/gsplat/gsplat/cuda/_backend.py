@@ -40,6 +40,8 @@ try:
     # try to import the compiled module (via setup.py)
     from gsplat import csrc as _C
 except ImportError:
+    # Force to use pre-compiled module
+    raise ImportError("gsplat: Cannot find the compiled module. Please run `python setup.py install`.")
     # if failed, try with JIT compilation
     if cuda_toolkit_available():
         name = "gsplat_cuda"

@@ -16,7 +16,8 @@ channels: 4
 prior: sd
 guidance_scale: 7.5
 
-sampler: dreamtime
+sampler: sds
+linear_annealing: true
 reduction: sum
 
 logger: simple_latent

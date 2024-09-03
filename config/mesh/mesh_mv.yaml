@@ -1,9 +1,9 @@
 root_dir: "./results/mesh_sd"
-text_prompt: "a DSLR photo of face of a high-elf girl, fantasy, best quality, high quality, extremely detailed, good geometry"
-max_steps: 1000
-batch_size: 2
+text_prompt: "a DSLR photo of face of a man, best quality, high quality, extremely detailed, good geometry"
+max_steps: 500
+batch_size: 4
 
-dataset: random
+dataset: random_mv
 height: 512
 width: 512
 convention: OpenGL
@@ -21,16 +21,17 @@ texture_size: 512
 mesh_scale: 1.0
 sampling_mode: "bilinear"
 initialization: "random"
-learning_rate: 0.01
+learning_rate: 0.0001
 decay:  0
 lr_decay:  0.9
 decay_step: 100
 lr_plateau: false
 
-prior: sd
-guidance_scale: 35
+prior: mvdream
+guidance_scale: 7.5
 
 sampler: sds
+linear_annealing: true
 
 logger: procedure
 log_interval: 20

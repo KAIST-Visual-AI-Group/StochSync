@@ -33,14 +33,14 @@ class BaseModel(ABC):
         assert self.cfg is not None, "Configuration not initialized"
         return self.cfg.max_steps
 
-    @abstractmethod
-    def load(self, path: str) -> None:
-        """
-        Load the model from the specified path.
+    # @abstractmethod
+    # def load(self, path: str) -> None:
+    #     """
+    #     Load the model from the specified path.
         
-        :param path: Path to the file from which to load the model.
-        """
-        pass
+    #     :param path: Path to the file from which to load the model.
+    #     """
+    #     pass
 
     @abstractmethod
     def save(self, path: str) -> None:
@@ -61,16 +61,22 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def render(self, c2ws: torch.Tensor, Ks: torch.Tensor, width: int, height: int, **kwargs) -> Dict[str, torch.Tensor]:
+    def render(self, camera) -> torch.Tensor:
         """
         Render the 3D model from the specified camera parameters.
         
-        :param c2ws: Camera-to-world transformation matrices.
-        :param Ks: Camera intrinsic matrices.
-        :param width: Width of the rendered image.
-        :param height: Height of the rendered image.
-        :param kwargs: Additional parameters for rendering.
+        :param camera: Dictionary containing the camera parameters.
         :return: A dictionary containing the rendered images and other information.
+        """
+        pass
+
+    @abstractmethod
+    @torch.no_grad()
+    def render_self(self) -> torch.Tensor:
+        """
+        Render the model from its own camera parameters.
+
+        :return: A tensor containing the rendered image.
         """
         pass
 
@@ -85,6 +91,19 @@ class BaseModel(ABC):
 
     def regularize(self):
         """
-        Regularize the model parameters.
+        Regularize the model parameters (optional).
         """
         return torch.tensor(0.0, device=self.device)
+    
+    def schedule_lr(self, step):
+        """
+        Adjust the learning rate (optional).
+        """
+        raise NotImplementedError("Learning rate scheduling not implemented")
+    
+    @torch.no_grad()
+    def closed_form_optimize(self, step, camera, target):
+        """
+        Perform closed-form optimization for the model parameters (optional).
+        """
+        raise NotImplementedError("Closed-form optimization not implemented")

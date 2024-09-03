@@ -35,8 +35,8 @@ class CameraDataset(InfiniteDataset):
                 elev,
                 azim,
                 self.cfg.fov,
-                self.cfg.width,
                 self.cfg.height,
+                self.cfg.width,
                 self.cfg.up_vec,
                 self.cfg.convention,
                 device=self.cfg.device,
@@ -75,7 +75,7 @@ class RandomCameraDataset(CameraDataset):
         return self.params_to_cameras(dists, elevs, azims)
 
 
-class RandomMVDreamCameraDataset(CameraDataset):
+class RandomMVCameraDataset(CameraDataset):
     @ignore_kwargs
     @dataclass
     class Config(CameraDataset.Config):
@@ -87,51 +87,19 @@ class RandomMVDreamCameraDataset(CameraDataset):
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
         self.cfg = self.Config(**cfg)
-        assert self.cfg.batch_size % 4 == 0, "Batch size must be a multiple of 4"
 
-    # def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
-    #     cameras = []
-    #     for _ in range(self.cfg.batch_size // 4):
-    #         dist = np.random.uniform(*self.cfg.dist_range)
-    #         elev = np.random.uniform(*self.cfg.elev_range)
-    #         azim1 = np.random.uniform(*self.cfg.azim_range)
-    #         azim2 = (azim1 + 90) % 360
-    #         azim3 = (azim1 + 180) % 360
-    #         azim4 = (azim1 + 270) % 360
-    #         for azim in [azim1, azim2, azim3, azim4]:
-    #             camera = generate_camera(
-    #                 dist,
-    #                 elev,
-    #                 azim,
-    #                 self.cfg.fov,
-    #                 self.cfg.width,
-    #                 self.cfg.height,
-    #                 self.cfg.up_vec,
-    #                 self.cfg.convention,
-    #                 device=self.cfg.device,
-    #             )
-    #             cameras.append(camera)
-
-    #     cameras = merge_camera(cameras)
-
-    #     return cameras
-
-    # Rewrite the above function to use params_to_cameras
     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
         dists = []
         elevs = []
         azims = []
-        for _ in range(self.cfg.batch_size // 4):
-            dist = np.random.uniform(*self.cfg.dist_range)
-            elev = np.random.uniform(*self.cfg.elev_range)
-            azim1 = np.random.uniform(*self.cfg.azim_range)
-            azim2 = (azim1 + 90) % 360
-            azim3 = (azim1 + 180) % 360
-            azim4 = (azim1 + 270) % 360
-            for azim in [azim1, azim2, azim3, azim4]:
-                dists.append(dist)
-                elevs.append(elev)
-                azims.append(azim)
+        interval = 360 / self.cfg.batch_size
+
+        dist = np.random.uniform(*self.cfg.dist_range)
+        elev = np.random.uniform(*self.cfg.elev_range)
+        azim = np.random.uniform(*self.cfg.azim_range)
+        dists = dists + [dist] * self.cfg.batch_size
+        elevs = elevs + [elev] * self.cfg.batch_size
+        azims = [(azim + i * interval) % 360 for i in range(self.cfg.batch_size)]
             
         return self.params_to_cameras(dists, elevs, azims)
 
@@ -155,33 +123,6 @@ class SeqTurnaroundCameraDataset(CameraDataset):
     def __len__(self) -> int:
         return self.cfg.num_cameras
 
-    # def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
-    #     azim = self.azimuths[idx]
-    #     c2w, K = generate_camera_params(
-    #         self.cfg.dist,
-    #         self.cfg.elev,
-    #         azim,
-    #         self.cfg.fov,
-    #         self.cfg.width,
-    #         self.cfg.height,
-    #         self.cfg.up_vec,
-    #         self.cfg.convention,
-    #     )
-    #     c2w = c2w.to(self.cfg.device)
-    #     K = K.to(self.cfg.device)
-
-    #     return {
-    #         "num": self.cfg.batch_size,
-    #         "c2w": c2w.unsqueeze(0),
-    #         "K": K.unsqueeze(0),
-    #         "width": self.cfg.width,
-    #         "height": self.cfg.height,
-    #         "fov": self.cfg.fov,
-    #         "azimuth": [azim],
-    #         "elevation": [self.cfg.elev],
-    #     }
-
-    # Rewrite the above function to use params_to_cameras
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         azim = self.azimuths[idx]
         return self.params_to_cameras([self.cfg.dist], [self.cfg.elev], [azim])

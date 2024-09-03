@@ -1,6 +1,6 @@
 import math
 from dataclasses import dataclass
-from typing import Dict, Optional, Any
+from typing import Dict, Optional, Any, Tuple
 
 import numpy as np
 import torch
@@ -19,6 +19,7 @@ from .base import BaseModel
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 from utils.gaussian_utils import create_random_pcd
+import shared_modules as sm
 
 from k_utils.print_utils import print_info
 
@@ -51,6 +52,9 @@ class GSModel(BaseModel):
         quat_lr: float = 1e-3
         opacity_lr: float = 5e-2
         feature_lr: float = 5e-3
+
+        # For self-rendering
+        dist_range: Tuple[float, float] = (1.8, 2.2)
 
     def __init__(self, args=None):
         super().__init__()
@@ -266,7 +270,7 @@ class GSModel(BaseModel):
             sparse_grad=False,
             rasterize_mode=rasterize_mode,
             render_mode=render_mode,
-        )
+        ) 
 
         # if grad enabled
         if torch.is_grad_enabled():
@@ -281,9 +285,25 @@ class GSModel(BaseModel):
             "info": info,
         }
 
-    def regularize(self):
-        return torch.tensor(0.0, device=self.device)
+    @torch.no_grad()
+    def render_self(self) -> torch.Tensor:
+        """
+        Render the splats to an image.
 
+        :return: The rendered image. Shape [B, 3, H, W].
+        """
+        elevs = (0, 0, 0, 0, 30, 30, 30, 30)
+        azims = (0, 90, 180, 270, 45, 135, 225, 315)
+        dists = [sum(self.cfg.dist_range) / 2] * len(elevs)
+
+        cameras = sm.dataset.params_to_cameras(
+            dists,
+            elevs,
+            azims,
+        )
+
+        return self.render(cameras)["image"]
+    
     def optimize(self, step):
         cfg = self.cfg
         """
@@ -304,7 +324,6 @@ class GSModel(BaseModel):
             refine_start_iter = cfg.refine_start_iter // batch_adjust
             refine_stop_iter = cfg.refine_stop_iter // batch_adjust
             refine_every = cfg.refine_every // batch_adjust
-
             if (
                 step >= refine_start_iter
                 and step < refine_stop_iter
@@ -341,14 +360,14 @@ class GSModel(BaseModel):
                     )
                     n_split = is_split.sum().item()
                     self.refine_split(is_split)
-                    print(
-                        f"Step {step}: {n_dupli} GSs duplicated, {n_split} GSs split. "
-                        f"Now having {len(self)} GSs."
-                    )
+                    # print(
+                    #     f"Step {step}: {n_dupli} GSs duplicated, {n_split} GSs split. "
+                    #     f"Now having {len(self)} GSs."
+                    # )
                 else:  # prune GSs
                     # resample GSs accorging to weights
                     prob = self.running_stats["weights"]
-                    # if sum is too small, just uniform
+                    # if sum is too small, just uniformly sample
                     if prob.sum() < 1e-6:
                         prob = torch.ones_like(prob, device=device)
                     else:
@@ -364,9 +383,9 @@ class GSModel(BaseModel):
                     mask = torch.zeros(len(self), device=device, dtype=torch.bool)
                     mask[indices] = True
                     self.refine_keep(mask)
-                    print(
-                        f"Step {step}: Resampled GSs. " f"Now having {len(self)} GSs."
-                    )
+                    # print(
+                    #     f"Step {step}: Resampled GSs. " f"Now having {len(self)} GSs."
+                    # )
 
                     # prune GSs
                     is_prune = torch.sigmoid(self.splats["opacities"]) < cfg.prune_opa
@@ -378,10 +397,10 @@ class GSModel(BaseModel):
                         is_prune = is_prune | is_too_big
                     n_prune = is_prune.sum().item()
                     self.refine_keep(~is_prune)
-                    print(
-                        f"Step {step}: {n_prune} GSs pruned. "
-                        f"Now having {len(self)} GSs."
-                    )
+                    # print(
+                    #     f"Step {step}: {n_prune} GSs pruned. "
+                    #     f"Now having {len(self)} GSs."
+                    # )
 
                 # reset running stats
                 self.running_stats["grad2d"].zero_()
