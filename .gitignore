@@ -5,6 +5,7 @@ test/
 results/
 scripts/
 *_backup
+*pano_results
 
 # Ignore jupyter notebook files
 *.ipynb

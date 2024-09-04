@@ -24,8 +24,8 @@ class ImageWideModel(ImageModel):
         height: int = 512
         initialization: str = "gray"  # random, zero, gray, image
         init_img_path: Optional[str] = None
-        xscale: int = 4
-        yscale: int = 1
+        xscale: float = 4
+        yscale: float = 1
         
         latent_scale: int = 8
         learning_rate: float = 0.1
@@ -41,8 +41,8 @@ class ImageWideModel(ImageModel):
         self.image = torch.nn.Parameter(
             self.initialize_image(
                 self.cfg.channels,
-                self.cfg.height * self.cfg.yscale,
-                self.cfg.width * self.cfg.xscale,
+                int(self.cfg.height * self.cfg.yscale),
+                int(self.cfg.width * self.cfg.xscale),
                 self.cfg.initialization,
             )
         )

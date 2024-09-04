@@ -106,16 +106,19 @@ class DDIMTrainer(ABC):
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
 
             # 5. Perturb-recover to get the GT latent
-            latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
+            if step == 0:
+                latent_noisy = noise
+            else:
+                latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
             noise_preds = sm.prior.predict(camera, latent_noisy, t_curr)
             gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
 
             # 5.5. Calculate the weighting coefficient
             if self.cfg.weighting_scheme == "sds":
                 alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod[t_curr].to(latent)
-                coeff = (1 - alpha_t)**1.5 / (alpha_t)**0.5
+                coeff = ((1 - alpha_t)*alpha_t)**0.5
             elif self.cfg.weighting_scheme == "fixed":
-                coeff = 2.7  # to match the scale of the sds weighting
+                coeff = 0.32  # to match the scale of the sds weighting
             else:
                 raise ValueError(f"Unknown weighting scheme: {self.cfg.weighting_scheme}")
             
@@ -144,7 +147,7 @@ class DDIMTrainer(ABC):
                     else:
                         source = sm.prior.decode_latent_if_needed(g(camera))
                         
-                    total_loss = coeff * F.mse_loss(source, target, reduction="sum")
+                    total_loss = coeff * F.mse_loss(source, target, reduction="sum") / camera["num"]
                     total_loss.backward()
                     
                     sm.model.optimize(in_step)

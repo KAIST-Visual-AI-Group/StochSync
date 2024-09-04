@@ -124,7 +124,7 @@ class ImageModel(BaseModel):
     def render(self, camera) -> torch.Tensor:
         tf = camera.get("transforms", lambda x: x)
         img = tf(self.image.unsqueeze(0))
-
+        print(img.shape)
         img_resized = F.interpolate(
             img,
             size=(camera["height"], camera["width"]),
@@ -153,6 +153,15 @@ class ImageModel(BaseModel):
     def optimize(self, step: int) -> None:
         self.optimizer.step()
         self.optimizer.zero_grad()
+
+    def closed_form_optimize(self, step, camera, target):
+        if self.image.shape[0] == 3:
+            target = shared_modules.prior.decode_latent_if_needed(target)
+        elif self.image.shape[0] == 4:
+            target = shared_modules.prior.encode_image_if_needed(target)
+
+        assert target.shape[0] == 1, "Target must have batch size 1"
+        self.image = target.squeeze(0)
 
     def regularize(self) -> torch.Tensor:
         return torch.tensor(0.0, device=self.cfg.device)

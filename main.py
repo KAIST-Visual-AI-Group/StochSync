@@ -21,6 +21,7 @@ class Config:
     root_dir: str = "./results/default"
     save_source: bool = False
     seed: int = 0
+    tag: str = ""
 
 
 def main():
@@ -39,6 +40,7 @@ def main():
     
     now = datetime.now()
     strnow = now.strftime("%Y%m%d_%H%M%S")
+    
     cfg.root_dir = os.path.join(cfg.root_dir, cfg.tag, strnow)
 
     print_with_box(

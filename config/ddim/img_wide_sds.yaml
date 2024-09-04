@@ -6,8 +6,8 @@ max_steps: 300
 dataset: image_wide
 height: 64
 width: 64
-y_scale: 1
-x_scale: 4
+yscale: 1
+xscale: 4
 batch_size: 15
 
 model: image_wide

@@ -93,6 +93,8 @@ class SDISampler(NoiseSampler):
 
 class DDIMSampler(NoiseSampler):
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
+        if eps_prev is None:
+            return self.get_noise(camera, images)
         return eps_prev
 
 
@@ -107,7 +109,7 @@ class RandomizedDDIMSampler(NoiseSampler):
         self.cfg = self.Config(**cfg)
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
-        if t < self.cfg.random_noise_end:
+        if t >= self.cfg.random_noise_end or eps_prev == None:
             return self.get_noise(camera, images)
         return eps_prev
 
@@ -125,5 +127,7 @@ class GeneralizedDDIMSampler(NoiseSampler):
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
         random_eps = self.get_noise(camera, images)
+        if eps_prev is None:
+            return random_eps
         ratio = self.random_ratio(t)
         return ratio**0.5 * random_eps + (1 - ratio) ** 0.5 * eps_prev

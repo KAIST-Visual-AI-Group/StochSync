@@ -1,0 +1,31 @@
+root_dir: "./results/image"
+tag: image
+output: "result.png"
+text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
+max_steps: 301
+
+dataset: random
+batch_size: 1
+width: 64
+height: 64
+
+model: image
+initialization: random
+learning_rate: 0.1
+channels: 4
+
+prior: sd
+guidance_scale: 7.5
+
+timesampler: linear_annealing
+noisesampler: sds
+
+logger: simple
+log_interval: 20
+
+background: solid
+rgb: [0, 0, 0, 0]
+
+recon_steps: 400
+recon_type: rgb
+use_closed_form: true

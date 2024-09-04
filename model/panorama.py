@@ -46,25 +46,25 @@ class PanoramaModel(ImageModel):
         )
         self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
 
-    @torch.no_grad()
-    def save(self, path: str) -> None:
-        if self.cfg.channels == 3:
-            img = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-            # crop based on gray-color search
-            print_warning('Manually cropping panorama image before saving. This is a temporary solution.')
-            img_col = img[0, :, :, 0]
-            first_pixel = img_col[:, 0:1]
-            # search the first non-gray pixel index
-            first_non_gray_idx = torch.where(img_col != first_pixel)[-1][0]
-            last_non_gray_idx = torch.where(img_col != first_pixel)[-1][-1]
-            img = img[:, :, first_non_gray_idx:last_non_gray_idx + 1, :]
-            save_tensor(img, path)
-        elif self.cfg.channels == 4:
-            latent = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-            img = shared_modules.prior.decode_latent(latent)
-            save_tensor(img, path)
-        else:
-            raise ValueError(f"Channels must be 3 or 4, got {self.cfg.channels}")
+    # @torch.no_grad()
+    # def save(self, path: str) -> None:
+    #     if self.cfg.channels == 3:
+    #         img = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+    #         # crop based on gray-color search
+    #         print_warning('Manually cropping panorama image before saving. This is a temporary solution.')
+    #         img_col = img[0, :, :, 0]
+    #         first_pixel = img_col[:, 0:1]
+    #         # search the first non-gray pixel index
+    #         first_non_gray_idx = torch.where(img_col != first_pixel)[-1][0]
+    #         last_non_gray_idx = torch.where(img_col != first_pixel)[-1][-1]
+    #         img = img[:, :, first_non_gray_idx:last_non_gray_idx + 1, :]
+    #         save_tensor(img, path)
+    #     elif self.cfg.channels == 4:
+    #         latent = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+    #         img = shared_modules.prior.decode_latent(latent)
+    #         save_tensor(img, path)
+    #     else:
+    #         raise ValueError(f"Channels must be 3 or 4, got {self.cfg.channels}")
     
     def render(self, camera) -> torch.Tensor:
         num_cameras = camera["num"]
