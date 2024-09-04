@@ -14,6 +14,7 @@ from model import MODELs
 from prior import PRIORs
 from sampler import SAMPLERs
 from logger import LOGGERs
+from time_sampler import TIME_SAMPLERs
 from utils.extra_utils import ignore_kwargs, get_class_filename, redirect_stdout_to_tqdm
 from utils.extra_utils import redirected_tqdm as re_tqdm
 from utils.extra_utils import redirected_trange as re_trange
@@ -39,6 +40,7 @@ class DDIMTrainer(ABC):
         model: Any = "gs"
         prior: Any = "sd"
         sampler: Any = "sds"
+        timesampler: Any = "linear_annealing"
         logger: Any = "procedure"
         max_steps: int = 10000
         init_step: int = 0
@@ -61,6 +63,8 @@ class DDIMTrainer(ABC):
         sm.background = BACKGROUNDs[self.cfg.background](cfg_dict)
         sm.model = MODELs[self.cfg.model](cfg_dict)
         sm.prior = PRIORs[self.cfg.prior](cfg_dict)
+        sm.sampler = SAMPLERs[self.cfg.sampler](cfg_dict)
+        sm.timesampler = TIME_SAMPLERs[self.cfg.timesampler](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
 
         os.makedirs(self.cfg.root_dir, exist_ok=True)
@@ -88,50 +92,41 @@ class DDIMTrainer(ABC):
 
         # Render-Perturb-recover the images
         with torch.no_grad():
-            t_curr = torch.tensor(
-                min(int(1000 * (1.0 - step / self.cfg.max_steps)), 999),
-                device=sm.prior.device,
-            )
+            # 1. Sample camera 
             camera = sm.dataset.generate_sample()
-
-            if prev_eps is None:
-                if self.cfg.use_zt_noise:
-                    prev_eps = sm.model.get_noise(camera)
-                else:
-                    _, *res = sm.prior.latent_res
-                    new_res = (camera["num"], *res)
-                    prev_eps = torch.randn(*new_res, device=sm.prior.device)
-
-            if step == 0:
-                print_info("Using pure noise for the initial step...")
-                perturbed = prev_eps
-            else:
-                latent = sm.prior.encode_image_if_needed(g(camera))
-                perturbed = sm.prior.get_noisy_sample(latent, prev_eps, t_curr)
-
-            eps_pred = sm.prior.predict(camera, perturbed, t_curr)
-            gt_latent = sm.prior.get_tweedie(perturbed, eps_pred, t_curr).detach()
-
+            
+            # 2. Render image 
+            images = g(camera)
+            
+            # 3. Sample time 
+            t_curr = sm.timesampler(step)
+            
+            # 3. Call sampler to return GT Tweedie's
+            sampler_dict = sm.sampler(camera, images, t_curr)
+            
+            gt_tweedie = sampler_dict["gt_tweedie"]
+            coeff = sampler_dict["coeff"]
+            perturbed = sampler_dict["perturbed"]
+            
+            # 4. Optimize Tweedie's
+            
             if self.cfg.recon_type == "rgb":
-                gt_image = sm.prior.decode_latent(gt_latent)
+                gt_image = sm.prior.decode_latent(gt_tweedie)
                 gt_image = torch.clamp(gt_image, 0.01, 0.99)
                 target = gt_image
             else:
-                target = gt_latent
+                target = gt_tweedie
 
         # Try closed-form optimization first. If NotImplementedError is raised, fall back to iterative optimization.
         final_loss = 0.0
         if self.cfg.use_closed_form:
             sm.model.closed_form_optimize(step, camera, target)
+            
         else:
             recon_steps = self.cfg.recon_steps
             if self.cfg.initial_recon_steps is not None and step == 0:
                 print_info("Using another # of steps for the first step...")
                 recon_steps = self.cfg.initial_recon_steps
-
-            if hasattr(sm.model, "reset_optimizer"):
-                print_info("Resetting optimizer...")
-                sm.model.reset_optimizer()
 
             with re_trange(recon_steps, position=1, desc="Regression") as pbar:
                 for in_step in pbar:
@@ -139,11 +134,14 @@ class DDIMTrainer(ABC):
                         source = sm.prior.encode_image_if_needed(g(camera))
                     else:
                         source = sm.prior.decode_latent_if_needed(g(camera))
-                    total_loss = F.mse_loss(source, target, reduction="sum")
+                        
+                    total_loss = coeff * F.mse_loss(source, target, reduction="sum")
                     total_loss.backward()
+                    
                     sm.model.optimize(in_step)
                     if hasattr(sm.background, "optimize"):
                         sm.background.optimize(in_step)
+                        
                     pbar.set_postfix(reg_loss=total_loss.item())
             final_loss = total_loss.item()
 

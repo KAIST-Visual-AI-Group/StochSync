@@ -42,16 +42,15 @@ class DDIMTrainer(ABC):
         logger: Any = "procedure"
         max_steps: int = 10000
         init_step: int = 0
-        output: str = "output.ply"
+        output: str = "output"
         prefix: str = ""
         save_source: bool = True
         recon_steps: int = 30
         initial_recon_steps: Optional[int] = None
         recon_type: str = "rgb"
-        guidance_scale: float = 100.0
         use_cached_noise: bool = False
-        eta: float = 0.0
-        try_closed_form: bool = False
+        use_closed_form: bool = True
+        use_zt_noise: bool = True
         disable_debug: bool = False
 
         log_interval: int = 100
@@ -82,60 +81,49 @@ class DDIMTrainer(ABC):
         sm.model.prepare_optimization()
 
     def train_single_step(self, step: int, prev_eps=None) -> Any:
+        def g(camera):
+            r_pkg = sm.model.render(camera)
+            bg = sm.background(camera)
+            return r_pkg["image"] + bg * (1 - r_pkg["alpha"])
+
         # Render-Perturb-recover the images
         with torch.no_grad():
             t_curr = torch.tensor(
-                min(int(1000 * (1.0 - step / self.cfg.max_steps)), 999)
-            )
-            t_next = torch.tensor(
-                min(int(1000 * (1.0 - (step - 1) / self.cfg.max_steps)), 999)
+                min(int(1000 * (1.0 - step / self.cfg.max_steps)), 999),
+                device=sm.prior.device,
             )
             camera = sm.dataset.generate_sample()
-            # TODO: Put this into the else block and determine the noise shape
-            # in another way
-            r_pkg = sm.model.render(camera)
-            bg = sm.background(camera)
-            images = r_pkg["image"] + bg * (1 - r_pkg["alpha"])
-            latent = sm.prior.encode_image_if_needed(images)
 
             if prev_eps is None:
-                prev_eps = torch.randn_like(latent)
+                if self.cfg.use_zt_noise:
+                    prev_eps = sm.model.get_noise(camera)
+                else:
+                    _, *res = sm.prior.latent_res
+                    new_res = (camera["num"], *res)
+                    prev_eps = torch.randn(*new_res, device=sm.prior.device)
 
             if step == 0:
                 print_info("Using pure noise for the initial step...")
                 perturbed = prev_eps
             else:
-                perturbed = sm.prior.get_noisy_sample(
-                    latent,
-                    prev_eps,
-                    t_curr,
-                    t_next=t_next,
-                    eta=self.cfg.eta,
-                )
+                latent = sm.prior.encode_image_if_needed(g(camera))
+                perturbed = sm.prior.get_noisy_sample(latent, prev_eps, t_curr)
 
-            eps_pred = sm.prior.predict(
-                camera, perturbed, t_curr.to("cuda"), self.cfg.guidance_scale
-            )
+            eps_pred = sm.prior.predict(camera, perturbed, t_curr)
             gt_latent = sm.prior.get_tweedie(perturbed, eps_pred, t_curr).detach()
 
-            if self.cfg.recon_type == "rgb" and images.shape[1] == 3:
-                gt_images = sm.prior.decode_latent(gt_latent)
-                gt_images = torch.clamp(gt_images, 0.01, 0.99)
+            if self.cfg.recon_type == "rgb":
+                gt_image = sm.prior.decode_latent(gt_latent)
+                gt_image = torch.clamp(gt_image, 0.01, 0.99)
+                target = gt_image
             else:
-                gt_images = gt_latent
+                target = gt_latent
 
         # Try closed-form optimization first. If NotImplementedError is raised, fall back to iterative optimization.
         final_loss = 0.0
-        try:
-            if self.cfg.try_closed_form:
-                if images.shape[1] == 3:
-                    target = sm.prior.decode_latent_if_needed(gt_images)
-                else:
-                    target = gt_latent
-                sm.model.closed_form_optimize(step, camera, target)
-            else:
-                raise NotImplementedError
-        except NotImplementedError:
+        if self.cfg.use_closed_form:
+            sm.model.closed_form_optimize(step, camera, target)
+        else:
             recon_steps = self.cfg.recon_steps
             if self.cfg.initial_recon_steps is not None and step == 0:
                 print_info("Using another # of steps for the first step...")
@@ -145,18 +133,13 @@ class DDIMTrainer(ABC):
                 print_info("Resetting optimizer...")
                 sm.model.reset_optimizer()
 
-            with re_trange(
-                recon_steps, position=1, desc="Regression", leave=False
-            ) as pbar:
+            with re_trange(recon_steps, position=1, desc="Regression") as pbar:
                 for in_step in pbar:
-                    r_pkg = sm.model.render(camera)
-                    bg = sm.background(camera)
-                    images = r_pkg["image"] + bg * (1 - r_pkg["alpha"])
-                    if self.cfg.recon_type == "latent" and images.shape[1] == 3:
-                        cur_images = sm.prior.encode_image(images)
+                    if self.cfg.recon_type == "latent":
+                        source = sm.prior.encode_image_if_needed(g(camera))
                     else:
-                        cur_images = images
-                    total_loss = F.mse_loss(cur_images, gt_images, reduction="sum")
+                        source = sm.prior.decode_latent_if_needed(g(camera))
+                    total_loss = F.mse_loss(source, target, reduction="sum")
                     total_loss.backward()
                     sm.model.optimize(in_step)
                     if hasattr(sm.background, "optimize"):
@@ -166,24 +149,13 @@ class DDIMTrainer(ABC):
 
         with torch.no_grad():
             print_warning("Rendering the image again to calculate pseudo noise...")
-            r_pkg = sm.model.render(camera)
-            bg = sm.background(camera)
-            images = r_pkg["image"] + bg * (1 - r_pkg["alpha"])
-            latent = sm.prior.encode_image_if_needed(images)
+            latent = sm.prior.encode_image_if_needed(g(camera))
             eps_pred = sm.prior.get_eps(perturbed, latent, t_curr)
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
-                images_for_log = (
-                    sm.prior.decode_latent(sm.prior.encode_image(images))
-                    if images.shape[1] == 3
-                    else sm.prior.decode_latent(images)
-                )
-                gt_images_for_log = (
-                    gt_images
-                    if gt_images.shape[1] == 3
-                    else sm.prior.decode_latent(gt_images)
-                )
+                images_for_log = sm.prior.decode_latent(latent)
+                gt_images_for_log = sm.prior.decode_latent_if_needed(target)
                 sm.logger(
                     step, camera, torch.cat([images_for_log, gt_images_for_log], dim=0)
                 )
@@ -194,48 +166,6 @@ class DDIMTrainer(ABC):
         with redirect_stdout_to_tqdm():
             eps_pred = None
 
-            if (
-                sm.model.__class__.__name__ == "ImageWideModel"
-                and sm.dataset.__class__.__name__ == "ImageWideDataset"
-                and self.cfg.use_cached_noise
-                and False
-            ):
-                print_warning(
-                    (
-                        "ImageWideModel detected. "
-                        "For cached noise to be effective, "
-                        "initial noise should be z-initialized. "
-                        "This may cause unexpected behavior."
-                    )
-                )
-                camera = sm.dataset.generate_sample()
-                num = camera["num"]
-                if sm.model.cfg.channels == 3:
-                    height, width = camera["height"] // 8, camera["width"] // 8
-                    yoffsets, xoffsets = (
-                        camera["yoffsets"] // 8,
-                        camera["xoffsets"] // 8,
-                    )
-                else:
-                    height, width = camera["height"], camera["width"]
-                    yoffsets, xoffsets = camera["yoffsets"], camera["xoffsets"]
-
-                noise = torch.randn(
-                    4,
-                    height * sm.model.cfg.yscale,
-                    width * sm.model.cfg.xscale,
-                    device=sm.model.device,
-                )
-                noise_list = []
-                for i in range(num):
-                    noise_list.append(
-                        noise[
-                            :,
-                            yoffsets[i] : yoffsets[i] + height,
-                            xoffsets[i] : xoffsets[i] + width,
-                        ]
-                    )
-                eps_pred = torch.stack(noise_list, dim=0)
             if (
                 sm.model.__class__.__name__ == "PanoramaModel"
                 and self.cfg.use_cached_noise
