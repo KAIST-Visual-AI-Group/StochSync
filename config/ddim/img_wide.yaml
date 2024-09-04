@@ -1,5 +1,6 @@
 root_dir: "./results/img_wide"
 text_prompt: "Skyline of New York City"
+tag: wide_image
 max_steps: 30
 
 dataset: image_wide
@@ -28,4 +29,4 @@ linear_annealing: true
 recon_steps: 400
 use_cached_noise: true
 recon_type: latent
-try_closed_form: true
+use_closed_form: true

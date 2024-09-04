@@ -3,7 +3,7 @@ _*/
 local/
 test/
 results/
-results
+scripts/
 *_backup
 
 # Ignore jupyter notebook files

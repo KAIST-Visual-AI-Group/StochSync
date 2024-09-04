@@ -68,6 +68,12 @@ class ImageWideModel(ImageModel):
             "image": img_cropped,
             "alpha": torch.ones(num_cameras, 1, height, width, device=self.cfg.device),
         }
+        
+        
+    def get_noise(self, camera) -> torch.Tensor:
+        xts = self.render(camera)["image"]
+        return xts 
+        
 
     def closed_form_optimize(self, step, camera, target):
         if self.image.shape[0] == 3:

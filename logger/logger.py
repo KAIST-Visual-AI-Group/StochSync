@@ -72,7 +72,8 @@ class SelfLogger(BaseLogger):
         images = shared_modules.model.render_self()
         if self.cfg.use_encoder_decoder:
             latents = shared_modules.prior.encode_image_if_needed(images)
-            images = shared_modules.prior.decode_image(latents)
+            # images = shared_modules.prior.decode_image(latents)
+            images = shared_modules.prior.decode_latent(latents)
         save_tensor(
             images,
             os.path.join(self.training_dir, f"training_{step:05d}.png"),
@@ -117,6 +118,7 @@ class SimpleLogger(BaseLogger):
         root_dir: str = "./results/default"
         log_interval: int = 100
         prefix: str = ""
+        use_encoder_decoder: bool = True
 
     def __init__(self, cfg) -> None:
         super().__init__()
@@ -141,6 +143,10 @@ class SimpleLogger(BaseLogger):
             images = torch.cat(images, dim=0)
         with torch.no_grad():
             images = self.post_processor(images)
+            if self.cfg.use_encoder_decoder:
+                latents = shared_modules.prior.encode_image_if_needed(images)
+                images = shared_modules.prior.decode_latent(latents)
+                
         save_tensor(
             images,
             os.path.join(self.training_dir, f"training_{step:05d}.png"),

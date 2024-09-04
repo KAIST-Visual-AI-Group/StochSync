@@ -75,7 +75,7 @@ class Trainer(ABC):
         # Render the model and the background
         r_pkg = sm.model.render(camera)
         bg = sm.background(camera)
-        images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
+        images = r_pkg["image"] + bg * (1 - r_pkg["alpha"])
 
         # Sample the score and calculate the loss
         opt_loss = sm.sampler(camera, images, step)

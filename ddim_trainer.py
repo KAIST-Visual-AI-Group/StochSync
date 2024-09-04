@@ -42,15 +42,15 @@ class DDIMTrainer(ABC):
         logger: Any = "procedure"
         max_steps: int = 10000
         init_step: int = 0
-        output: str = "output.ply"
+        output: str = "output"
         prefix: str = ""
         save_source: bool = True
         recon_steps: int = 30
         initial_recon_steps: Optional[int] = None
         recon_type: str = "rgb"
         use_cached_noise: bool = False
-        use_closed_form: bool = False
-        use_zt_noise: bool = False
+        use_closed_form: bool = True
+        use_zt_noise: bool = True
         disable_debug: bool = False
 
         log_interval: int = 100
@@ -98,7 +98,9 @@ class DDIMTrainer(ABC):
                 if self.cfg.use_zt_noise:
                     prev_eps = sm.model.get_noise(camera)
                 else:
-                    prev_eps = torch.randn(sm.prior.latent_res, device=sm.prior.device)
+                    _, *res = sm.prior.latent_res
+                    new_res = (camera["num"], *res)
+                    prev_eps = torch.randn(*new_res, device=sm.prior.device)
 
             if step == 0:
                 print_info("Using pure noise for the initial step...")

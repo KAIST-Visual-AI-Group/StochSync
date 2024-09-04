@@ -1,6 +1,7 @@
 import os
 import argparse
 from omegaconf import OmegaConf
+from datetime import datetime
 from time import time
 
 import torch
@@ -35,6 +36,10 @@ def main():
     )
     args, extras = parser.parse_known_args()
     cfg = load_config(args.config, cli_args=extras)
+    
+    now = datetime.now()
+    strnow = now.strftime("%Y%m%d_%H%M%S")
+    cfg.root_dir = os.path.join(cfg.root_dir, cfg.tag, strnow)
 
     print_with_box(
         f"Config loaded from {args.config} with the following content:\n{OmegaConf.to_yaml(cfg)}",
