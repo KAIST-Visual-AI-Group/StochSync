@@ -15,6 +15,7 @@ from prior import PRIORs
 from sampler import SAMPLERs
 from logger import LOGGERs
 from time_sampler import TIME_SAMPLERs
+from noise_sampler import NOISE_SAMPLERs
 from utils.extra_utils import ignore_kwargs, get_class_filename, redirect_stdout_to_tqdm
 from utils.extra_utils import redirected_tqdm as re_tqdm
 from utils.extra_utils import redirected_trange as re_trange
@@ -35,13 +36,14 @@ class DDIMTrainer(ABC):
     @dataclass
     class Config:
         root_dir: str = "./results/default"
-        dataset: Any = "random"
-        background: Any = "random_solid"
-        model: Any = "gs"
-        prior: Any = "sd"
-        sampler: Any = "sds"
-        timesampler: Any = "linear_annealing"
-        logger: Any = "procedure"
+        dataset: str = "random"
+        background: str = "random_solid"
+        model: str = "gs"
+        prior: str = "sd"
+        sampler: str = "sds"
+        timesampler: str = "linear_annealing"
+        noisesampler: str = "sds"
+        logger: str = "procedure"
         max_steps: int = 10000
         init_step: int = 0
         output: str = "output"
@@ -50,9 +52,8 @@ class DDIMTrainer(ABC):
         recon_steps: int = 30
         initial_recon_steps: Optional[int] = None
         recon_type: str = "rgb"
-        use_cached_noise: bool = False
+        weighting_scheme: str = "sds"  # sds, fixed
         use_closed_form: bool = True
-        use_zt_noise: bool = True
         disable_debug: bool = False
 
         log_interval: int = 100
@@ -63,8 +64,8 @@ class DDIMTrainer(ABC):
         sm.background = BACKGROUNDs[self.cfg.background](cfg_dict)
         sm.model = MODELs[self.cfg.model](cfg_dict)
         sm.prior = PRIORs[self.cfg.prior](cfg_dict)
-        sm.sampler = SAMPLERs[self.cfg.sampler](cfg_dict)
-        sm.timesampler = TIME_SAMPLERs[self.cfg.timesampler](cfg_dict)
+        sm.time_sampler = TIME_SAMPLERs[self.cfg.timesampler](cfg_dict)
+        sm.noise_sampler = NOISE_SAMPLERs[self.cfg.noisesampler](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
 
         os.makedirs(self.cfg.root_dir, exist_ok=True)
@@ -90,38 +91,46 @@ class DDIMTrainer(ABC):
             bg = sm.background(camera)
             return r_pkg["image"] + bg * (1 - r_pkg["alpha"])
 
-        # Render-Perturb-recover the images
         with torch.no_grad():
             # 1. Sample camera 
             camera = sm.dataset.generate_sample()
             
             # 2. Render image 
-            images = g(camera)
+            latent = sm.prior.encode_image_if_needed(g(camera))
             
             # 3. Sample time 
-            t_curr = sm.timesampler(step)
+            t_curr = sm.time_sampler(step)
+            print(t_curr)
             
-            # 3. Call sampler to return GT Tweedie's
-            sampler_dict = sm.sampler(camera, images, t_curr)
+            # 4. Sample noise
+            noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
+
+            # 5. Perturb-recover to get the GT latent
+            latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
+            noise_preds = sm.prior.predict(camera, latent_noisy, t_curr)
+            gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
+
+            # 5.5. Calculate the weighting coefficient
+            if self.cfg.weighting_scheme == "sds":
+                alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod[t_curr].to(latent)
+                coeff = (1 - alpha_t)**1.5 / (alpha_t)**0.5
+            elif self.cfg.weighting_scheme == "fixed":
+                coeff = 2.7  # to match the scale of the sds weighting
+            else:
+                raise ValueError(f"Unknown weighting scheme: {self.cfg.weighting_scheme}")
             
-            gt_tweedie = sampler_dict["gt_tweedie"]
-            coeff = sampler_dict["coeff"]
-            perturbed = sampler_dict["perturbed"]
-            
-            # 4. Optimize Tweedie's
-            
+            # 6. Define the target image depending on the reconstruction type
             if self.cfg.recon_type == "rgb":
                 gt_image = sm.prior.decode_latent(gt_tweedie)
                 gt_image = torch.clamp(gt_image, 0.01, 0.99)
                 target = gt_image
             else:
                 target = gt_tweedie
-
-        # Try closed-form optimization first. If NotImplementedError is raised, fall back to iterative optimization.
+        
+        # 7. Optimize the rendering to match the target
         final_loss = 0.0
         if self.cfg.use_closed_form:
             sm.model.closed_form_optimize(step, camera, target)
-            
         else:
             recon_steps = self.cfg.recon_steps
             if self.cfg.initial_recon_steps is not None and step == 0:
@@ -148,7 +157,7 @@ class DDIMTrainer(ABC):
         with torch.no_grad():
             print_warning("Rendering the image again to calculate pseudo noise...")
             latent = sm.prior.encode_image_if_needed(g(camera))
-            eps_pred = sm.prior.get_eps(perturbed, latent, t_curr)
+            eps_pred = sm.prior.get_eps(latent_noisy, latent, t_curr)
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
@@ -164,16 +173,6 @@ class DDIMTrainer(ABC):
         with redirect_stdout_to_tqdm():
             eps_pred = None
 
-            if (
-                sm.model.__class__.__name__ == "PanoramaModel"
-                and self.cfg.use_cached_noise
-            ):
-                print_warning(
-                    "PanoramaModel detected. Cached noise may not be effective."
-                )
-                camera = sm.dataset.generate_sample()
-                eps_pred = sm.model.get_noise(camera)
-
             with re_trange(
                 self.cfg.init_step,
                 self.cfg.max_steps,
@@ -182,17 +181,8 @@ class DDIMTrainer(ABC):
                 initial=self.cfg.init_step,
                 total=self.cfg.max_steps,
             ) as pbar:
-
                 for step in pbar:
-                    if self.cfg.use_cached_noise:
-                        loss, eps_pred = self.train_single_step(step, prev_eps=eps_pred)
-                        # if step in range(12, 22+1):
-                        #     print_info(f"Forgetting noise at step {step}...")
-                        #     #eps_pred = None
-                        #     camera = sm.dataset.generate_sample()
-                        #     eps_pred = sm.model.get_noise(camera)
-                    else:
-                        loss, eps_pred = self.train_single_step(step)
+                    loss, eps_pred = self.train_single_step(step, prev_eps=eps_pred)
                     pbar.set_postfix(loss=loss)
             sm.logger.end_logging()
 

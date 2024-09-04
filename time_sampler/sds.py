@@ -1,4 +1,4 @@
-from base import TimeSampler
+from .base import TimeSampler
 
 import torch
 import torch.nn.functional as F

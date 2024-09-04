@@ -1,7 +1,7 @@
 root_dir: "./results/panorama"
 tag: panorama
 text_prompt: "Interior of an old looking library"
-max_steps: 50
+max_steps: 300
 use_encoder_decoder: False 
 
 dataset: random_mv
@@ -28,8 +28,8 @@ timesampler: linear_annealing
 noisesampler: sds
 
 logger: simple 
-log_interval: 1
+log_interval: 10
 
-recon_steps: 400
+recon_steps: 1
 recon_type: rgb
-use_closed_form: true
+use_closed_form: false

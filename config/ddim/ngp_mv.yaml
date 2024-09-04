@@ -1,0 +1,30 @@
+root_dir: "./results/ngp_mv"
+text_prompt: "a zoomed out DSLR photo of a baby dragon"
+max_steps: 30
+
+dataset: random_mv
+height: 256
+width: 256
+convention: RUF
+batch_size: 4
+dist_range: [1.3, 1.5]
+
+model: ngp
+render_step_size: 0.02
+learning_rate: 0.02
+use_density_bias: true
+
+prior: mvdream
+guidance_scale: 7.5
+
+background: nerf
+
+timesampler: linear_annealing
+noisesampler: sds
+
+logger: self
+log_interval: 1
+
+recon_steps: 100
+recon_type: latent
+use_cached_noise: false

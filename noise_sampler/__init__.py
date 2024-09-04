@@ -1,13 +1,9 @@
-from .sds import SDSSampler, DreamTimeSampler, SDISampler, SDIppSampler, HifaSampler
-from .csd import CSDSampler, DreamTimeCSDSampler, BSDSampler, BSDISampler
-SAMPLERs = {
+from .base import SDSSampler, SDISampler, DDIMSampler, RandomizedDDIMSampler, GeneralizedDDIMSampler
+
+NOISE_SAMPLERs = {
     "sds": SDSSampler,
-    #"dreamtime": DreamTimeSampler,
-    "hifa": HifaSampler,
     "sdi": SDISampler,
-    "sdipp": SDIppSampler,
-    "csd": CSDSampler,
-    "dreamtime_csd": DreamTimeCSDSampler,
-    "bsd": BSDSampler,
-    "bsdi": BSDISampler
+    "ddim": DDIMSampler,
+    "randomized_ddim": RandomizedDDIMSampler,
+    "generalized_ddim": GeneralizedDDIMSampler,
 }

@@ -7,7 +7,7 @@ height: 256
 width: 256
 convention: RUF
 batch_size: 4
-dist_range: [1.5, 1.8]
+dist_range: [1.5, 1.5]
 
 model: ngp
 
