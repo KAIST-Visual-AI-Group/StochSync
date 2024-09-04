@@ -16,6 +16,7 @@ azim_range: [0, 0]
 model: panorama
 learning_rate: 0.1
 channels: 3
+disable_debug: True # Faster 
 
 prior: sd
 guidance_scale: 7.5

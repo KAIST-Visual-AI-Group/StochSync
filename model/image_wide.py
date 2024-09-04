@@ -8,6 +8,8 @@ from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 import shared_modules as sm
 
+from k_utils.print_utils import print_with_box, print_warning
+
 
 class ImageWideModel(ImageModel):
     """
@@ -24,7 +26,8 @@ class ImageWideModel(ImageModel):
         init_img_path: Optional[str] = None
         xscale: int = 4
         yscale: int = 1
-
+        
+        latent_scale: int = 8
         learning_rate: float = 0.1
 
     def __init__(self, cfg={}):
@@ -71,7 +74,27 @@ class ImageWideModel(ImageModel):
         
         
     def get_noise(self, camera) -> torch.Tensor:
-        xts = self.render(camera)["image"]
+        if self.cfg.initialization != "random":
+            print_warning("get_noise called for non-random initialization.")
+            
+        noise_map = torch.rand_like(self.image)
+        
+        num_cameras = camera["num"]
+        yoffsets, xoffsets = camera["yoffsets"], camera["xoffsets"]
+        height, width = camera["height"], camera["width"]
+        
+        xt_cropped = []
+        for i in range(num_cameras):
+            xt_cropped.append(
+                noise_map[
+                    :,
+                    yoffsets[i] : yoffsets[i] + height,
+                    xoffsets[i] : xoffsets[i] + width,
+                ]
+            )
+            
+        xts = torch.stack(xt_cropped, dim=0)
+        
         return xts 
         
 

@@ -13,6 +13,7 @@ batch_size: 15
 model: image_wide
 learning_rate: 2.0
 channels: 4
+disable_debug: True # Faster 
 
 prior: sd
 guidance_scale: 7.5
