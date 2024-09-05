@@ -22,7 +22,7 @@ class PanoramaModel(ImageModel):
         channels: int = 3
         pano_height: int = 2048
         pano_width: int = 4096
-        initialization: str = "gray"  # random, zero, gray, image
+        initialization: str = "random"  # random, zero, gray, image
         init_img_path: Optional[str] = None
 
         learning_rate: float = 0.1
@@ -94,9 +94,65 @@ class PanoramaModel(ImageModel):
             "image": img_projected,
             "alpha": torch.ones(num_cameras, 1, height, width, device=self.cfg.device),
         }
+    
+    @torch.no_grad()
+    def render_self(self) -> torch.Tensor:
+        image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+        if image.shape[1] == 3:
+            pass
+            # latent = shared_modules.prior.encode_image(image)
+            # image = shared_modules.prior.decode_latent(latent)
+        elif image.shape[1] == 4:
+            elevs = (0, 0, 0, 0, 0, 50, 50, 50, 50, -50, -50, -50, -50)
+            azims = (0, 72, 144, 216, 288, 0, 90, 180, 270, 0, 90, 180, 270)
+            dists = [1.5] * len(elevs)
+            cameras = shared_modules.dataset.params_to_cameras(
+                dists,
+                elevs,
+                azims,
+            )
+            latents = self.render(cameras)["image"]
+            rgbs = shared_modules.prior.decode_latent(latents)
+
+            # unprojection
+            num_cameras = cameras["num"]
+            width, height, fov, azim, elev = (
+                cameras["width"],
+                cameras["height"],
+                cameras["fov"],
+                cameras["azimuth"],
+                cameras["elevation"],
+            )
+
+            img_new = torch.zeros(1, 3, 2048, 4096, device=self.cfg.device)
+            img_cnt = torch.zeros(1, 1, 2048, 4096, device=self.cfg.device)
+            print("start")
+            for i in range(num_cameras):
+                print(':', i)
+                img_tmp, mask = pers_to_pano_raw(
+                    rgbs[i:i+1],
+                    fov,
+                    azim[i],
+                    elev[i],
+                    2048,
+                    4096,
+                    return_mask=True,
+                )
+                print(':', i)
+                img_new += img_tmp.squeeze(0)
+                img_cnt += mask.squeeze(0).long()
+            
+            image = img_new / (img_cnt + 1e-6)
+
+        return image
 
     @torch.no_grad()
     def closed_form_optimize(self, step, camera, target):
+        if self.image.shape[0] == 3:
+            target = shared_modules.prior.decode_latent_if_needed(target)
+        elif self.image.shape[0] == 4:
+            target = shared_modules.prior.encode_image_if_needed(target)
+
         num_cameras = camera["num"]
         width, height, fov, azim, elev = (
             camera["width"],
@@ -108,29 +164,26 @@ class PanoramaModel(ImageModel):
 
         img_new = torch.zeros_like(self.image)
         img_cnt = torch.zeros_like(self.image, dtype=torch.long)
+        print("start")
         for i in range(num_cameras):
-            mask = pers_to_pano_raw(
-                torch.ones_like(target[i:i+1]),
-                fov,
-                azim[i],
-                elev[i],
-                self.cfg.pano_height,
-                self.cfg.pano_width,
-            ).squeeze(0)
-            img_tmp = pers_to_pano_raw(
+            print(':', i)
+            img_tmp, mask = pers_to_pano_raw(
                 target[i:i+1],
                 fov,
                 azim[i],
                 elev[i],
                 self.cfg.pano_height,
                 self.cfg.pano_width,
-            ).squeeze(0)
-            img_new += img_tmp
+                return_mask=True,
+            )
+            print(':', i)
+            img_new += img_tmp.squeeze(0)
             # round mask
-            img_cnt += mask.round().long()
+            img_cnt += mask.squeeze(0).long()
         
         img_new = img_new / (img_cnt + 1e-6)
         img_new[img_cnt == 0] = self.image[img_cnt == 0]
+        print("end")
 
         self.image.data = img_new
     

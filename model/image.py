@@ -27,7 +27,7 @@ class ImageModel(BaseModel):
         device: str = "cuda"
         width: int = 512
         height: int = 512
-        initialization: str = "gray"  # random, zero, gray, image
+        initialization: str = "random"  # random, zero, gray, image
         init_img_path: Optional[str] = None
         channels: int = 3
 
@@ -54,18 +54,20 @@ class ImageModel(BaseModel):
 
     @torch.no_grad()
     def save(self, path: str) -> None:
-        if self.cfg.channels == 3:
-            # encode-decode to remove artifacts
-            img = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-            # latent = shared_modules.prior.encode_image(img)
-            # img = shared_modules.prior.decode_latent(latent)
-            save_tensor(img, path)
-        elif self.cfg.channels == 4:
-            latent = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-            img = shared_modules.prior.decode_latent(latent)
-            save_tensor(img, path)
-        else:
-            raise ValueError(f"Channels must be 3 or 4, got {self.cfg.channels}")
+        image = self.render_self()
+        save_tensor(image, path)
+        # if self.cfg.channels == 3:
+        #     # encode-decode to remove artifacts
+        #     img = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+        #     # latent = shared_modules.prior.encode_image(img)
+        #     # img = shared_modules.prior.decode_latent(latent)
+        #     save_tensor(img, path)
+        # elif self.cfg.channels == 4:
+        #     latent = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+        #     img = shared_modules.prior.decode_latent(latent)
+        #     save_tensor(img, path)
+        # else:
+        #     raise ValueError(f"Channels must be 3 or 4, got {self.cfg.channels}")
 
     def initialize_image(
         self, C, H, W, init_method="random", img_path=None
@@ -124,7 +126,6 @@ class ImageModel(BaseModel):
     def render(self, camera) -> torch.Tensor:
         tf = camera.get("transforms", lambda x: x)
         img = tf(self.image.unsqueeze(0))
-        print(img.shape)
         img_resized = F.interpolate(
             img,
             size=(camera["height"], camera["width"]),

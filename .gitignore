@@ -6,6 +6,7 @@ results/
 scripts/
 *_backup
 *pano_results
+Iclr/
 
 # Ignore jupyter notebook files
 *.ipynb

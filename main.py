@@ -7,8 +7,8 @@ from time import time
 import torch
 
 from utils.config_utils import load_config
-from trainer import Trainer
-from ddim_trainer import DDIMTrainer
+from distillation_trainer import DistillationTrainer
+from general_trainer import GeneralTrainer
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 from k_utils.print_utils import print_with_box, print_info
@@ -31,8 +31,8 @@ def main():
     parser.add_argument(
         "-t",
         "--trainer_type",
-        default="sds",
-        choices=["sds", "ddim"],
+        default="general",
+        choices=["general", "distillation"],
         help="type of trainer to use",
     )
     args, extras = parser.parse_known_args()
@@ -56,10 +56,10 @@ def main():
     with open(os.path.join(main_cfg.root_dir, "config.yaml"), "w") as f:
         f.write(OmegaConf.to_yaml(cfg))
 
-    if args.trainer_type == "sds":
-        trainer = Trainer(cfg)
-    elif args.trainer_type == "ddim":
-        trainer = DDIMTrainer(cfg)
+    if args.trainer_type == "distillation":
+        trainer = DistillationTrainer(cfg)
+    elif args.trainer_type == "general":
+        trainer = GeneralTrainer(cfg)
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 

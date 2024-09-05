@@ -19,8 +19,8 @@ guidance_scale: 7.5
 
 background: nerf
 
-timesampler: linear_annealing
-noisesampler: sds
+time_sampler: linear_annealing
+noise_sampler: sds
 
 logger: self
 log_interval: 20

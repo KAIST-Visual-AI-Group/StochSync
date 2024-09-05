@@ -20,7 +20,7 @@ from k_utils.print_utils import print_with_box, print_info
 from k_utils.image_utils import save_tensor
 
 
-class Trainer(ABC):
+class DistillationTrainer(ABC):
     """
     Abstract base class for all trainers.
     """

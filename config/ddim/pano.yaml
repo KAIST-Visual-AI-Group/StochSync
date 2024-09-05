@@ -14,7 +14,7 @@ elev_range: [0, 0]
 azim_range: [0, 0]
 
 model: panorama
-learning_rate: 0.1
+learning_rate: 1.0
 channels: 3
 disable_debug: False # Faster 
 
@@ -24,8 +24,8 @@ guidance_scale: 7.5
 background: solid
 rgb: [0, 0, 0]
 
-timesampler: linear_annealing
-noisesampler: sds
+time_sampler: linear_annealing
+noise_sampler: sds
 
 logger: simple 
 log_interval: 1

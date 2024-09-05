@@ -22,7 +22,7 @@ class ImageWideModel(ImageModel):
         channels: int = 3
         width: int = 512
         height: int = 512
-        initialization: str = "gray"  # random, zero, gray, image
+        initialization: str = "random"  # random, zero, gray, image
         init_img_path: Optional[str] = None
         xscale: float = 4
         yscale: float = 1

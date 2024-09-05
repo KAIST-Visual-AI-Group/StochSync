@@ -32,7 +32,7 @@ class ImageMVModel(BaseModel):
         device: str = "cuda"
         width: int = 512
         height: int = 512
-        initialization: str = "gray"  # random, zero, gray, image
+        initialization: str = "random"  # random, zero, gray, image
         init_img_path: Optional[str] = None
         channels: int = 3
         batch_size: int = 1

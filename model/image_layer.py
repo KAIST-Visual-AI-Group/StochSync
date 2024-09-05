@@ -20,7 +20,7 @@ class ImageLayerModel(ImageModel):
         channels: int = 3
         width: int = 512
         height: int = 512
-        initialization: str = "gray"  # random, zero, gray, image
+        initialization: str = "random"  # random, zero, gray, image
         init_img_path: Optional[str] = None
         bbox: Tuple[float, float, float, float] = (0.1, 0.25, 0.9, 0.75)
         bg_prompt: str = "An interior of a room with a window."

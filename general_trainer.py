@@ -27,7 +27,7 @@ from k_utils.image_utils import save_tensor
 from tqdm import tqdm, trange
 
 
-class DDIMTrainer(ABC):
+class GeneralTrainer(ABC):
     """
     Abstract base class for all trainers.
     """
@@ -41,9 +41,9 @@ class DDIMTrainer(ABC):
         model: str = "gs"
         prior: str = "sd"
         sampler: str = "sds"
-        timesampler: str = "linear_annealing"
-        noisesampler: str = "sds"
-        logger: str = "procedure"
+        time_sampler: str = "linear_annealing"
+        noise_sampler: str = "sds"
+        logger: str = "simple"
         max_steps: int = 10000
         init_step: int = 0
         output: str = "output"
@@ -64,8 +64,8 @@ class DDIMTrainer(ABC):
         sm.background = BACKGROUNDs[self.cfg.background](cfg_dict)
         sm.model = MODELs[self.cfg.model](cfg_dict)
         sm.prior = PRIORs[self.cfg.prior](cfg_dict)
-        sm.time_sampler = TIME_SAMPLERs[self.cfg.timesampler](cfg_dict)
-        sm.noise_sampler = NOISE_SAMPLERs[self.cfg.noisesampler](cfg_dict)
+        sm.time_sampler = TIME_SAMPLERs[self.cfg.time_sampler](cfg_dict)
+        sm.noise_sampler = NOISE_SAMPLERs[self.cfg.noise_sampler](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
 
         os.makedirs(self.cfg.root_dir, exist_ok=True)
@@ -93,19 +93,23 @@ class DDIMTrainer(ABC):
 
         with torch.no_grad():
             # 1. Sample camera 
+            print(1)
             camera = sm.dataset.generate_sample()
             
             # 2. Render image 
+            print(2)
             latent = sm.prior.encode_image_if_needed(g(camera))
             
             # 3. Sample time 
+            print(3)
             t_curr = sm.time_sampler(step)
-            print(t_curr)
             
             # 4. Sample noise
+            print(4)
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
 
             # 5. Perturb-recover to get the GT latent
+            print(5)
             if step == 0:
                 latent_noisy = noise
             else:
@@ -114,6 +118,7 @@ class DDIMTrainer(ABC):
             gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
 
             # 5.5. Calculate the weighting coefficient
+            print(5.5)
             if self.cfg.weighting_scheme == "sds":
                 alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod[t_curr].to(latent)
                 coeff = ((1 - alpha_t)*alpha_t)**0.5
@@ -123,6 +128,7 @@ class DDIMTrainer(ABC):
                 raise ValueError(f"Unknown weighting scheme: {self.cfg.weighting_scheme}")
             
             # 6. Define the target image depending on the reconstruction type
+            print(6)
             if self.cfg.recon_type == "rgb":
                 gt_image = sm.prior.decode_latent(gt_tweedie)
                 gt_image = torch.clamp(gt_image, 0.01, 0.99)
@@ -131,6 +137,7 @@ class DDIMTrainer(ABC):
                 target = gt_tweedie
         
         # 7. Optimize the rendering to match the target
+        print(7)
         final_loss = 0.0
         if self.cfg.use_closed_form:
             sm.model.closed_form_optimize(step, camera, target)
@@ -157,6 +164,8 @@ class DDIMTrainer(ABC):
                     pbar.set_postfix(reg_loss=total_loss.item())
             final_loss = total_loss.item()
 
+        # 8. Calculate the pseudo noise
+        print(8)
         with torch.no_grad():
             print_warning("Rendering the image again to calculate pseudo noise...")
             latent = sm.prior.encode_image_if_needed(g(camera))

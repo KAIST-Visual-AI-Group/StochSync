@@ -21,8 +21,8 @@ guidance_scale: 7.5
 background: solid
 rgb: [0, 0, 0, 0]
 
-timesampler: linear_annealing
-noisesampler: sds
+time_sampler: linear_annealing
+noise_sampler: sds
 
 logger: simple
 log_interval: 10
