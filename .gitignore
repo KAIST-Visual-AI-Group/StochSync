@@ -7,6 +7,9 @@ scripts/
 *_backup
 *pano_results
 Iclr/
+poc/
+k_utils/
+config/ddim/img_wide*
 
 # Ignore jupyter notebook files
 *.ipynb

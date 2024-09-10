@@ -9,6 +9,7 @@ import torch
 from utils.config_utils import load_config
 from distillation_trainer import DistillationTrainer
 from general_trainer import GeneralTrainer
+from advanced_sampling_trainer import ResamplingTrainer
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 from k_utils.print_utils import print_with_box, print_info
@@ -32,7 +33,7 @@ def main():
         "-t",
         "--trainer_type",
         default="general",
-        choices=["general", "distillation"],
+        choices=["general", "distillation", "resampling"],
         help="type of trainer to use",
     )
     args, extras = parser.parse_known_args()
@@ -56,10 +57,13 @@ def main():
     with open(os.path.join(main_cfg.root_dir, "config.yaml"), "w") as f:
         f.write(OmegaConf.to_yaml(cfg))
 
+    print("trainer_type", args.trainer_type)
     if args.trainer_type == "distillation":
         trainer = DistillationTrainer(cfg)
     elif args.trainer_type == "general":
         trainer = GeneralTrainer(cfg)
+    elif args.trainer_type == "resampling":
+        trainer = ResamplingTrainer(cfg)
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 

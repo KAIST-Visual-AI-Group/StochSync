@@ -133,3 +133,51 @@ class ImageWideModel(ImageModel):
         # lr = 0.02 + 0.05*(step/300)
         # self.image = self.image + self.momentum * lr
         # self.image = 0.9 * self.image + 0.1 * img_new
+        
+        
+    def compute_reproj_error(self, target, camera):
+        import torch.nn.functional as F
+        
+        if self.image.shape[0] == 3:
+            target = sm.prior.decode_latent_if_needed(target)
+        elif self.image.shape[0] == 4:
+            target = sm.prior.encode_image_if_needed(target)
+        
+        num_cameras = camera["num"]
+        yoffsets, xoffsets = camera["yoffsets"], camera["xoffsets"]
+        height, width = camera["height"], camera["width"]
+
+        # 1. Unprojected image 
+        img_new = torch.zeros_like(self.image)
+        img_cnt = torch.zeros_like(self.image, dtype=torch.long)
+        for i in range(num_cameras):
+            img_new[
+                :,
+                yoffsets[i] : yoffsets[i] + height,
+                xoffsets[i] : xoffsets[i] + width,
+            ] += target[i]
+            img_cnt[
+                :,
+                yoffsets[i] : yoffsets[i] + height,
+                xoffsets[i] : xoffsets[i] + width,
+            ] += 1
+        
+        img_new = img_new / (img_cnt + 1e-6) 
+        
+        # 2. Project image 
+        img_cropped = []
+        for i in range(num_cameras):
+            img_cropped.append(
+                img_new[
+                    :,
+                    yoffsets[i] : yoffsets[i] + height,
+                    xoffsets[i] : xoffsets[i] + width,
+                ]
+            )
+        img_cropped = torch.stack(img_cropped, dim=0)
+        
+        reproj_error = F.mse_loss(
+            target, img_cropped, reduction="mean"
+        ) / camera["num"]
+        
+        return reproj_error

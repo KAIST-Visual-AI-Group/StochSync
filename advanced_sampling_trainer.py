@@ -27,7 +27,7 @@ from k_utils.image_utils import save_tensor
 from tqdm import tqdm, trange
 
 
-class GeneralTrainer(ABC):
+class ResamplingTrainer(ABC):
     """
     Abstract base class for all trainers.
     """
@@ -57,6 +57,13 @@ class GeneralTrainer(ABC):
         disable_debug: bool = False
 
         log_interval: int = 100
+        
+        # Re-Sampling 
+        use_resampling: bool = False
+        resampling_iter: int = 10
+        resampling_method: str = "mcg"  # mcg, rejection
+        reproj_error_threshold: float = 0.1
+        
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -104,19 +111,50 @@ class GeneralTrainer(ABC):
             print(3)
             t_curr = sm.time_sampler(step)
             
-            # 4. Sample noise
-            print(4)
-            noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
+            best_loss = float("inf")
+            for ri in range(self.cfg.resampling_iter):
+                # 4. Sample noise
+                print(4)
+                
+                # noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
+                if prev_eps is None:
+                    noise = torch.randn_like(latent)
+                else:
+                    noise = prev_eps
 
-            # 5. Perturb-recover to get the GT latent
-            print(5)
-            if step == 0:
-                latent_noisy = noise
-            else:
-                latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
-            noise_preds = sm.prior.predict(camera, latent_noisy, t_curr)
-            gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
+                # 5. Perturb-recover to get the GT latent
+                print(5)
+                if step == 0:
+                    latent_noisy = noise
+                else:
+                    latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
+                    
+                noise_preds = sm.prior.predict(camera, latent_noisy, t_curr)
+                gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
+                
+                if self.cfg.use_resampling:
+                    prev_eps = noise_preds
+                    
+                    reproj_error = sm.model.compute_reproj_error(gt_tweedie, camera)
+                    if reproj_error < best_loss:
+                        best_loss = reproj_error
+                        best_tweedie = gt_tweedie
+                        best_latent_noisy = latent_noisy
+                        
+                    print(f"reproj_error : {reproj_error}")
+                    
+                    if self.cfg.resampling_method == "rejection":
+                        if step == 0 or reproj_error < self.cfg.reproj_error_threshold:
+                            break
+                
+                    elif self.cfg.resampling_method == "mcg":
+                        raise NotImplementedError("MCG resampling is not implemented yet.")
             
+            gt_tweedie = best_tweedie
+            latent_noisy = best_latent_noisy
+            
+            # =========================================================
+
             # 5.5. Calculate the weighting coefficient
             print(5.5)
             if self.cfg.weighting_scheme == "sds":

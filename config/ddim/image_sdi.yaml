@@ -29,7 +29,7 @@ time_sampler: linear_annealing
 noise_sampler: sdi
 
 logger: simple
-log_interval: 30
+log_interval: 1
 
 background: solid
 rgb: [0, 0, 0, 0]

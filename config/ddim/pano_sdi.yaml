@@ -1,0 +1,34 @@
+root_dir: "./results/panorama"
+tag: panorama
+text_prompt: "Skyline of New York City"
+max_steps: 300
+
+dataset: random_mv
+height: 512
+width: 512
+batch_size: 10
+fov: 72
+dist_range: [1, 1]
+elev_range: [0, 0]
+azim_range: [0, 0]
+
+model: panorama
+learning_rate: 1.0
+channels: 3
+disable_debug: False # Faster 
+
+prior: sd
+guidance_scale: 7.5
+
+background: solid
+rgb: [0, 0, 0]
+
+time_sampler: linear_annealing
+noise_sampler: sds
+
+logger: simple 
+log_interval: 1
+
+recon_steps: 400
+recon_type: rgb
+use_closed_form: true

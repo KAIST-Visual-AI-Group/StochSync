@@ -136,3 +136,70 @@ class ImageWideDataset(InfiniteDataset):
             "yoffsets": yoffsets,
             "xoffsets": xoffsets,
         }
+
+# ===================================================
+# =========== Debugging dataset =====================
+# ===================================================
+
+
+class TwoViewNoOverlapCameraDataset(InfiniteDataset):
+    @ignore_kwargs
+    @dataclass
+    class Config:
+        width: int = 512
+        height: int = 512
+        xscale: int = 4
+        yscale: int = 1
+        batch_size: int = 1
+
+    def __init__(self, cfg) -> None:
+        super().__init__()
+        self.cfg = self.Config(**cfg)
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert self.cfg.yscale == 1, "TwoViewNoOverlapCameraDataset only supports yscale=1"
+        
+        xoffsets = torch.tensor([0, self.cfg.width], dtype=torch.long)
+        print("xoffsets", xoffsets)
+        
+        yoffsets = torch.zeros(self.cfg.batch_size, dtype=torch.long)
+
+        return {
+            "num": self.cfg.batch_size,
+            "height": self.cfg.height,
+            "width": self.cfg.width,
+            "yoffsets": yoffsets,
+            "xoffsets": xoffsets,
+        }
+
+
+
+class TwoViewOverlapCameraDataset(InfiniteDataset):
+    @ignore_kwargs
+    @dataclass
+    class Config:
+        width: int = 512
+        height: int = 512
+        xscale: int = 4
+        yscale: int = 1
+        batch_size: int = 1
+
+    def __init__(self, cfg) -> None:
+        super().__init__()
+        self.cfg = self.Config(**cfg)
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert self.cfg.yscale == 1, "TwoViewNoOverlapCameraDataset only supports yscale=1"
+        
+        xoffsets = torch.tensor([0, self.cfg.width // 2], dtype=torch.long)
+        print("xoffsets", xoffsets)
+        
+        yoffsets = torch.zeros(self.cfg.batch_size, dtype=torch.long)
+
+        return {
+            "num": self.cfg.batch_size,
+            "height": self.cfg.height,
+            "width": self.cfg.width,
+            "yoffsets": yoffsets,
+            "xoffsets": xoffsets,
+        }
