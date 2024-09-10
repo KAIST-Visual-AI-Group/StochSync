@@ -1,7 +1,7 @@
 root_dir: "./results/panorama"
 tag: panorama
 text_prompt: "Interior of an old looking library"
-max_steps: 50
+max_steps: 30
 use_encoder_decoder: False 
 
 dataset: random_mv
@@ -14,7 +14,9 @@ elev_range: [0, 0]
 azim_range: [0, 0]
 
 model: panorama
-learning_rate: 1.0
+learning_rate: 0.07
+pano_height: 2048
+pano_width: 4096
 channels: 3
 disable_debug: False # Faster 
 
@@ -25,11 +27,22 @@ background: solid
 rgb: [0, 0, 0]
 
 time_sampler: linear_annealing
-noise_sampler: sds
+noise_sampler: ddim
 
-logger: simple 
+use_ode: false
+ode_steps: 100
+
+logger: self 
 log_interval: 1
 
-recon_steps: 400
-recon_type: rgb
+recon_steps: 1
+recon_type: rgb  # optim=1: latent, optim=inf: rgb
 use_closed_form: true
+
+
+# use_closed_form=true & recon_type=rgb & max_steps = 30
+# use_closed_form=false & recon_type=latent & max_steps = 300
+
+# noise_sampler: ddim, sds, sdi
+
+# use_ode: true, false

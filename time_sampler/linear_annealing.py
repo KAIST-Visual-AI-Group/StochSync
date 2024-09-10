@@ -19,5 +19,6 @@ class LinearAnnealingTimeSampler(TimeSampler):
     def __call__(self, step):
         ratio = step / self.cfg.max_steps  # 0.0 ~ 1.0
         t_curr = int(self.cfg.t_max + (self.cfg.t_min - self.cfg.t_max) * ratio)
+        t_curr = max(0, min(999, t_curr))
 
-        return t_curr
+        return t_curr 

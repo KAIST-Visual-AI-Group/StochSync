@@ -1,7 +1,7 @@
-from .linear_annealing import LinearAnnealingTimeSampler
-from .sds import SDSTimeSampler
+from .base import SDSTimeSampler, LinearAnnealingTimeSampler, RepeatingTimeSampler
 
 TIME_SAMPLERs = {
     "sds": SDSTimeSampler,
     "linear_annealing": LinearAnnealingTimeSampler,
+    "repeating": RepeatingTimeSampler,
 }

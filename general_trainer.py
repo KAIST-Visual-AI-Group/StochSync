@@ -26,6 +26,10 @@ from k_utils.image_utils import save_tensor
 
 from tqdm import tqdm, trange
 
+# PSNR
+def psnr(x, y):
+    mse = torch.mean((x - y) ** 2)
+    return 20 * torch.log10(1.0 / torch.sqrt(mse))
 
 class GeneralTrainer(ABC):
     """
@@ -54,8 +58,10 @@ class GeneralTrainer(ABC):
         recon_type: str = "rgb"
         weighting_scheme: str = "sds"  # sds, fixed
         use_closed_form: bool = True
+        use_ode: bool = False
         disable_debug: bool = False
 
+        ode_steps: int = 100
         log_interval: int = 100
 
     def __init__(self, cfg_dict):
@@ -93,32 +99,30 @@ class GeneralTrainer(ABC):
 
         with torch.no_grad():
             # 1. Sample camera 
-            print(1)
             camera = sm.dataset.generate_sample()
             
             # 2. Render image 
-            print(2)
             latent = sm.prior.encode_image_if_needed(g(camera))
             
             # 3. Sample time 
-            print(3)
             t_curr = sm.time_sampler(step)
             
             # 4. Sample noise
-            print(4)
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
 
             # 5. Perturb-recover to get the GT latent
-            print(5)
             if step == 0:
                 latent_noisy = noise
             else:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
-            noise_preds = sm.prior.predict(camera, latent_noisy, t_curr)
-            gt_tweedie = sm.prior.get_tweedie(latent_noisy, noise_preds, t_curr)
             
+            if self.cfg.use_ode:
+                gt_tweedie = sm.prior.ddim_loop(camera, latent_noisy, t_curr, 0, num_steps=self.cfg.ode_steps)
+            else:
+                eps_pred = sm.prior.predict(camera, latent_noisy, t_curr)
+                gt_tweedie = sm.prior.get_tweedie(latent_noisy, eps_pred, t_curr)
+
             # 5.5. Calculate the weighting coefficient
-            print(5.5)
             if self.cfg.weighting_scheme == "sds":
                 alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod[t_curr].to(latent)
                 coeff = ((1 - alpha_t)*alpha_t)**0.5
@@ -128,7 +132,6 @@ class GeneralTrainer(ABC):
                 raise ValueError(f"Unknown weighting scheme: {self.cfg.weighting_scheme}")
             
             # 6. Define the target image depending on the reconstruction type
-            print(6)
             if self.cfg.recon_type == "rgb":
                 gt_image = sm.prior.decode_latent(gt_tweedie)
                 gt_image = torch.clamp(gt_image, 0.01, 0.99)
@@ -137,7 +140,6 @@ class GeneralTrainer(ABC):
                 target = gt_tweedie
                 
         # 7. Optimize the rendering to match the target
-        print(7)
         final_loss = 0.0
         if self.cfg.use_closed_form:
             sm.model.closed_form_optimize(step, camera, target)
@@ -147,7 +149,7 @@ class GeneralTrainer(ABC):
                 print_info("Using another # of steps for the first step...")
                 recon_steps = self.cfg.initial_recon_steps
 
-            with re_trange(recon_steps, position=1, desc="Regression") as pbar:
+            with re_trange(recon_steps, position=1, desc="Regression", leave=False) as pbar:
                 for in_step in pbar:
                     if self.cfg.recon_type == "latent":
                         source = sm.prior.encode_image_if_needed(g(camera))
@@ -165,11 +167,54 @@ class GeneralTrainer(ABC):
             final_loss = total_loss.item()
 
         # 8. Calculate the pseudo noise
-        print(8)
         with torch.no_grad():
-            print_warning("Rendering the image again to calculate pseudo noise...")
-            latent = sm.prior.encode_image_if_needed(g(camera))
-            eps_pred = sm.prior.get_eps(latent_noisy, latent, t_curr)
+            # TODO: Remove this ad-hoc optimization
+            if "DDIM" in sm.noise_sampler.__class__.__name__:
+                print_info("Rendering the image again to calculate pseudo noise...")
+                image = g(camera)
+                latent = sm.prior.encode_image_if_needed(image)
+                eps_pred_pseudo = sm.prior.get_eps(latent_noisy, latent, t_curr)
+
+                # save latent, gt_tweedie, eps_pred, eps_pred_pseudo.
+                # If recon_type is rgb, additionally save image and gt_image.
+                debug_dir = os.path.join(self.cfg.root_dir, "debug")
+                torch.save(latent, os.path.join(debug_dir, f"latent_{step}.pt"))
+                torch.save(gt_tweedie, os.path.join(debug_dir, f"gt_tweedie_{step}.pt"))
+                torch.save(eps_pred, os.path.join(debug_dir, f"eps_pred_{step}.pt"))
+                torch.save(eps_pred_pseudo, os.path.join(debug_dir, f"eps_pred_pseudo_{step}.pt"))
+                if self.cfg.recon_type == "rgb":
+                    torch.save(image, os.path.join(debug_dir, f"image_{step}.pt"))
+                    torch.save(gt_image, os.path.join(debug_dir, f"gt_image_{step}.pt"))
+                
+                # Calculate PSNR and save them with a form
+                # step: i, t_curr: t
+                # PSNR(avg_tweedie, gt_tweedie): x
+                # PSNR(eps_pred, eps_pred_pseudo): y
+                # PSNR(avg_image, gt_image): z (if recon_type is rgb)
+                # |eps_pred|^2: a
+                # |eps_pred_pseudo|^2: b
+                # =====================
+                psnr_avg_tweedie = psnr(latent, gt_tweedie).item()
+                psnr_eps_pred = psnr(eps_pred_pseudo, eps_pred).item()
+                if self.cfg.recon_type == "rgb":
+                    psnr_avg_image = psnr(image, gt_image).item()
+                eps_pred_norm = torch.norm(eps_pred).item()
+                eps_pred_pseudo_norm = torch.norm(eps_pred_pseudo).item()
+
+                statistics = f"step: {step}, t_curr: {t_curr}\n"
+                statistics += f"PSNR(avg_tweedie, gt_tweedie): {psnr_avg_tweedie}\n"
+                statistics += f"PSNR(eps_pred, eps_pred_pseudo): {psnr_eps_pred}\n"
+                if self.cfg.recon_type == "rgb":
+                    statistics += f"PSNR(avg_image, gt_image): {psnr_avg_image}\n"
+                statistics += f"|eps_pred|^2: {eps_pred_norm**2}\n"
+                statistics += f"|eps_pred_pseudo|^2: {eps_pred_pseudo_norm**2}\n"
+                statistics += "=====================\n"
+
+                statistics_file = os.path.join(debug_dir, "statistics.txt")
+                with open(statistics_file, "a") as f:
+                    f.write(statistics)
+                
+                eps_pred = eps_pred_pseudo
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:

@@ -27,7 +27,6 @@ def remap(image, grid, mode="bilinear"):
 
 
 def remap_int(tensor, grid, indexing="xy"):
-    print_warning("remap_int function is not checked. Please verify before using.")
     H, W = tensor.shape[-2:]
     if indexing == "xy":
         grid = grid.flip(-1)

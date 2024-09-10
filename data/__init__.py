@@ -1,5 +1,5 @@
-from .camera_dataset import CameraDataset, RandomCameraDataset, RandomMVCameraDataset, SeqTurnaroundCameraDataset#, NVDiffrastCameraDataset, NVDiffrastMVDreamCameraDataset
-from .image_dataset import ImageDataset, RotateImageDataset, RotateBatchImageDataset, ImageWideDataset, ImageWideRandomDataset, TwoViewNoOverlapCameraDataset, TwoViewOverlapCameraDataset, TwoViewOverlapCameraDataset
+from .camera_dataset import CameraDataset, RandomCameraDataset, RandomMVCameraDataset, SeqTurnaroundCameraDataset, FixMVCameraDataset, AlternateMVCameraDataset
+from .image_dataset import ImageDataset, RotateImageDataset, RotateBatchImageDataset, ImageWideDataset, ImageWideRandomDataset, AlternateImageWideDataset
 
 DATASETs = {
     "camera": CameraDataset,
@@ -11,7 +11,7 @@ DATASETs = {
     "rotate_batch_image": RotateBatchImageDataset,
     "image_wide": ImageWideDataset,
     "image_wide_random": ImageWideRandomDataset,
-    # 2-view dataset for debugging
-    "two_view_no_overlap": TwoViewNoOverlapCameraDataset,
-    "two_view_overlap": TwoViewOverlapCameraDataset,
+    "fix_mv": FixMVCameraDataset,
+    "alternate_mv": AlternateMVCameraDataset,
+    "alternate_image_wide": AlternateImageWideDataset,
 }
