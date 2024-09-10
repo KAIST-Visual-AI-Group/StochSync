@@ -82,7 +82,7 @@ class RandomMVCameraDataset(CameraDataset):
         batch_size: int = 1
         dist_range: Tuple[float, float] = (1.8, 2.2)
         elev_range: Tuple[float, float] = (-5, 40)
-        azim_range: Tuple[float, float] = (0, 90)
+        azim_range: Tuple[float, float] = (0, 360)
 
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
@@ -133,3 +133,72 @@ class SeqTurnaroundCameraDataset(CameraDataset):
         if self.count == len(self):
             self.count = 0
         return data
+
+
+#=====================
+
+class FixMVCameraDataset(CameraDataset):
+    @ignore_kwargs
+    @dataclass
+    class Config(CameraDataset.Config):
+        batch_size: int = 1
+        dist_range: Tuple[float, float] = (1.8, 2.2)
+        elev_range: Tuple[float, float] = (-5, 40)
+        azim_range: Tuple[float, float] = (0, 360)
+
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        dists = []
+        elevs = []
+        azims = []
+        interval = 360 / self.cfg.batch_size
+
+        dist = (self.cfg.dist_range[0] + self.cfg.dist_range[1]) / 2
+        elev = (self.cfg.elev_range[0] + self.cfg.elev_range[1]) / 2
+        # min, mim+interval, min+2*interval, ..., min+(batch_size-1)*interval=max
+        azims = np.linspace(*self.cfg.azim_range, self.cfg.batch_size, endpoint=False)
+        dists = dists + [dist] * self.cfg.batch_size
+        elevs = elevs + [elev] * self.cfg.batch_size
+            
+        return self.params_to_cameras(dists, elevs, azims)
+    
+
+class AlternateMVCameraDataset(CameraDataset):
+    @ignore_kwargs
+    @dataclass
+    class Config(CameraDataset.Config):
+        batch_size: int = 1
+        dist_range: Tuple[float, float] = (1.8, 2.2)
+        elev_range: Tuple[float, float] = (-5, 40)
+        azim_range: Tuple[float, float] = (0, 360)
+
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+        self.flag = False
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        dists = []
+        elevs = []
+        azims = []
+
+        dist = (self.cfg.dist_range[0] + self.cfg.dist_range[1]) / 2
+        elev = (self.cfg.elev_range[0] + self.cfg.elev_range[1]) / 2
+        # min, mim+interval, min+2*interval, ..., min+(batch_size-1)*interval=max
+        azims = np.linspace(*self.cfg.azim_range, self.cfg.batch_size, endpoint=False)
+        dists = dists + [dist] * self.cfg.batch_size
+        elevs = elevs + [elev] * self.cfg.batch_size
+
+        if self.flag:
+            azims = azims[1::2]
+            dists = dists[1::2]
+            elevs = elevs[1::2]
+        else:
+            azims = azims[::2]
+            dists = dists[::2]
+            elevs = elevs[::2]
+        self.flag = not self.flag
+        return self.params_to_cameras(dists, elevs, azims)

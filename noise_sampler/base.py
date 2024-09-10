@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from math import sqrt, exp, log, cos, sin, pi, floor, ceil
 
 import torch
 import torch.nn.functional as F
@@ -7,6 +8,7 @@ import torch.nn.functional as F
 from utils.extra_utils import ignore_kwargs
 import shared_modules as sm
 from random import randint
+from k_utils.print_utils import print_warning, print_error
 
 
 class NoiseSampler(ABC):
@@ -54,8 +56,8 @@ class SDISampler(NoiseSampler):
         tau = randint(0, 33)
         t_tau = min(t + tau, 999)
 
-        ts_prev = len(sm.prior.scheduler.timesteps)
-        sm.prior.scheduler.set_timesteps(10)
+        # ts_prev = len(sm.prior.scheduler.timesteps)
+        # sm.prior.scheduler.set_timesteps(10)
         noisy_sample = sm.prior.ddim_loop(
             camera,
             images,
@@ -63,11 +65,14 @@ class SDISampler(NoiseSampler):
             t_tau,
             guidance_scale=self.cfg.inversion_guidance_scale,
             mode="cfg",
+            num_steps=10,
         )
-        sm.prior.scheduler.set_timesteps(ts_prev)
+        # print("noisy_sample", torch.isnan(noisy_sample).sum().item())
+        # sm.prior.scheduler.set_timesteps(ts_prev)
 
         alpha_prod_t = sm.prior.scheduler.alphas_cumprod[t_tau]
         inverted_eps = sm.prior.get_eps(noisy_sample, images, t_tau)
+        # print("inverted_eps", torch.isnan(inverted_eps).sum().item())
 
         def fixed_point_loss(img, eps, t):
             data_dtype = img.dtype
@@ -79,6 +84,7 @@ class SDISampler(NoiseSampler):
             return F.mse_loss(noise_pred, eps)
 
         if self.cfg.opt_steps > 0:
+            raise NotImplementedError("Optimization for fixed point is not implemented")
             print("Optimizing for fixed point")
             images = images.float().detach()
             inverted_eps = inverted_eps.float().detach().requires_grad_()
@@ -113,6 +119,32 @@ class RandomizedDDIMSampler(NoiseSampler):
         self.cfg = self.Config(**cfg)
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
+        # if not hasattr(self, 'preparing_t'):
+        #     print_warning("RandomizedDDIM is looking for the DOOM's day...")
+        #     print_warning("DOOM's day is coming...")
+        #     for step in range(100000):
+        #         tmp = sm.time_sampler(step)
+        #         if tmp < self.cfg.random_noise_end:
+        #             self.preparing_t = sm.time_sampler(step - 2)
+        #             print_warning(f"You must prepare for the DOOM's day at {self.preparing_t}")
+        #             break
+        #     else:
+        #         raise ValueError("DOOM's day is a lie lol")
+        # if t <= self.preparing_t:
+        #     self.preparing_t = -666
+        #     print_error("DOOM's day is here!")
+        #     print_warning("The ground trembles beneath your feet as the air grows thick with an ominous presence.")
+        #     print_warning("A dark cloud looms overhead, casting a shadow over the land.")
+        #     print_warning("Whispers of ancient prophecies fill your ears, foretelling the coming of DOOM's day.")
+        #     print_warning("Suddenly, the ground splits open, revealing a swirling vortex of darkness.")
+        #     print_error("The hellgate has opened!")
+        #     print_warning("Monstrous creatures emerge from the abyss, their eyes glowing with malevolence.")
+        #     print_warning("You draw your weapon, ready to face the horrors that await.")
+        #     print_warning("The fate of the world rests on your shoulders.")
+        #     assert sm.dataset.__class__.__name__ == "RandomMVCameraDataset", "DOOM's day is only for RandomMVCameraDataset"
+        #     sm.dataset.cfg.batch_size = 10
+        #     sm.dataset.cfg.azim_range = (0, 0)
+
         if t >= self.cfg.random_noise_end or eps_prev == None:
             return self.get_noise(camera, images)
         return eps_prev
@@ -128,6 +160,32 @@ class RandomizedSDISampler(SDISampler):
         self.cfg = self.Config(**cfg)
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
+        if not hasattr(self, 'preparing_t'):
+            print_warning("RandomizedSDI is looking for the DOOM's day...")
+            print_warning("DOOM's day is coming...")
+            for step in range(100000):
+                tmp = sm.time_sampler(step)
+                if tmp < self.cfg.random_noise_end:
+                    self.preparing_t = sm.time_sampler(step - 2)
+                    print_warning(f"You must prepare for the DOOM's day at {self.preparing_t}")
+                    break
+            else:
+                raise ValueError("DOOM's day is a lie lol")
+        if t <= self.preparing_t:
+            self.preparing_t = -666
+            print_error("DOOM's day is here!")
+            print_warning("The ground trembles beneath your feet as the air grows thick with an ominous presence.")
+            print_warning("A dark cloud looms overhead, casting a shadow over the land.")
+            print_warning("Whispers of ancient prophecies fill your ears, foretelling the coming of DOOM's day.")
+            print_warning("Suddenly, the ground splits open, revealing a swirling vortex of darkness.")
+            print_error("The hellgate has opened!")
+            print_warning("Monstrous creatures emerge from the abyss, their eyes glowing with malevolence.")
+            print_warning("You draw your weapon, ready to face the horrors that await.")
+            print_warning("The fate of the world rests on your shoulders.")
+            assert sm.dataset.__class__.__name__ == "RandomMVCameraDataset", "DOOM's day is only for RandomMVCameraDataset"
+            sm.dataset.cfg.batch_size = 10
+            sm.dataset.cfg.azim_range = (0, 0)
+
         if t >= self.cfg.random_noise_end or eps_prev == None:
             return self.get_noise(camera, images)
         
@@ -179,16 +237,18 @@ class GeneralizedDDIMSampler(NoiseSampler):
     @ignore_kwargs
     @dataclass
     class Config(NoiseSampler.Config):
-        random_ratio_expr: str = "0.5 * (1 - t / 1000)"
+        random_ratio_expr: str = "(1 - x)"
 
     def __init__(self, cfg):
         super().__init__(cfg)
         self.cfg = self.Config(**cfg)
-        self.random_ratio = eval(f"lambda t: {self.cfg.random_ratio_expr}")
+        self.random_ratio = lambda x: eval(str(self.cfg.random_ratio_expr))
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
         random_eps = self.get_noise(camera, images)
         if eps_prev is None:
             return random_eps
-        ratio = self.random_ratio(t)
-        return ratio**0.5 * random_eps + (1 - ratio) ** 0.5 * eps_prev
+        x = 1 - t / 1000
+        ratio = self.random_ratio(x)
+        # print(f"Stochasticiy ratio at t={t}: {ratio}")
+        return (1 - ratio) ** 0.5 * eps_prev + ratio ** 0.5 * random_eps

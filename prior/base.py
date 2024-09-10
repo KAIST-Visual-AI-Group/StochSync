@@ -144,16 +144,17 @@ class Prior(ABC):
 
         noisy_sample = tweedie_coeff * pred_original_sample + eps_coeff * eps
         if eta > 0:
+            assert t_next > t, "DDPM is not designed for inversion"
             noise = torch.randn_like(eps) if noise is None else noise
             noisy_sample = noisy_sample + noise_coeff * noise
 
         return noisy_sample
 
-    def move_step(self, sample, denoise_eps, src_t, tgt_t, renoise_eps=None):
+    def move_step(self, sample, denoise_eps, src_t, tgt_t, eta=0, renoise_eps=None):
         renoise_eps = renoise_eps if renoise_eps is not None else denoise_eps
 
         pred_original_sample = self.get_tweedie(sample, denoise_eps, src_t)
-        next_sample = self.get_noisy_sample(pred_original_sample, renoise_eps, tgt_t)
+        next_sample = self.get_noisy_sample(pred_original_sample, renoise_eps, tgt_t, eta=eta, t_next=src_t)
         return next_sample
 
     @torch.no_grad()
@@ -166,6 +167,8 @@ class Prior(ABC):
         mode="cfg",
         guidance_scale=None,
         inv_guidance_scale=None,
+        eta=0,
+        num_steps=30,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):
@@ -179,10 +182,13 @@ class Prior(ABC):
 
         x_t = x_t.detach()
 
+        # linearly interpolate between 1000 and 0
+        raw_timesteps = torch.linspace(999, 0, num_steps, dtype=torch.long)
+
         if src_t == tgt_t:
             return x_t
         elif src_t < tgt_t:
-            timesteps = reversed(self.scheduler.timesteps)
+            timesteps = reversed(raw_timesteps)
             from_idx = torch.where(timesteps > src_t)[0]
             from_idx = from_idx[0] if len(from_idx) > 0 else len(timesteps)
             to_idx = torch.where(timesteps < tgt_t)[0]
@@ -195,7 +201,7 @@ class Prior(ABC):
                 ]
             )
         elif src_t > tgt_t:
-            timesteps = self.scheduler.timesteps
+            timesteps = raw_timesteps
             from_idx = torch.where(timesteps < src_t)[0]
             from_idx = from_idx[0] if len(from_idx) > 0 else len(timesteps)
             to_idx = torch.where(timesteps > tgt_t)[0]
@@ -207,8 +213,11 @@ class Prior(ABC):
                     torch.tensor([tgt_t]),
                 ]
             )
+        
+        print(timesteps)
 
         for t_curr, t_next in zip(timesteps[:-1], timesteps[1:]):
+            print(torch.isnan(x_t).sum().item())
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )
@@ -217,6 +226,7 @@ class Prior(ABC):
                 noise_pred_dict["noise_pred_uncond"],
                 noise_pred_dict["noise_pred_text"],
             )
+            print("noise_pred", torch.isnan(noise_pred).sum().item())
 
             if mode == "cfg":
                 renoise_eps = noise_pred
@@ -254,8 +264,10 @@ class Prior(ABC):
                 )
                 renoise_eps = self.get_eps(noisy_sample, pred_original_sample, t_next)
 
+            print("renoise_eps", torch.isnan(renoise_eps).sum().item())
             x_t = self.move_step(
-                x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps
+                x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps, eta=eta
             )
+            print("x_t_after", torch.isnan(x_t).sum().item())
 
         return x_t

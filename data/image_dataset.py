@@ -136,3 +136,34 @@ class ImageWideDataset(InfiniteDataset):
             "yoffsets": yoffsets,
             "xoffsets": xoffsets,
         }
+
+
+class AlternateImageWideDataset(ImageWideDataset):
+
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+        self.flag = False
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        assert self.cfg.yscale == 1, "ImageWideDataset only supports yscale=1"
+        xoffsets = torch.linspace(
+            0, self.cfg.width * (self.cfg.xscale - 1), self.cfg.batch_size, dtype=torch.long
+        )
+        yoffsets = torch.zeros(self.cfg.batch_size, dtype=torch.long)
+
+        if self.flag:
+            xoffsets = xoffsets[1::2]
+            yoffsets = yoffsets[1::2]
+        else:
+            xoffsets = xoffsets[::2]
+            yoffsets = yoffsets[::2]
+        self.flag = not self.flag
+
+        return {
+            "num": len(xoffsets),
+            "height": self.cfg.height,
+            "width": self.cfg.width,
+            "yoffsets": yoffsets,
+            "xoffsets": xoffsets,
+        }

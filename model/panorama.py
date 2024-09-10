@@ -32,7 +32,6 @@ class PanoramaModel(ImageModel):
         self.cfg = self.Config(**cfg)
         self.image = None
         self.optimizer = None
-        self.noise_map = torch.randn(1, 4, 2048, 4096, device=self.cfg.device)
 
     def prepare_optimization(self) -> None:
         self.image = torch.nn.Parameter(
@@ -46,6 +45,10 @@ class PanoramaModel(ImageModel):
         )
         self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
 
+    @torch.no_grad()
+    def save(self, path: str) -> None:
+        image = self.render_self()
+        save_tensor(image, path)
     # @torch.no_grad()
     # def save(self, path: str) -> None:
     #     if self.cfg.channels == 3:
@@ -98,51 +101,47 @@ class PanoramaModel(ImageModel):
     @torch.no_grad()
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-        if image.shape[1] == 3:
-            pass
-            # latent = shared_modules.prior.encode_image(image)
-            # image = shared_modules.prior.decode_latent(latent)
-        elif image.shape[1] == 4:
-            elevs = (0, 0, 0, 0, 0, 50, 50, 50, 50, -50, -50, -50, -50)
-            azims = (0, 72, 144, 216, 288, 0, 90, 180, 270, 0, 90, 180, 270)
-            dists = [1.5] * len(elevs)
-            cameras = shared_modules.dataset.params_to_cameras(
-                dists,
-                elevs,
-                azims,
-            )
-            latents = self.render(cameras)["image"]
-            rgbs = shared_modules.prior.decode_latent(latents)
 
-            # unprojection
-            num_cameras = cameras["num"]
-            width, height, fov, azim, elev = (
-                cameras["width"],
-                cameras["height"],
-                cameras["fov"],
-                cameras["azimuth"],
-                cameras["elevation"],
-            )
+        # elevs = (0, 0, 0, 0, 0, 50, 50, 50, 50, -50, -50, -50, -50)
+        # azims = (0, 72, 144, 216, 288, 0, 90, 180, 270, 0, 90, 180, 270)
+        elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)
+        dists = [1.5] * len(elevs)
+        cameras = shared_modules.dataset.params_to_cameras(
+            dists,
+            elevs,
+            azims,
+        )
+        images = self.render(cameras)["image"]
+        latents = shared_modules.prior.encode_image_if_needed(images)
+        rgbs = shared_modules.prior.decode_latent(latents)
 
-            img_new = torch.zeros(1, 3, 2048, 4096, device=self.cfg.device)
-            img_cnt = torch.zeros(1, 1, 2048, 4096, device=self.cfg.device)
-            print("start")
-            for i in range(num_cameras):
-                print(':', i)
-                img_tmp, mask = pers_to_pano_raw(
-                    rgbs[i:i+1],
-                    fov,
-                    azim[i],
-                    elev[i],
-                    2048,
-                    4096,
-                    return_mask=True,
-                )
-                print(':', i)
-                img_new += img_tmp.squeeze(0)
-                img_cnt += mask.squeeze(0).long()
-            
-            image = img_new / (img_cnt + 1e-6)
+        # unprojection
+        num_cameras = cameras["num"]
+        width, height, fov, azim, elev = (
+            cameras["width"],
+            cameras["height"],
+            cameras["fov"],
+            cameras["azimuth"],
+            cameras["elevation"],
+        )
+
+        img_new = torch.zeros(1, 3, 2048, 4096, device=self.cfg.device)
+        img_cnt = torch.zeros(1, 1, 2048, 4096, device=self.cfg.device)
+        for i in range(num_cameras):
+            img_tmp, mask = pers_to_pano_raw(
+                rgbs[i:i+1],
+                fov,
+                azim[i],
+                elev[i],
+                2048,
+                4096,
+                return_mask=True,
+            )
+            img_new += img_tmp.squeeze(0)
+            img_cnt += mask.squeeze(0).long()
+        
+        image = img_new / (img_cnt + 1e-6)
 
         return image
 
@@ -164,9 +163,7 @@ class PanoramaModel(ImageModel):
 
         img_new = torch.zeros_like(self.image)
         img_cnt = torch.zeros_like(self.image, dtype=torch.long)
-        print("start")
         for i in range(num_cameras):
-            print(':', i)
             img_tmp, mask = pers_to_pano_raw(
                 target[i:i+1],
                 fov,
@@ -176,34 +173,29 @@ class PanoramaModel(ImageModel):
                 self.cfg.pano_width,
                 return_mask=True,
             )
-            print(':', i)
             img_new += img_tmp.squeeze(0)
             # round mask
             img_cnt += mask.squeeze(0).long()
         
         img_new = img_new / (img_cnt + 1e-6)
         img_new[img_cnt == 0] = self.image[img_cnt == 0]
-        print("end")
 
         self.image.data = img_new
     
 
     def get_noise(self, camera):
-        self.noise_map = torch.randn(1, 4, 2048, 4096, device=self.cfg.device)
+        noise_map = torch.randn(1, 4, 2048, 4096, device=self.cfg.device)
         num_cameras = camera["num"]
-        width, height, fov, azim, elev = (
-            camera["width"],
-            camera["height"],
+        fov, azim, elev = (
             camera["fov"],
             camera["azimuth"],
             camera["elevation"],
         )
-        width = width // 8
-        height = height // 8
+        _, _, height, width = shared_modules.prior.latent_res
 
         noise_projected = []
         for i in range(num_cameras):
-            pers, cnt = pano_to_pers_accum_raw(self.noise_map, fov, azim[i], elev[i], height, width)
+            pers, cnt = pano_to_pers_accum_raw(noise_map, fov, azim[i], elev[i], height, width)
             pers = pers / (torch.sqrt(cnt) + 1e-8)
             noise_projected.append(pers)
         noise_projected = torch.cat(noise_projected, dim=0)

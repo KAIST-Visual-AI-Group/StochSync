@@ -1,0 +1,40 @@
+# Main Differences:
+# max_steps: 50
+# learning_rate: 0.1 (Optional)
+# noise_sampler: ddim
+# log_interval: 1
+# recon_steps: 400 (Optional)
+# use_closed_form: true
+
+root_dir: "./results/image"
+tag: image
+output: "result.png"
+text_prompt: "Tranquil pond surrounded by autumn leaves"
+max_steps: 100
+
+dataset: random
+batch_size: 1
+width: 64
+height: 64
+
+model: image
+initialization: random
+learning_rate: 0.1
+channels: 4
+
+prior: sd
+guidance_scale: 7.5
+
+time_sampler: repeating
+t_repeat: 900
+noise_sampler: sds
+
+logger: self
+log_interval: 1
+
+background: solid
+rgb: [0, 0, 0, 0]
+
+recon_steps: 400
+recon_type: latent
+use_closed_form: true
