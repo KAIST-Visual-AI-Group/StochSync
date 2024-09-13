@@ -195,3 +195,17 @@ def merge_camera(cam_list):
         "azimuth": azimuth,
         "elevation": elevation,
     }
+
+def index_camera(cam_list, idx):
+    assert idx < cam_list["num"], "Index out of range."
+
+    return {
+        "num": 1,
+        "c2w": cam_list["c2w"][idx:idx+1],
+        "K": cam_list["K"][idx:idx+1],
+        "width": cam_list["width"],
+        "height": cam_list["height"],
+        "fov": cam_list["fov"],
+        "azimuth": [cam_list["azimuth"][idx]],
+        "elevation": [cam_list["elevation"][idx]],
+    }

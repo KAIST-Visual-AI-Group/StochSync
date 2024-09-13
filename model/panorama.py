@@ -46,6 +46,13 @@ class PanoramaModel(ImageModel):
                 self.cfg.init_img_path,
             )
         )
+        self.preserve_mask = None
+        print(self.cfg.init_img_path, self.cfg.initialization)
+        if self.cfg.init_img_path is not None and self.cfg.initialization == "image":
+            self.preserve_img = self.image.clone()
+            self.preserve_mask = self.image.norm(dim=0, keepdim=True) > 1e-6
+            self.preserve_mask = self.preserve_mask.expand_as(self.image)
+            print(self.preserve_mask.sum())
         self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
 
     @torch.no_grad()
@@ -127,8 +134,8 @@ class PanoramaModel(ImageModel):
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
-        # elevs = (0, 0, 0, 0, 0, 50, 50, 50, 50, -50, -50, -50, -50)
-        # azims = (0, 72, 144, 216, 288, 0, 90, 180, 270, 0, 90, 180, 270)
+        print_warning("Directly returning the raw image for stability. This is a temporary solution.")
+        return image
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)
         
@@ -206,6 +213,10 @@ class PanoramaModel(ImageModel):
         img_new = img_new / (img_cnt + 1e-6)
         img_new[img_cnt == 0] = self.image[img_cnt == 0]
 
+        if self.preserve_mask is not None:
+            print_info("Preserving the original image...")
+            img_new[self.preserve_mask] = self.preserve_img[self.preserve_mask]
+        
         self.image.data = img_new
     
 

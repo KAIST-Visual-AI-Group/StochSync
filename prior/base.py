@@ -172,6 +172,8 @@ class Prior(ABC):
         inv_guidance_scale=None,
         eta=0,
         num_steps=30,
+        edge_preserve=False,
+        clean=None,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):
@@ -217,7 +219,17 @@ class Prior(ABC):
                 ]
             )
         
-        for t_curr, t_next in zip(timesteps[:-1], timesteps[1:]):
+        if edge_preserve:
+            N = len(timesteps - 1)
+            H, W = x_t.shape[-2:]
+            mask = torch.zeros(N, H, W, device=self.device)  # keeping mask
+            for i in range(N):
+                left = int((W/2) * (1 - i / N))
+                right = W - left
+                mask[i, :, left:right] = 1
+            clean_eps = torch.randn_like(x_t)
+
+        for i, (t_curr, t_next) in enumerate(zip(timesteps[:-1], timesteps[1:])):
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )
@@ -233,38 +245,12 @@ class Prior(ABC):
                 renoise_eps = torch.randn_like(noise_pred)
             elif mode == "cfg++":
                 renoise_eps = noise_pred_uncond
-            elif mode == "sdi":
-                print_info(f"performing SDI at t=0 -> {t_next}")
-                print_warning(f"Modifying timesteps of the scheduler. It would not be restored.")
-
-                pred_original_sample = self.get_tweedie(x_t, noise_pred, t_curr)
-                self.scheduler.set_timesteps(10)
-                inv_guidance_scale = (
-                    inv_guidance_scale
-                    if inv_guidance_scale is not None
-                    else -guidance_scale
-                )
-                noisy_sample = self.ddim_loop(
-                    camera,
-                    pred_original_sample,
-                    0,
-                    t_curr,
-                    guidance_scale=inv_guidance_scale,
-                    mode="cfg",
-                )
-                self.scheduler.set_timesteps(30)
-                noisy_sample = self.ddim_loop(
-                    camera,
-                    noisy_sample,
-                    t_curr,
-                    t_next,
-                    guidance_scale=guidance_scale,
-                    mode="cfg",
-                )
-                renoise_eps = self.get_eps(noisy_sample, pred_original_sample, t_next)
 
             x_t = self.move_step(
                 x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps, eta=eta
             )
+            if edge_preserve:
+                M = mask[i]
+                x_t = x_t * M + self.get_noisy_sample(clean, clean_eps, t_next) * (1 - M)
 
         return x_t
