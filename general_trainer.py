@@ -67,6 +67,7 @@ class GeneralTrainer(ABC):
 
         ode_steps: int = 100
         log_interval: int = 100
+        seam_removal_steps: int = 0
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -118,9 +119,9 @@ class GeneralTrainer(ABC):
 
             # 3. Sample time
             t_curr = sm.time_sampler(step)
-            if step >= self.cfg.max_steps - 2:
+            if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                 print_warning("Doubling the time for the edge-preserving mode...")
-                t_curr = int(1.5 * t_curr)
+                t_curr = int(2.0 * t_curr)
 
             # 4. Sample noise
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
@@ -132,7 +133,7 @@ class GeneralTrainer(ABC):
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
 
             if self.cfg.use_ode:
-                if step >= self.cfg.max_steps - 2:
+                if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                     print_warning("Edge-preserving ODE for the last 3 steps...")
                     gt_tweedie = sm.prior.ddim_loop(
                         camera,

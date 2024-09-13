@@ -68,7 +68,7 @@ class GoodTimeSampler(TimeSampler):
         y= (ratio + sin(2*pi*ratio)/(2*pi))**1.2
         t_curr = int(self.cfg.t_max + (self.cfg.t_min - self.cfg.t_max) * y)
         t_curr = max(0, min(999, t_curr))
-        print(t_curr)
+        # print(t_curr)
 
         return t_curr 
 

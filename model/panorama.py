@@ -114,6 +114,8 @@ class PanoramaModel(ImageModel):
 
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = self.cfg.eval_pos
+        if azims is None:
+            azims = [0, 36, 72, 108, 144, 180, 216, 252, 288, 324]
         
         dists = [1.5] * len(elevs)
         cameras = shared_modules.dataset.params_to_cameras(
@@ -134,7 +136,7 @@ class PanoramaModel(ImageModel):
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
-        print_warning("Directly returning the raw image for stability. This is a temporary solution.")
+        # print_warning("Directly returning the raw image for stability. This is a temporary solution.")
         return image
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)

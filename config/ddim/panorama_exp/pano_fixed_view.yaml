@@ -1,17 +1,17 @@
 root_dir: "./results/panorama"
 tag: panorama
 text_prompt: "Interior of an old looking library"
-max_steps: 25
+max_steps: 30 # In ODE -> 25
 use_encoder_decoder: False 
 
-dataset: alternate_mv
+dataset: random_mv
 height: 512
 width: 512
-batch_size: 10 # 5 
+batch_size: 10
 fov: 72
 dist_range: [1, 1]
 elev_range: [0, 0]
-azim_range: [0, 360]
+azim_range: [0, 0]
 
 model: panorama
 learning_rate: 0.05 # 0.1 SDS, 0.01 SDI 
@@ -26,10 +26,11 @@ guidance_scale: 7.5
 background: solid
 rgb: [0, 0, 0]
 
-time_sampler: good
-t_max: 900
-t_min: 270
-noise_sampler: sds
+time_sampler: linear_annealing
+t_max: 999
+t_min: 0
+seam_removal_steps: 0 
+noise_sampler: ddim
 
 use_ode: false
 ode_steps: 50 # 100 -> 50
