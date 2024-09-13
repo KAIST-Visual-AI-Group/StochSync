@@ -4,6 +4,7 @@ from .sd import (
     ViewDependentStableDiffusionPrior,
     ElevDependentStableDiffusionPrior,
 )
+from .controlnet import ControlNetPrior
 from .mvdream import MVDreamPrior
 
 from .deepfloyd import DeepFloydPrior
@@ -13,6 +14,7 @@ PRIORs = {
     "view_sd": ViewDependentStableDiffusionPrior,
     "elev_sd": ElevDependentStableDiffusionPrior,
     "angle_sd": AngleDependentStableDiffusionPrior,
+    "controlnet": ControlNetPrior,
     "mvdream": MVDreamPrior,
     "df": DeepFloydPrior,
 }

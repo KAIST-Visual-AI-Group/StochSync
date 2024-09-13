@@ -9,6 +9,7 @@ def normalize_grid(grid, height, width):
     """
     Normalize map coordinates to the range [-1, 1] for use with grid_sample.
     """
+    grid = grid.clone()
     grid[..., 0] = 2.0 * grid[..., 0] / (width - 1) - 1.0
     grid[..., 1] = 2.0 * grid[..., 1] / (height - 1) - 1.0
     return grid

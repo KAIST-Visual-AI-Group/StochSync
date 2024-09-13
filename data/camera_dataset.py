@@ -22,10 +22,14 @@ class CameraDataset(InfiniteDataset):
             "LUF", "RDF", "RUB", "RUF", "Pytorch3D", "OpenCV", "OpenGL", "Unity"
         ] = "RDF"
         device: str = "cuda"
+        dists: Tuple[float] = (2.0,)
+        elevs: Tuple[float] = (0.0,)
+        azims: Tuple[float] = (30.0,)
 
     def __init__(self, cfg) -> None:
         super().__init__()
         self.cfg = self.Config(**cfg)
+        assert len(self.cfg.dists) == len(self.cfg.elevs) == len(self.cfg.azims), "Length of dists, elevs, and azims must be the same"
 
     def params_to_cameras(self, dists, elevs, azims):
         cameras = []
@@ -47,8 +51,9 @@ class CameraDataset(InfiniteDataset):
 
         return cameras
 
-    def generate_sample(self, dists, elevs, azims):
-        return self.params_to_cameras(dists, elevs, azims)
+    def generate_sample(self):
+        # return self.params_to_cameras(dists, elevs, azims)
+        return self.params_to_cameras(self.cfg.dists, self.cfg.elevs, self.cfg.azims)
 
 class RandomCameraDataset(CameraDataset):
     @ignore_kwargs

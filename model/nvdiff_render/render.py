@@ -34,7 +34,8 @@ def shade(
         view_pos,
         lgt,
         material,
-        bsdf
+        bsdf,
+        gb_z=None
     ):
 
     ################################################################################
@@ -102,6 +103,12 @@ def shade(
         shaded_col = kd
     elif bsdf == 'ks':
         shaded_col = ks
+    elif bsdf == "depth":
+        shaded_col = gb_z.repeat(1, 1, 1, 3)
+    elif bsdf == "cos":
+        # cosine similarity between view direction and normal
+        view_rays = torch.nn.functional.normalize(view_pos - gb_pos, dim=-1)
+        shaded_col = torch.sum(gb_normal * view_rays, dim=-1, keepdim=True).repeat(1, 1, 1, 3)
     else:
         assert False, "Invalid BSDF '%s'" % bsdf
     
@@ -129,7 +136,8 @@ def render_layer(
         resolution,
         spp,
         msaa,
-        bsdf
+        bsdf,
+        z_clip=None
     ):
 
     full_res = [resolution[0]*spp, resolution[1]*spp]
@@ -153,6 +161,7 @@ def render_layer(
     # Interpolate world space position
     gb_pos, _ = interpolate(mesh.v_pos[None, ...], rast_out_s, mesh.t_pos_idx.int())
     gb_mask, _ = interpolate(torch.ones_like(mesh.v_pos[None, ..., :1]), rast_out_s, mesh.t_pos_idx.int())
+    gb_z, _ = interpolate(z_clip, rast_out_s, mesh.t_pos_idx.int())
 
     # Compute geometric normals. We need those because of bent normals trick (for bump mapping)
     v0 = mesh.v_pos[mesh.t_pos_idx[:, 0], :]
@@ -175,7 +184,7 @@ def render_layer(
     # Shade
     ################################################################################
 
-    buffers = shade(gb_pos, gb_mask, gb_geometric_normal, gb_normal, gb_tangent, gb_texc, gb_texc_deriv, view_pos, lgt, mesh.material, bsdf)
+    buffers = shade(gb_pos, gb_mask, gb_geometric_normal, gb_normal, gb_tangent, gb_texc, gb_texc_deriv, view_pos, lgt, mesh.material, bsdf, gb_z=gb_z)
 
     ################################################################################
     # Prepare output
@@ -235,13 +244,14 @@ def render_mesh(
 
     # clip space transform
     v_pos_clip = ru.xfm_points(mesh.v_pos[None, ...], mtx_in) # just the mvp transform, [1, N, 3]
+    z_clip = v_pos_clip[..., 2:3] / v_pos_clip[..., 3:4] # z_clip = z_clip / w_clip
 
     # Render all layers front-to-back
     layers = []
     with dr.DepthPeeler(ctx, v_pos_clip, mesh.t_pos_idx.int(), full_res) as peeler:
         for _ in range(num_layers):
             rast, db = peeler.rasterize_next_layer()
-            layers += [(render_layer(rast, db, mesh, view_pos, lgt, resolution, spp, msaa, bsdf), rast)]
+            layers += [(render_layer(rast, db, mesh, view_pos, lgt, resolution, spp, msaa, bsdf, z_clip=z_clip), rast)]
 
     # Setup background
     if background is not None:
