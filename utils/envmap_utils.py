@@ -2,7 +2,7 @@ from math import tan, pi
 
 from PIL import Image
 import torch
-from k_utils.image_utils import torch_to_pil, pil_to_torch
+from utils.image_utils import torch_to_pil, pil_to_torch
 from Utils.matrix_utils import rodrigues
 
 def xyz2lonlat(xyz):

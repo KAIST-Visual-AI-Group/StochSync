@@ -14,7 +14,7 @@ from prior import PRIORs
 from logger import LOGGERs
 from utils.config_utils import load_config
 from utils.extra_utils import ignore_kwargs
-from k_utils.print_utils import print_info, print_error, print_warning
+from utils.print_utils import print_info, print_error, print_warning
 
 
 class Renderer:

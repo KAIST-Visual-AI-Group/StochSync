@@ -10,6 +10,9 @@ Iclr/
 poc/
 k_utils/
 config/ddim/img_wide*
+baselines/
+weights/
+make_data.py
 
 # Ignore jupyter notebook files
 *.ipynb

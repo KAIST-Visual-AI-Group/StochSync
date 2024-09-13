@@ -8,7 +8,7 @@ from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 import shared_modules as sm
 
-from k_utils.print_utils import print_with_box, print_warning
+from utils.print_utils import print_with_box, print_warning
 
 
 class ImageWideModel(ImageModel):

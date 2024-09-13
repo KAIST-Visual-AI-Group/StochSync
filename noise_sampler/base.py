@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from utils.extra_utils import ignore_kwargs
 import shared_modules as sm
 from random import randint
-from k_utils.print_utils import print_warning, print_error
+from utils.print_utils import print_warning, print_error
 
 
 class NoiseSampler(ABC):

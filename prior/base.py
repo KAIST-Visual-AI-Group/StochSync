@@ -13,7 +13,7 @@ from diffusers import (
 )
 
 from utils.extra_utils import weak_lru
-from k_utils.print_utils import print_info, print_warning
+from utils.print_utils import print_info, print_warning
 
 
 # NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
@@ -136,17 +136,20 @@ class Prior(ABC):
         
         alpha = self.pipeline.scheduler.alphas_cumprod[t]
         alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
-        sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
+        if eta > 0:
+            assert t_next > t, "DDPM is not designed for inversion"
+            sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
+        else:
+            sigma = 0
 
         tweedie_coeff = alpha ** 0.5
         eps_coeff = (1 - alpha - sigma**2) ** 0.5
         noise_coeff = sigma
 
         noisy_sample = tweedie_coeff * pred_original_sample + eps_coeff * eps
-        if eta > 0:
-            assert t_next > t, "DDPM is not designed for inversion"
-            noise = torch.randn_like(eps) if noise is None else noise
-            noisy_sample = noisy_sample + noise_coeff * noise
+        
+        noise = torch.randn_like(eps) if noise is None else noise
+        noisy_sample = noisy_sample + noise_coeff * noise
 
         return noisy_sample
 
@@ -214,10 +217,7 @@ class Prior(ABC):
                 ]
             )
         
-        print(timesteps)
-
         for t_curr, t_next in zip(timesteps[:-1], timesteps[1:]):
-            print(torch.isnan(x_t).sum().item())
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )
@@ -226,7 +226,6 @@ class Prior(ABC):
                 noise_pred_dict["noise_pred_uncond"],
                 noise_pred_dict["noise_pred_text"],
             )
-            print("noise_pred", torch.isnan(noise_pred).sum().item())
 
             if mode == "cfg":
                 renoise_eps = noise_pred
@@ -264,10 +263,8 @@ class Prior(ABC):
                 )
                 renoise_eps = self.get_eps(noisy_sample, pred_original_sample, t_next)
 
-            print("renoise_eps", torch.isnan(renoise_eps).sum().item())
             x_t = self.move_step(
                 x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps, eta=eta
             )
-            print("x_t_after", torch.isnan(x_t).sum().item())
 
         return x_t

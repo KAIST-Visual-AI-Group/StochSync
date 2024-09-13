@@ -11,8 +11,8 @@ from diffusers import (
     DDIMScheduler,
 )
 
-from k_utils.random_utils import seed_everything
-from k_utils.image_utils import torch_to_pil, concat_images
+from utils.random_utils import seed_everything
+from utils.image_utils import torch_to_pil, concat_images
 
 def encode_text(pipeline, prompt, negative_prompt=None):
     """

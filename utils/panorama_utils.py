@@ -2,7 +2,7 @@ import math
 import torch
 import torch.nn.functional as F
 from utils.extra_utils import accumulate_tensor
-from k_utils.print_utils import print_warning
+from utils.print_utils import print_warning
 
 
 def normalize_grid(grid, height, width):

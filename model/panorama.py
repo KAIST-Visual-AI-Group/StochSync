@@ -1,6 +1,7 @@
 from dataclasses import dataclass
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
+import os 
 import torch
 
 from .image import ImageModel
@@ -8,8 +9,8 @@ from .image import ImageModel
 import shared_modules
 from utils.extra_utils import ignore_kwargs
 from utils.panorama_utils import pano_to_pers_raw, pers_to_pano_raw, pano_to_pers_accum_raw
-from k_utils.image_utils import save_tensor, pil_to_torch
-from k_utils.print_utils import print_warning
+from utils.image_utils import save_tensor, pil_to_torch
+from utils.print_utils import print_warning
 
 class PanoramaModel(ImageModel):
     """
@@ -26,6 +27,8 @@ class PanoramaModel(ImageModel):
         init_img_path: Optional[str] = None
 
         learning_rate: float = 0.1
+        eval_pos: Optional[int] = None
+        
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -97,6 +100,28 @@ class PanoramaModel(ImageModel):
             "image": img_projected,
             "alpha": torch.ones(num_cameras, 1, height, width, device=self.cfg.device),
         }
+        
+    @torch.no_grad()
+    def render_eval(self, path) -> torch.Tensor:
+        image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
+
+        elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        azims = self.cfg.eval_pos
+        
+        dists = [1.5] * len(elevs)
+        cameras = shared_modules.dataset.params_to_cameras(
+            dists,
+            elevs,
+            azims,
+        )
+        images = self.render(cameras)["image"]
+        latents = shared_modules.prior.encode_image_if_needed(images)
+        rgbs = shared_modules.prior.decode_latent(latents)
+        rgbs.clip_(0, 1)
+        
+        fns = [f"{azi}_{_i}" for _i, azi in enumerate(azims)]
+        # Save perspective view images 09.10
+        save_tensor(rgbs, path, fns=fns)
     
     @torch.no_grad()
     def render_self(self) -> torch.Tensor:
@@ -106,6 +131,7 @@ class PanoramaModel(ImageModel):
         # azims = (0, 72, 144, 216, 288, 0, 90, 180, 270, 0, 90, 180, 270)
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)
+        
         dists = [1.5] * len(elevs)
         cameras = shared_modules.dataset.params_to_cameras(
             dists,

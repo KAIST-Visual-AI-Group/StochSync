@@ -9,11 +9,11 @@ import torch
 from utils.config_utils import load_config
 from distillation_trainer import DistillationTrainer
 from general_trainer import GeneralTrainer
-from rewind_trainer import RewindTrainer
+# from rewind_trainer import RewindTrainer
 from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
-from k_utils.print_utils import print_with_box, print_info
-from k_utils.random_utils import seed_everything
+from utils.print_utils import print_with_box, print_info
+from utils.random_utils import seed_everything
 
 
 @ignore_kwargs
@@ -26,7 +26,7 @@ class Config:
 
 
 def main():
-    torch.autograd.set_detect_anomaly(True)
+    torch.autograd.set_detect_anomaly(False)
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="path to the yaml config file")
     parser.add_argument(
@@ -42,7 +42,10 @@ def main():
     now = datetime.now()
     strnow = now.strftime("%Y%m%d_%H%M%S")
     
-    cfg.root_dir = os.path.join(cfg.root_dir.replace(" ", "_"), cfg.tag, strnow)
+    cfg.root_dir = os.path.join(cfg.root_dir.replace(" ", "_"), cfg.tag)
+    if os.path.exists(os.path.join(cfg.root_dir, "_output")):
+        print(f"{os.path.join(cfg.root_dir, '_output')} already exists. Exiting.")
+        exit(0)
 
     print_with_box(
         f"Config loaded from {args.config} with the following content:\n{OmegaConf.to_yaml(cfg)}",
@@ -62,8 +65,8 @@ def main():
         trainer = DistillationTrainer(cfg)
     elif args.trainer_type == "general":
         trainer = GeneralTrainer(cfg)
-    elif args.trainer_type == "rewind":
-        trainer = RewindTrainer(cfg)
+    # elif args.trainer_type == "rewind":
+    #     trainer = RewindTrainer(cfg)
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 

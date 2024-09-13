@@ -14,7 +14,7 @@ elev_range: [0, 0]
 azim_range: [0, 360]
 
 model: panorama
-learning_rate: 1.0
+learning_rate: 0.05 # 0.1 SDS, 0.01 SDI 
 pano_height: 2048
 pano_width: 4096
 channels: 3
@@ -27,14 +27,22 @@ background: solid
 rgb: [0, 0, 0]
 
 time_sampler: linear_annealing
-noise_sampler: sds
+noise_sampler: ddim
 
-use_ode: true
-ode_steps: 100
+use_ode: false
+ode_steps: 50 # 100 -> 50
 
-logger: self
-log_interval: 1
+logger: self 
+log_interval: 10
 
-recon_steps: 400
-recon_type: rgb
+recon_steps: 1
+recon_type: rgb  # optim=1: latent, optim=inf: rgb
 use_closed_form: true
+
+
+# use_closed_form=true & recon_type=rgb & max_steps = 30
+# use_closed_form=false & recon_type=latent & max_steps = 300
+
+# noise_sampler: ddim, sds, sdi
+
+# use_ode: true, false

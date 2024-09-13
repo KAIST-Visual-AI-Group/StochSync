@@ -16,8 +16,8 @@ from sampler import SAMPLERs
 from logger import LOGGERs
 from utils.extra_utils import ignore_kwargs, get_class_filename
 from utils.camera_utils import merge_camera
-from k_utils.print_utils import print_with_box, print_info
-from k_utils.image_utils import save_tensor
+from utils.print_utils import print_with_box, print_info
+from utils.image_utils import save_tensor
 
 
 class DistillationTrainer(ABC):

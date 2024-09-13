@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from utils.extra_utils import ignore_kwargs
 import shared_modules
 
-from k_utils.image_utils import save_tensor, pil_to_torch
+from utils.image_utils import save_tensor, pil_to_torch
 
 
 class ImageMVModel(BaseModel):

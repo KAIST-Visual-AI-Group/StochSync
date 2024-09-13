@@ -27,7 +27,7 @@ from utils.extra_utils import (
     ignore_kwargs,
     attach_elevation_prompt,
 )
-from k_utils.print_utils import print_info, print_warning, print_error
+from utils.print_utils import print_info, print_warning, print_error
 
 
 class StableDiffusionPrior(Prior):
@@ -65,7 +65,7 @@ class StableDiffusionPrior(Prior):
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
         self.pipeline.text_encoder.requires_grad_(False)
-    
+        
     @property
     def rgb_res(self):
         return 1, 3, 512, 512

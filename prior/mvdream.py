@@ -13,7 +13,7 @@ from utils.extra_utils import (
     attach_direction_prompt,
     ignore_kwargs,
 )
-from k_utils.print_utils import print_info, print_warning, print_error
+from utils.print_utils import print_info, print_warning, print_error
 
 # Set the logging verbosity to error to avoid unnecessary warnings
 diffusers.logging.set_verbosity_error()

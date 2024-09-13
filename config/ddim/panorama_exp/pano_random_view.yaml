@@ -7,14 +7,14 @@ use_encoder_decoder: False
 dataset: random_mv
 height: 512
 width: 512
-batch_size: 10
+batch_size: 5
 fov: 72
 dist_range: [1, 1]
 elev_range: [0, 0]
-azim_range: [0, 0]
+azim_range: [0, 360]
 
 model: panorama
-learning_rate: 0.07
+learning_rate: 0.05 # 0.1 SDS, 0.01 SDI 
 pano_height: 2048
 pano_width: 4096
 channels: 3
@@ -30,14 +30,14 @@ time_sampler: linear_annealing
 noise_sampler: ddim
 
 use_ode: false
-ode_steps: 100
+ode_steps: 50 # 100 -> 50
 
 logger: self 
-log_interval: 1
+log_interval: 30
 
 recon_steps: 1
-recon_type: rgb  # optim=1: latent, optim=inf: rgb
-use_closed_form: true
+recon_type: latent  # optim=1: latent, optim=inf: rgb
+use_closed_form: false
 
 
 # use_closed_form=true & recon_type=rgb & max_steps = 30

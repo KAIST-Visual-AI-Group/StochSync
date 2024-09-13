@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from .base import DistillationSampler
 import shared_modules
 from utils.extra_utils import ignore_kwargs
-from k_utils.print_utils import print_warning
+from utils.print_utils import print_warning
 from utils.extra_utils import weak_lru
 
 

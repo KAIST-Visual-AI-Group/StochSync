@@ -9,7 +9,7 @@ from .radiance_fields.utils import Rays, render_image_with_occgrid
 from nerfacc.estimators.occ_grid import OccGridEstimator
 import shared_modules as sm
 
-from k_utils.print_utils import print_info
+from utils.print_utils import print_info
 
 
 class NGPModel(BaseModel):

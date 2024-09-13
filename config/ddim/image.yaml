@@ -19,21 +19,21 @@ height: 64
 
 model: image
 initialization: random
-learning_rate: 0.1
+learning_rate: 0.01
 channels: 4
 
 prior: sd
 guidance_scale: 7.5
 
 time_sampler: linear_annealing
-noise_sampler: ddim
+noise_sampler: sdi
 
 logger: simple
-log_interval: 1
+log_interval: 10
 
 background: solid
 rgb: [0, 0, 0, 0]
 
-recon_steps: 400
+recon_steps: 1
 recon_type: latent
-use_closed_form: true
+use_closed_form: false

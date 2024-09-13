@@ -28,8 +28,8 @@ import shared_modules
 # from model.mesh_utils.mesh_renderer import Renderer
 from .dc_pbr import skip
 
-from k_utils.image_utils import save_tensor, pil_to_torch
-from k_utils.print_utils import print_info, print_warning
+from utils.image_utils import save_tensor, pil_to_torch
+from utils.print_utils import print_info, print_warning
 
 
 class MeshModel(BaseModel):

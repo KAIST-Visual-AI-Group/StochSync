@@ -23,7 +23,7 @@ from utils.extra_utils import (
     ignore_kwargs,
 )  # How to remove this project-specific import?
 
-from k_utils.print_utils import print_info
+from utils.print_utils import print_info
 
 
 class DeepFloydPrior(Prior):

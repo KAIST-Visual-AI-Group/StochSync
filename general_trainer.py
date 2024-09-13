@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
+import torch.nn as nn 
 import torch.nn.functional as F
 from utils.config_utils import load_config
 import shared_modules as sm
@@ -21,8 +22,8 @@ from utils.extra_utils import redirected_tqdm as re_tqdm
 from utils.extra_utils import redirected_trange as re_trange
 from utils.camera_utils import merge_camera
 import utils.prior_utils as pu
-from k_utils.print_utils import print_with_box, print_info, print_warning
-from k_utils.image_utils import save_tensor
+from utils.print_utils import print_with_box, print_info, print_warning
+from utils.image_utils import save_tensor
 
 from tqdm import tqdm, trange
 
@@ -40,6 +41,7 @@ class GeneralTrainer(ABC):
     @dataclass
     class Config:
         root_dir: str = "./results/default"
+        eval_dir: str = None
         dataset: str = "random"
         background: str = "random_solid"
         model: str = "gs"
@@ -74,8 +76,14 @@ class GeneralTrainer(ABC):
         sm.noise_sampler = NOISE_SAMPLERs[self.cfg.noise_sampler](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
 
+        if self.cfg.eval_dir is None:
+            self.eval_dir = os.path.join(self.cfg.root_dir, "eval")
+        else:
+            self.eval_dir = self.cfg.eval_dir
+        
         os.makedirs(self.cfg.root_dir, exist_ok=True)
         os.makedirs(f"{self.cfg.root_dir}/debug", exist_ok=True)
+        os.makedirs(self.eval_dir, exist_ok=True)
 
         if self.cfg.save_source:
             os.makedirs(f"{self.cfg.root_dir}/src", exist_ok=True)
@@ -159,6 +167,13 @@ class GeneralTrainer(ABC):
                     total_loss = coeff * F.mse_loss(source, target, reduction="sum") / camera["num"]
                     total_loss.backward()
                     
+                    # Clip gradients for stability
+                    # nn.utils.clip_grad_value_(
+                    #     sm.model.optimizer.param_groups[0]['params'][0], clip_value=1.0
+                    # )
+                    # _grad = sm.model.optimizer.param_groups[0]['params'][0].grad
+                    # print("Gradient", torch.mean(_grad), torch.min(_grad), torch.max(_grad))
+                    
                     sm.model.optimize(in_step)
                     if hasattr(sm.background, "optimize"):
                         sm.background.optimize(in_step)
@@ -166,55 +181,54 @@ class GeneralTrainer(ABC):
                     pbar.set_postfix(reg_loss=total_loss.item())
             final_loss = total_loss.item()
 
-        # 8. Calculate the pseudo noise
+        # 8. Calculate the pseudo noises
+        eps_pred = None 
         with torch.no_grad():
-            # TODO: Remove this ad-hoc optimization
-            if "DDIM" in sm.noise_sampler.__class__.__name__:
-                print_info("Rendering the image again to calculate pseudo noise...")
-                image = g(camera)
-                latent = sm.prior.encode_image_if_needed(image)
-                eps_pred_pseudo = sm.prior.get_eps(latent_noisy, latent, t_curr)
+            print_info("Rendering the image again to calculate pseudo noise...")
+            image = g(camera)
+            latent = sm.prior.encode_image_if_needed(image)
+            eps_pred_pseudo = sm.prior.get_eps(latent_noisy, latent, t_curr)
 
-                # save latent, gt_tweedie, eps_pred, eps_pred_pseudo.
-                # If recon_type is rgb, additionally save image and gt_image.
-                debug_dir = os.path.join(self.cfg.root_dir, "debug")
-                torch.save(latent, os.path.join(debug_dir, f"latent_{step}.pt"))
-                torch.save(gt_tweedie, os.path.join(debug_dir, f"gt_tweedie_{step}.pt"))
-                torch.save(eps_pred, os.path.join(debug_dir, f"eps_pred_{step}.pt"))
-                torch.save(eps_pred_pseudo, os.path.join(debug_dir, f"eps_pred_pseudo_{step}.pt"))
-                if self.cfg.recon_type == "rgb":
-                    torch.save(image, os.path.join(debug_dir, f"image_{step}.pt"))
-                    torch.save(gt_image, os.path.join(debug_dir, f"gt_image_{step}.pt"))
-                
-                # Calculate PSNR and save them with a form
-                # step: i, t_curr: t
-                # PSNR(avg_tweedie, gt_tweedie): x
-                # PSNR(eps_pred, eps_pred_pseudo): y
-                # PSNR(avg_image, gt_image): z (if recon_type is rgb)
-                # |eps_pred|^2: a
-                # |eps_pred_pseudo|^2: b
-                # =====================
-                psnr_avg_tweedie = psnr(latent, gt_tweedie).item()
-                psnr_eps_pred = psnr(eps_pred_pseudo, eps_pred).item()
-                if self.cfg.recon_type == "rgb":
-                    psnr_avg_image = psnr(image, gt_image).item()
-                eps_pred_norm = torch.norm(eps_pred).item()
-                eps_pred_pseudo_norm = torch.norm(eps_pred_pseudo).item()
+            # # save latent, gt_tweedie, eps_pred, eps_pred_pseudo.
+            # # If recon_type is rgb, additionally save image and gt_image.
+            # debug_dir = os.path.join(self.cfg.root_dir, "debug")
+            # torch.save(latent, os.path.join(debug_dir, f"latent_{step}.pt"))
+            # torch.save(gt_tweedie, os.path.join(debug_dir, f"gt_tweedie_{step}.pt"))
+            # torch.save(eps_pred, os.path.join(debug_dir, f"eps_pred_{step}.pt"))
+            # torch.save(eps_pred_pseudo, os.path.join(debug_dir, f"eps_pred_pseudo_{step}.pt"))
+            # if self.cfg.recon_type == "rgb":
+            #     torch.save(image, os.path.join(debug_dir, f"image_{step}.pt"))
+            #     torch.save(gt_image, os.path.join(debug_dir, f"gt_image_{step}.pt"))
+            
+            # # Calculate PSNR and save them with a form
+            # # step: i, t_curr: t
+            # # PSNR(avg_tweedie, gt_tweedie): x
+            # # PSNR(eps_pred, eps_pred_pseudo): y
+            # # PSNR(avg_image, gt_image): z (if recon_type is rgb)
+            # # |eps_pred|^2: a
+            # # |eps_pred_pseudo|^2: b
+            # # =====================
+            # psnr_avg_tweedie = psnr(latent, gt_tweedie).item()
+            # psnr_eps_pred = psnr(eps_pred_pseudo, eps_pred).item()
+            # if self.cfg.recon_type == "rgb":
+            #     psnr_avg_image = psnr(image, gt_image).item()
+            # eps_pred_norm = torch.norm(eps_pred).item()
+            # eps_pred_pseudo_norm = torch.norm(eps_pred_pseudo).item()
 
-                statistics = f"step: {step}, t_curr: {t_curr}\n"
-                statistics += f"PSNR(avg_tweedie, gt_tweedie): {psnr_avg_tweedie}\n"
-                statistics += f"PSNR(eps_pred, eps_pred_pseudo): {psnr_eps_pred}\n"
-                if self.cfg.recon_type == "rgb":
-                    statistics += f"PSNR(avg_image, gt_image): {psnr_avg_image}\n"
-                statistics += f"|eps_pred|^2: {eps_pred_norm**2}\n"
-                statistics += f"|eps_pred_pseudo|^2: {eps_pred_pseudo_norm**2}\n"
-                statistics += "=====================\n"
+            # statistics = f"step: {step}, t_curr: {t_curr}\n"
+            # statistics += f"PSNR(avg_tweedie, gt_tweedie): {psnr_avg_tweedie}\n"
+            # statistics += f"PSNR(eps_pred, eps_pred_pseudo): {psnr_eps_pred}\n"
+            # if self.cfg.recon_type == "rgb":
+            #     statistics += f"PSNR(avg_image, gt_image): {psnr_avg_image}\n"
+            # statistics += f"|eps_pred|^2: {eps_pred_norm**2}\n"
+            # statistics += f"|eps_pred_pseudo|^2: {eps_pred_pseudo_norm**2}\n"
+            # statistics += "=====================\n"
 
-                statistics_file = os.path.join(debug_dir, "statistics.txt")
-                with open(statistics_file, "a") as f:
-                    f.write(statistics)
-                
-                eps_pred = eps_pred_pseudo
+            # statistics_file = os.path.join(debug_dir, "statistics.txt")
+            # with open(statistics_file, "a") as f:
+            #     f.write(statistics)
+            
+            eps_pred = eps_pred_pseudo
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
@@ -247,5 +261,6 @@ class GeneralTrainer(ABC):
                 self.cfg.root_dir, f"{self.cfg.prefix}_{self.cfg.output}"
             )
             sm.model.save(output_filename)
+            sm.model.render_eval(self.eval_dir)
 
             return output_filename

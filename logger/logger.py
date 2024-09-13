@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from k_utils.image_utils import save_tensor, convert_to_video
-from k_utils.print_utils import print_info, print_warning, print_error
+from utils.image_utils import save_tensor, convert_to_video
+from utils.print_utils import print_info, print_warning, print_error
 from utils.extra_utils import ignore_kwargs
 from utils.camera_utils import generate_camera, merge_camera
 import shared_modules
@@ -74,6 +74,8 @@ class SelfLogger(BaseLogger):
             latents = shared_modules.prior.encode_image_if_needed(images)
             # images = shared_modules.prior.decode_image(latents)
             images = shared_modules.prior.decode_latent(latents)
+            
+        images.clip_(0, 1)
         save_tensor(
             images,
             os.path.join(self.training_dir, f"training_{step:05d}.png"),

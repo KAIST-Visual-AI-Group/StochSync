@@ -237,3 +237,5 @@ class NeRFBackground(BaseBackground):
     def optimize(self, step):
         self.optimizer.step()
         self.optimizer.zero_grad()
+        
+

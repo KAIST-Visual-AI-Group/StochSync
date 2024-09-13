@@ -21,7 +21,7 @@ from utils.extra_utils import ignore_kwargs
 from utils.gaussian_utils import create_random_pcd
 import shared_modules as sm
 
-from k_utils.print_utils import print_info
+from utils.print_utils import print_info
 
 
 class GSModel(BaseModel):
