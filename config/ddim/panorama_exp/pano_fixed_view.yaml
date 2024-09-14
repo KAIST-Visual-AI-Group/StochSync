@@ -14,11 +14,10 @@ elev_range: [0, 0]
 azim_range: [0, 0]
 
 model: panorama
-learning_rate: 0.05 # 0.1 SDS, 0.01 SDI 
 pano_height: 2048
 pano_width: 4096
 channels: 3
-disable_debug: False # Faster
+disable_debug: False
 
 prior: sd
 guidance_scale: 7.5
@@ -41,7 +40,8 @@ log_interval: 10
 recon_steps: 1
 recon_type: rgb  # optim=1: latent, optim=inf: rgb
 use_closed_form: true
-
+learning_rate: 0.0
+loss_scale: 1.0
 
 # use_closed_form=true & recon_type=rgb & max_steps = 30
 # use_closed_form=false & recon_type=latent & max_steps = 300

@@ -3,14 +3,30 @@ from typing import Dict, Optional, List
 
 import os 
 import torch
+import math
 
 from .image import ImageModel
 
 import shared_modules
+from torch.optim.lr_scheduler import LambdaLR
 from utils.extra_utils import ignore_kwargs
 from utils.panorama_utils import pano_to_pers_raw, pers_to_pano_raw, pano_to_pers_accum_raw
 from utils.image_utils import save_tensor, pil_to_torch
 from utils.print_utils import print_warning
+
+def get_cosine_schedule_with_warmup(
+    optimizer, 
+    num_warmup_steps, 
+    num_training_steps, 
+    num_cycles: float = 0.5
+):
+    def lr_lambda(current_step):
+        if current_step < num_warmup_steps:
+            return float(current_step) / float(max(1, num_warmup_steps))
+        progress = float(current_step - num_warmup_steps) / float(max(1, num_training_steps - num_warmup_steps))
+        return max(0.0, 0.5 * (1.0 + math.cos(math.pi * float(num_cycles) * 2.0 * progress)))
+
+    return LambdaLR(optimizer, lr_lambda, -1)
 
 class PanoramaModel(ImageModel):
     """
@@ -28,13 +44,14 @@ class PanoramaModel(ImageModel):
 
         learning_rate: float = 0.1
         eval_pos: Optional[int] = None
-        
+        max_steps: int = 10000
 
     def __init__(self, cfg={}):
         super().__init__()
         self.cfg = self.Config(**cfg)
         self.image = None
         self.optimizer = None
+        self.scheduler = None 
 
     def prepare_optimization(self) -> None:
         self.image = torch.nn.Parameter(
@@ -53,7 +70,10 @@ class PanoramaModel(ImageModel):
             self.preserve_mask = self.image.norm(dim=0, keepdim=True) > 1e-6
             self.preserve_mask = self.preserve_mask.expand_as(self.image)
             print(self.preserve_mask.sum())
-        self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
+        # self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
+        self.optimizer = torch.optim.AdamW([self.image], lr=self.cfg.learning_rate, weight_decay=0)
+        self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, 100, int(self.cfg.max_steps*1.5))
+        
 
     @torch.no_grad()
     def save(self, path: str) -> None:
@@ -137,7 +157,8 @@ class PanoramaModel(ImageModel):
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
         # print_warning("Directly returning the raw image for stability. This is a temporary solution.")
-        return image
+        # return image
+        
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)
         

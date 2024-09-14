@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 
+import random
 import torch
 import torch.nn.functional as F
 
@@ -14,6 +15,7 @@ class TimeSampler(ABC):
         max_steps: int = 10000
         t_min: int = 20
         t_max: int = 980
+        batch_size: int = 10 # batch size
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
 
@@ -50,7 +52,7 @@ class LinearAnnealingTimeSampler(TimeSampler):
         t_curr = int(self.cfg.t_max + (self.cfg.t_min - self.cfg.t_max) * ratio)
         t_curr = max(0, min(999, t_curr))
 
-        return t_curr 
+        return t_curr
 
 class GoodTimeSampler(TimeSampler):
     @ignore_kwargs
@@ -68,9 +70,8 @@ class GoodTimeSampler(TimeSampler):
         y= (ratio + sin(2*pi*ratio)/(2*pi))**1.2
         t_curr = int(self.cfg.t_max + (self.cfg.t_min - self.cfg.t_max) * y)
         t_curr = max(0, min(999, t_curr))
-        # print(t_curr)
 
-        return t_curr 
+        return t_curr
 
 class SDSTimeSampler(TimeSampler):
     @ignore_kwargs
@@ -82,5 +83,5 @@ class SDSTimeSampler(TimeSampler):
         self.cfg = self.Config(**cfg_dict)
 
     def __call__(self, step):
-        t_curr = torch.randint(self.cfg.t_min, self.cfg.t_max+1)
-        return t_curr 
+        t_curr = random.randint(self.cfg.t_min, self.cfg.t_max)
+        return t_curr

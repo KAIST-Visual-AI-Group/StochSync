@@ -14,7 +14,6 @@ elev_range: [0, 0]
 azim_range: [0, 360]
 
 model: panorama
-learning_rate: 0.05
 pano_height: 2048
 pano_width: 4096
 channels: 3
@@ -41,3 +40,5 @@ log_interval: 5
 recon_steps: 1
 recon_type: rgb
 use_closed_form: true
+learning_rate: 0.0
+loss_scale: 1.0

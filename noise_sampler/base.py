@@ -8,7 +8,7 @@ import torch.nn.functional as F
 from utils.extra_utils import ignore_kwargs
 import shared_modules as sm
 from random import randint
-from utils.print_utils import print_warning, print_error
+from utils.print_utils import print_warning, print_error, print_info
 
 
 class NoiseSampler(ABC):
@@ -51,6 +51,7 @@ class SDISampler(NoiseSampler):
 
     def __call__(self, camera, images, t, eps_prev, *args, **kwargs):
         if eps_prev is None:
+            print_warning(f"No previous noise found, generating random noise. This should only happen at the first step {t}")
             return self.get_noise(camera, images)
         
         tau = randint(0, 33)
@@ -228,9 +229,9 @@ class RandomizedSDISampler(SDISampler):
                 opt.zero_grad()
             inverted_eps = inverted_eps.detach().to(sm.prior.dtype)
 
-        # h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
-        # return inverted_eps + h
-        return inverted_eps
+        h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
+        return inverted_eps + h
+        # return inverted_eps
 
 
 class GeneralizedDDIMSampler(NoiseSampler):

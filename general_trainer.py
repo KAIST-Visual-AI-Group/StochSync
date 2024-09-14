@@ -68,6 +68,7 @@ class GeneralTrainer(ABC):
         ode_steps: int = 100
         log_interval: int = 100
         seam_removal_steps: int = 0
+        loss_scale: float = 2000
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -103,8 +104,6 @@ class GeneralTrainer(ABC):
         sm.model.prepare_optimization()
 
     def train_single_step(self, step: int, prev_eps=None) -> Any:
-        eps_pred = None
-
         def g(camera):
             r_pkg = sm.model.render(camera)
             bg = sm.background(camera)
@@ -120,7 +119,7 @@ class GeneralTrainer(ABC):
             # 3. Sample time
             t_curr = sm.time_sampler(step)
             if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
-                print_warning("Doubling the time for the edge-preserving mode...")
+                # print_warning("Doubling the time for the edge-preserving mode...")
                 t_curr = int(2.0 * t_curr)
 
             # 4. Sample noise
@@ -134,7 +133,7 @@ class GeneralTrainer(ABC):
 
             if self.cfg.use_ode:
                 if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
-                    print_warning("Edge-preserving ODE for the last 3 steps...")
+                    # print_warning("Edge-preserving ODE for the last 3 steps...")
                     gt_tweedie = sm.prior.ddim_loop(
                         camera,
                         latent_noisy,
@@ -154,7 +153,7 @@ class GeneralTrainer(ABC):
 
             # 5.5. Calculate the weighting coefficient
             if self.cfg.weighting_scheme == "sds":
-                alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod[t_curr].to(latent)
+                alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(latent)[t_curr]
                 coeff = ((1 - alpha_t) * alpha_t) ** 0.5
             elif self.cfg.weighting_scheme == "fixed":
                 coeff = 0.32  # to match the scale of the sds weighting
@@ -194,12 +193,13 @@ class GeneralTrainer(ABC):
                         coeff
                         * F.mse_loss(source, target, reduction="sum")
                         / camera["num"]
-                    )
+                    ) * self.cfg.loss_scale
                     total_loss.backward()
 
-                    sm.model.optimize(in_step)
+                    global_step = (step * recon_steps) + in_step
+                    sm.model.optimize(global_step)
                     if hasattr(sm.background, "optimize"):
-                        sm.background.optimize(in_step)
+                        sm.background.optimize(global_step)
 
                     pbar.set_postfix(reg_loss=total_loss.item())
             final_loss = total_loss.item()
@@ -207,53 +207,11 @@ class GeneralTrainer(ABC):
         # 8. Calculate the pseudo noises
         eps_pred = None 
         with torch.no_grad():
-            # TODO: Remove this ad-hoc optimization
-            if "DDIM" in sm.noise_sampler.__class__.__name__:
-                print_info("Rendering the image again to calculate pseudo noise...")
-                image = g(camera)
-                tmp_latent = sm.prior.encode_image_if_needed(image)
-                eps_pred_pseudo = sm.prior.get_eps(latent_noisy, tmp_latent, t_curr)
-
-                # # save latent, gt_tweedie, eps_pred, eps_pred_pseudo.
-                # # If recon_type is rgb, additionally save image and gt_image.
-                # debug_dir = os.path.join(self.cfg.root_dir, "debug")
-                # torch.save(latent, os.path.join(debug_dir, f"latent_{step}.pt"))
-                # torch.save(gt_tweedie, os.path.join(debug_dir, f"gt_tweedie_{step}.pt"))
-                # torch.save(eps_pred, os.path.join(debug_dir, f"eps_pred_{step}.pt"))
-                # torch.save(eps_pred_pseudo, os.path.join(debug_dir, f"eps_pred_pseudo_{step}.pt"))
-                # if self.cfg.recon_type == "rgb":
-                #     torch.save(image, os.path.join(debug_dir, f"image_{step}.pt"))
-                #     torch.save(gt_image, os.path.join(debug_dir, f"gt_image_{step}.pt"))
-
-                # # Calculate PSNR and save them with a form
-                # # step: i, t_curr: t
-                # # PSNR(avg_tweedie, gt_tweedie): x
-                # # PSNR(eps_pred, eps_pred_pseudo): y
-                # # PSNR(avg_image, gt_image): z (if recon_type is rgb)
-                # # |eps_pred|^2: a
-                # # |eps_pred_pseudo|^2: b
-                # # =====================
-                # psnr_avg_tweedie = psnr(latent, gt_tweedie).item()
-                # psnr_eps_pred = psnr(eps_pred_pseudo, eps_pred).item()
-                # if self.cfg.recon_type == "rgb":
-                #     psnr_avg_image = psnr(image, gt_image).item()
-                # eps_pred_norm = torch.norm(eps_pred).item()
-                # eps_pred_pseudo_norm = torch.norm(eps_pred_pseudo).item()
-
-                # statistics = f"step: {step}, t_curr: {t_curr}\n"
-                # statistics += f"PSNR(avg_tweedie, gt_tweedie): {psnr_avg_tweedie}\n"
-                # statistics += f"PSNR(eps_pred, eps_pred_pseudo): {psnr_eps_pred}\n"
-                # if self.cfg.recon_type == "rgb":
-                #     statistics += f"PSNR(avg_image, gt_image): {psnr_avg_image}\n"
-                # statistics += f"|eps_pred|^2: {eps_pred_norm**2}\n"
-                # statistics += f"|eps_pred_pseudo|^2: {eps_pred_pseudo_norm**2}\n"
-                # statistics += "=====================\n"
-
-                # statistics_file = os.path.join(debug_dir, "statistics.txt")
-                # with open(statistics_file, "a") as f:
-                #     f.write(statistics)
-
-                eps_pred = eps_pred_pseudo
+            # print_info("Rendering the image again to calculate pseudo noise...")
+            image = g(camera)
+            tmp_latent = sm.prior.encode_image_if_needed(image)
+            eps_pred_pseudo = sm.prior.get_eps(latent_noisy, tmp_latent, t_curr)
+            eps_pred = eps_pred_pseudo
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
