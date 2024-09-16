@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Any, Optional
 
 import torch
-import torch.nn as nn 
+import torch.nn as nn
 import torch.nn.functional as F
 from utils.config_utils import load_config
 import shared_modules as sm
@@ -26,7 +26,22 @@ from utils.print_utils import print_with_box, print_info, print_warning
 from utils.image_utils import save_tensor
 
 from tqdm import tqdm, trange
-
+from torch.nn import functional as F
+def downscale_min(tensor, scale_factor):
+    # Get the original dimensions
+    B, H, W = tensor.shape  # assuming the tensor has shape (B, H, W)
+    
+    # Ensure that the height and width are divisible by the scale factor
+    assert H % scale_factor == 0 and W % scale_factor == 0, "Dimensions must be divisible by scale factor"
+    
+    # Reshape the tensor to group nearby pixels
+    tensor_reshaped = tensor.view(B, H // scale_factor, scale_factor, W // scale_factor, scale_factor)
+    
+    # Apply the min operation along the height and width axes
+    tensor_min = torch.min(tensor_reshaped, dim=4)[0]  # min along width blocks
+    tensor_min = torch.min(tensor_min, dim=2)[0]  # min along height blocks
+    
+    return tensor_min
 
 # PSNR
 def psnr(x, y):
@@ -84,7 +99,7 @@ class GeneralTrainer(ABC):
             self.eval_dir = os.path.join(self.cfg.root_dir, "eval")
         else:
             self.eval_dir = self.cfg.eval_dir
-        
+
         os.makedirs(self.cfg.root_dir, exist_ok=True)
         os.makedirs(f"{self.cfg.root_dir}/debug", exist_ok=True)
         os.makedirs(self.eval_dir, exist_ok=True)
@@ -118,9 +133,9 @@ class GeneralTrainer(ABC):
 
             # 3. Sample time
             t_curr = sm.time_sampler(step)
-            if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
+            if self.cfg.use_ode and step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                 # print_warning("Doubling the time for the edge-preserving mode...")
-                t_curr = int(2.0 * t_curr)
+                t_curr = min(int(2.0 * t_curr), 999)
 
             # 4. Sample noise
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
@@ -133,7 +148,23 @@ class GeneralTrainer(ABC):
 
             if self.cfg.use_ode:
                 if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
-                    # print_warning("Edge-preserving ODE for the last 3 steps...")
+                    print_warning("Edge-preserving ODE...")
+                    # _, _, H, W = sm.prior.latent_res
+                    # cosmap = sm.model.render(camera, bsdf="cos")["image"][:, 0]
+                    # cosmap = torch.max(cosmap - 0.4, torch.zeros_like(cosmap)) * 1.67
+                    # cosmap = F.interpolate(
+                    #     cosmap.unsqueeze(1),
+                    #     (H, W),
+                    #     mode="bilinear",
+                    #     align_corners=False,
+                    # ).squeeze(1)
+                    
+                    render_pkg = sm.model.render(camera, bsdf="cos")
+                    cosmap = render_pkg["image"][:, 0]
+                    alpha = render_pkg["alpha"][:, 0]
+                    cosmap[alpha == 0] = 1.0
+                    cosmap = downscale_min(cosmap, 8)
+
                     gt_tweedie = sm.prior.ddim_loop(
                         camera,
                         latent_noisy,
@@ -142,6 +173,7 @@ class GeneralTrainer(ABC):
                         num_steps=self.cfg.ode_steps,
                         edge_preserve=True,
                         clean=latent,
+                        soft_mask=cosmap,
                     )
                 else:
                     gt_tweedie = sm.prior.ddim_loop(
@@ -205,7 +237,7 @@ class GeneralTrainer(ABC):
             final_loss = total_loss.item()
 
         # 8. Calculate the pseudo noises
-        eps_pred = None 
+        eps_pred = None
         with torch.no_grad():
             # print_info("Rendering the image again to calculate pseudo noise...")
             image = g(camera)

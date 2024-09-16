@@ -15,14 +15,14 @@ def normalize_grid(grid, height, width):
     return grid
 
 
-def remap(image, grid, mode="bilinear"):
+def remap(image, grid, mode="bilinear", padding_mode="border"):
     """
     Remap an image based on provided coordinate maps using grid_sample.
     """
     B, C, H, W = image.shape
     grid = normalize_grid(grid, H, W).unsqueeze(0)
     remapped_image = F.grid_sample(
-        image, grid, mode=mode, padding_mode="border", align_corners=True
+        image, grid, mode=mode, padding_mode=padding_mode, align_corners=True
     )
     return remapped_image
 
@@ -36,6 +36,44 @@ def remap_int(tensor, grid, indexing="xy"):
     h_idx = h_idx.clamp(0, H - 1)
     w_idx = w_idx.clamp(0, W - 1)
     return tensor[..., h_idx, w_idx]
+
+def remap_max(tensor, grid, indexing="xy"):
+    """
+    Remap an image based on provided coordinate maps using max pooling between neighbors.
+    """
+    H, W = tensor.shape[-2:]
+    if indexing == "xy":
+        grid = grid.flip(-1)
+    h_idx = grid[:, :, 0].long()
+    w_idx = grid[:, :, 1].long()
+    h_idx = h_idx.clamp(0, H - 2)
+    w_idx = w_idx.clamp(0, W - 2)
+
+    tensor1 = tensor[..., h_idx, w_idx]
+    tensor2 = tensor[..., h_idx + 1, w_idx]
+    tensor3 = tensor[..., h_idx, w_idx + 1]
+    tensor4 = tensor[..., h_idx + 1, w_idx + 1]
+    tensors = torch.stack([tensor1, tensor2, tensor3, tensor4], dim=-1)
+    return torch.max(tensors, dim=-1).values
+
+def remap_min(tensor, grid, indexing="xy"):
+    """
+    Remap an image based on provided coordinate maps using min pooling between neighbors.
+    """
+    H, W = tensor.shape[-2:]
+    if indexing == "xy":
+        grid = grid.flip(-1)
+    h_idx = grid[:, :, 0].long()
+    w_idx = grid[:, :, 1].long()
+    h_idx = h_idx.clamp(0, H - 2)
+    w_idx = w_idx.clamp(0, W - 2)
+
+    tensor1 = tensor[..., h_idx, w_idx]
+    tensor2 = tensor[..., h_idx + 1, w_idx]
+    tensor3 = tensor[..., h_idx, w_idx + 1]
+    tensor4 = tensor[..., h_idx + 1, w_idx + 1]
+    tensors = torch.stack([tensor1, tensor2, tensor3, tensor4], dim=-1)
+    return torch.min(tensors, dim=-1).values
 
 
 def xyz_to_lonlat(xyz):

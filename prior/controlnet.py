@@ -122,6 +122,8 @@ class ControlNetPrior(Prior):
     def predict(self, camera, x_t, timestep, guidance_scale=None, return_dict=False, text_prompt=None, negative_prompt=None):
         # Predict the noise using the UNet model
         x_t = self.encode_image_if_needed(x_t)
+        # cast if needed
+        x_t = x_t.to(self.dtype)
 
         self.prepare_cond(camera, text_prompt, negative_prompt)
         guidance_scale = (

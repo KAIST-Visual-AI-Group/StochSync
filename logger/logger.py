@@ -120,7 +120,7 @@ class SimpleLogger(BaseLogger):
         root_dir: str = "./results/default"
         log_interval: int = 100
         prefix: str = ""
-        use_encoder_decoder: bool = True
+        use_encoder_decoder: bool = False
 
     def __init__(self, cfg) -> None:
         super().__init__()

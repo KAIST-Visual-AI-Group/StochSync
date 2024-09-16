@@ -31,16 +31,19 @@ class CameraDataset(InfiniteDataset):
         self.cfg = self.Config(**cfg)
         assert len(self.cfg.dists) == len(self.cfg.elevs) == len(self.cfg.azims), "Length of dists, elevs, and azims must be the same"
 
-    def params_to_cameras(self, dists, elevs, azims):
+    def params_to_cameras(self, dists, elevs, azims, height=None, width=None, fov=None):
+        height = self.cfg.height if height is None else height
+        width = self.cfg.width if width is None else width
+        fov = self.cfg.fov if fov is None else fov
         cameras = []
         for dist, elev, azim in zip(dists, elevs, azims):
             camera = generate_camera(
                 dist,
                 elev,
                 azim,
-                self.cfg.fov,
-                self.cfg.height,
-                self.cfg.width,
+                fov,
+                height,
+                width,
                 self.cfg.up_vec,
                 self.cfg.convention,
                 device=self.cfg.device,
@@ -94,16 +97,16 @@ class RandomMVCameraDataset(CameraDataset):
         self.cfg = self.Config(**cfg)
 
     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
-        dists = []
-        elevs = []
-        azims = []
+        dists = np.random.uniform(*self.cfg.dist_range, self.cfg.batch_size)
+        
+        #PDF proportional to cos(elev)
+        u = np.random.uniform(0, 1, self.cfg.batch_size)
+        sina = np.sin(np.radians(self.cfg.elev_range[0]))
+        sinb = np.sin(np.radians(self.cfg.elev_range[1]))
+        elevs = np.degrees(np.arcsin((sinb - sina) * u + sina))
+        
         interval = 360 / self.cfg.batch_size
-
-        dist = np.random.uniform(*self.cfg.dist_range)
-        elev = np.random.uniform(*self.cfg.elev_range)
         azim = np.random.uniform(*self.cfg.azim_range)
-        dists = dists + [dist] * self.cfg.batch_size
-        elevs = elevs + [elev] * self.cfg.batch_size
         azims = [(azim + i * interval) % 360 for i in range(self.cfg.batch_size)]
             
         return self.params_to_cameras(dists, elevs, azims)

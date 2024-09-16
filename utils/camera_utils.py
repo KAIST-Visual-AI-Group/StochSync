@@ -161,6 +161,7 @@ def generate_camera(
         "fov": fov,
         "azimuth": [azim],
         "elevation": [elev],
+        "dist": [dist],
     }
 
 
@@ -182,6 +183,7 @@ def merge_camera(cam_list):
     fov = cam_list[0]["fov"]
     azimuth = [azim for cam in cam_list for azim in cam["azimuth"]]
     elevation = [elev for cam in cam_list for elev in cam["elevation"]]
+    dist = [d for cam in cam_list for d in cam["dist"]]
 
     assert len(azimuth) == len(elevation) == len(c2w) == len(K), "Invalid camera list."
 
@@ -194,6 +196,7 @@ def merge_camera(cam_list):
         "fov": fov,
         "azimuth": azimuth,
         "elevation": elevation,
+        "dist": dist,
     }
 
 def index_camera(cam_list, idx):
@@ -208,4 +211,5 @@ def index_camera(cam_list, idx):
         "fov": cam_list["fov"],
         "azimuth": [cam_list["azimuth"][idx]],
         "elevation": [cam_list["elevation"][idx]],
+        "dist": [cam_list["dist"][idx]],
     }

@@ -14,6 +14,7 @@ from diffusers import (
 
 from utils.extra_utils import weak_lru
 from utils.print_utils import print_info, print_warning
+from utils.image_utils import save_tensor
 
 
 # NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
@@ -71,6 +72,10 @@ class Prior(ABC):
     @property
     def device(self):
         return self.pipeline.device
+    
+    @property
+    def dtype(self):
+        return self.pipeline.vae.dtype
 
     def encode_image(self, img_tensor):
         assert self.pipeline is not None, "Pipeline not initialized"
@@ -96,7 +101,7 @@ class Prior(ABC):
         x = (x / 2 + 0.5).clamp(0, 1)
         if flag:
             x = x.squeeze(0)
-        return x
+        return x.to(torch.float32)
 
     def encode_image_if_needed(self, img_tensor):
         if img_tensor.shape[-3] == 3:
@@ -174,6 +179,7 @@ class Prior(ABC):
         num_steps=30,
         edge_preserve=False,
         clean=None,
+        soft_mask=None,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):
@@ -222,11 +228,20 @@ class Prior(ABC):
         if edge_preserve:
             N = len(timesteps - 1)
             H, W = x_t.shape[-2:]
-            mask = torch.zeros(N, H, W, device=self.device)  # keeping mask
-            for i in range(N):
-                left = int((W/2) * (1 - i / N))
-                right = W - left
-                mask[i, :, left:right] = 1
+            # mask = torch.zeros(N, H, W, device=self.device)  # keeping mask
+            # for i in range(N):
+            #     left = int((W/2) * (1 - i / N))
+            #     right = W - left
+            #     mask[i, :, left:right] = 1
+            if soft_mask is not None:
+                mask = soft_mask
+            else:
+                x = torch.linspace(0, 1, 32)  # from 0 to 1 in 32 steps
+                x = torch.cat([x, torch.flip(x, dims=[0])])  # mirror it to go back to 0 (64 steps in total)
+                mask = x.repeat(64, 1).to(self.device)
+            # make sure that mask is of the same size as the image
+            if mask.dim() == 3:
+                mask = mask.unsqueeze(1)
             clean_eps = torch.randn_like(x_t)
 
         for i, (t_curr, t_next) in enumerate(zip(timesteps[:-1], timesteps[1:])):
@@ -250,7 +265,7 @@ class Prior(ABC):
                 x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps, eta=eta
             )
             if edge_preserve:
-                M = mask[i]
+                M = (mask >= (1 - i / N)).float()
                 x_t = x_t * M + self.get_noisy_sample(clean, clean_eps, t_next) * (1 - M)
 
         return x_t
