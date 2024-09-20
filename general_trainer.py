@@ -117,11 +117,20 @@ class GeneralTrainer(ABC):
                 os.system(f"cp {filename} {self.cfg.root_dir}/src/")
 
         sm.model.prepare_optimization()
+        self.prev_target = None
 
     def train_single_step(self, step: int, prev_eps=None) -> Any:
         def g(camera):
             r_pkg = sm.model.render(camera)
             bg = sm.background(camera)
+            # if self.prev_target is not None:
+            #     print_warning("Using the previous target as the background...")
+            #     bg = self.prev_target
+            #     with torch.no_grad():
+            #         if r_pkg["image"].shape[1] < bg.shape[1]:
+            #             bg = sm.prior.decode_latent(bg)
+            #         elif r_pkg["image"].shape[1] > bg.shape[1]:
+            #             bg = sm.prior.encode_image_if_needed(bg)
             return r_pkg["image"] + bg * (1 - r_pkg["alpha"])
 
         with torch.no_grad():
@@ -143,27 +152,20 @@ class GeneralTrainer(ABC):
             # 5. Perturb-recover to get the GT latent
             if step == 0:
                 latent_noisy = noise
+                t_curr = 999
             else:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
 
             if self.cfg.use_ode:
                 if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                     print_warning("Edge-preserving ODE...")
-                    # _, _, H, W = sm.prior.latent_res
-                    # cosmap = sm.model.render(camera, bsdf="cos")["image"][:, 0]
-                    # cosmap = torch.max(cosmap - 0.4, torch.zeros_like(cosmap)) * 1.67
-                    # cosmap = F.interpolate(
-                    #     cosmap.unsqueeze(1),
-                    #     (H, W),
-                    #     mode="bilinear",
-                    #     align_corners=False,
-                    # ).squeeze(1)
-                    
-                    render_pkg = sm.model.render(camera, bsdf="cos")
-                    cosmap = render_pkg["image"][:, 0]
-                    alpha = render_pkg["alpha"][:, 0]
-                    cosmap[alpha == 0] = 1.0
+                    # render_pkg = sm.model.render(camera, bsdf="cos")
+                    # cosmap = render_pkg["image"][:, 0]
+                    # alpha = render_pkg["alpha"][:, 0]
+                    # cosmap[alpha == 0] = 1.0
+                    cosmap = sm.model.get_diffusion_softmask(camera)
                     cosmap = downscale_min(cosmap, 8)
+                    save_tensor(cosmap, f"{self.cfg.root_dir}/debug/cosmap_{step}.png", save_type="cat_image", is_grayscale=True)
 
                     gt_tweedie = sm.prior.ddim_loop(
                         camera,
@@ -201,6 +203,7 @@ class GeneralTrainer(ABC):
                 target = gt_image
             else:
                 target = gt_tweedie
+        self.prev_target = target
 
         # 7. Optimize the rendering to match the target
         final_loss = 0.0
@@ -247,8 +250,8 @@ class GeneralTrainer(ABC):
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
-                images_for_log = sm.prior.decode_latent_if_needed(latent)
-                gt_images_for_log = sm.prior.decode_latent_if_needed(target)
+                images_for_log = latent
+                gt_images_for_log = gt_tweedie
                 sm.logger(
                     step, camera, torch.cat([images_for_log, gt_images_for_log], dim=0)
                 )

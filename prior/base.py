@@ -85,10 +85,16 @@ class Prior(ABC):
             flag = True
             img_tensor = img_tensor.unsqueeze(0)
         x = (2 * img_tensor - 1).to(vae.dtype)
-        x = vae.encode(x).latent_dist.sample() * vae.config.scaling_factor
+        
+        y = []
+        for i in range(len(x)):
+            y.append(vae.encode(x[i:i+1]).latent_dist.sample() * vae.config.scaling_factor)
+        
+        y = torch.cat(y, dim=0)
+        # x = vae.encode(x).latent_dist.sample() * vae.config.scaling_factor
         if flag:
-            x = x.squeeze(0)
-        return x
+            y = y.squeeze(0)
+        return y
 
     def decode_latent(self, latent):
         assert self.pipeline is not None, "Pipeline not initialized"
@@ -97,11 +103,35 @@ class Prior(ABC):
         if latent.dim() == 3:
             flag = True
             latent = latent.unsqueeze(0)
-        x = vae.decode(latent / vae.config.scaling_factor).sample
+        
+        latent = latent.to(vae.dtype)
+        
+        x = []
+        for i in range(len(latent)):
+            x.append(vae.decode(latent[i:i+1] / vae.config.scaling_factor).sample)
+        x = torch.cat(x, dim=0)
+        
         x = (x / 2 + 0.5).clamp(0, 1)
         if flag:
             x = x.squeeze(0)
         return x.to(torch.float32)
+    
+    def decode_latent_fast(self, latent):
+        self.decode_mtx = torch.tensor(
+            [
+                #   R       G       B
+                [0.298, 0.207, 0.208],  # L1
+                [0.187, 0.286, 0.173],  # L2
+                [-0.158, 0.189, 0.264],  # L3
+                [-0.184, -0.271, -0.473],  # L4
+            ]
+        ).cuda()
+
+        self.post_processor = lambda x: (
+            (0.5 * torch.einsum("bchw,cd->bdhw", x, self.decode_mtx) + 0.5).clamp(0, 1)
+        )
+        
+        return self.post_processor(latent)
 
     def encode_image_if_needed(self, img_tensor):
         if img_tensor.shape[-3] == 3:
@@ -111,6 +141,11 @@ class Prior(ABC):
     def decode_latent_if_needed(self, latent):
         if latent.shape[-3] == 4:
             return self.decode_latent(latent)
+        return latent
+    
+    def decode_latent_fast_if_needed(self, latent):
+        if latent.shape[-3] == 4:
+            return self.decode_latent_fast(latent)
         return latent
 
     def add_noise(self, x, t, noise=None):
@@ -228,23 +263,19 @@ class Prior(ABC):
         if edge_preserve:
             N = len(timesteps - 1)
             H, W = x_t.shape[-2:]
-            # mask = torch.zeros(N, H, W, device=self.device)  # keeping mask
-            # for i in range(N):
-            #     left = int((W/2) * (1 - i / N))
-            #     right = W - left
-            #     mask[i, :, left:right] = 1
             if soft_mask is not None:
                 mask = soft_mask
             else:
-                x = torch.linspace(0, 1, 32)  # from 0 to 1 in 32 steps
+                x = torch.linspace(0, 1, W//2)  # from 0 to 1 in 32 steps
                 x = torch.cat([x, torch.flip(x, dims=[0])])  # mirror it to go back to 0 (64 steps in total)
-                mask = x.repeat(64, 1).to(self.device)
+                mask = x.repeat(H, 1).to(self.device)
             # make sure that mask is of the same size as the image
             if mask.dim() == 3:
                 mask = mask.unsqueeze(1)
             clean_eps = torch.randn_like(x_t)
 
         for i, (t_curr, t_next) in enumerate(zip(timesteps[:-1], timesteps[1:])):
+            # print(f"DDIM step {i+1}/{len(timesteps)-1}")
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )

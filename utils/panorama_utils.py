@@ -14,13 +14,26 @@ def normalize_grid(grid, height, width):
     grid[..., 1] = 2.0 * grid[..., 1] / (height - 1) - 1.0
     return grid
 
+def gather_2d(tensor, grid):
+    # tensor: BCHW -> BCX
+    # grid: Bhw2 -> BHW -> B1
+    # output: BChw
+    B, C, H, W = tensor.shape
+    b, h, w, _ = grid.shape
+    assert b == B, f"Batch size mismatch: {b} != {B}"
+
+    tensor = tensor.contiguous()
+    lin_idx = (grid[..., 0] * tensor.shape[-1] + grid[..., 1]).view(B, 1, -1).expand(-1, C, -1)
+    tensor = tensor.view(B, C, tensor.shape[-2] * tensor.shape[-1])
+    return tensor.gather(-1, lin_idx).view(B, C, h, w)
 
 def remap(image, grid, mode="bilinear", padding_mode="border"):
     """
     Remap an image based on provided coordinate maps using grid_sample.
     """
     B, C, H, W = image.shape
-    grid = normalize_grid(grid, H, W).unsqueeze(0)
+    grid = normalize_grid(grid, H, W)
+    grid = grid.unsqueeze(0) if grid.dim() == 3 else grid
     remapped_image = F.grid_sample(
         image, grid, mode=mode, padding_mode=padding_mode, align_corners=True
     )
@@ -31,11 +44,12 @@ def remap_int(tensor, grid, indexing="xy"):
     H, W = tensor.shape[-2:]
     if indexing == "xy":
         grid = grid.flip(-1)
-    h_idx = grid[:, :, 0].long()
-    w_idx = grid[:, :, 1].long()
-    h_idx = h_idx.clamp(0, H - 1)
-    w_idx = w_idx.clamp(0, W - 1)
-    return tensor[..., h_idx, w_idx]
+
+    grid = grid.unsqueeze(0) if grid.dim() == 3 else grid
+    grid = grid.long()
+    grid[..., 0] = grid[..., 0].clamp(0, H - 2)
+    grid[..., 1] = grid[..., 1].clamp(0, W - 2)
+    return gather_2d(tensor, grid)
 
 def remap_max(tensor, grid, indexing="xy"):
     """
@@ -44,15 +58,16 @@ def remap_max(tensor, grid, indexing="xy"):
     H, W = tensor.shape[-2:]
     if indexing == "xy":
         grid = grid.flip(-1)
-    h_idx = grid[:, :, 0].long()
-    w_idx = grid[:, :, 1].long()
-    h_idx = h_idx.clamp(0, H - 2)
-    w_idx = w_idx.clamp(0, W - 2)
 
-    tensor1 = tensor[..., h_idx, w_idx]
-    tensor2 = tensor[..., h_idx + 1, w_idx]
-    tensor3 = tensor[..., h_idx, w_idx + 1]
-    tensor4 = tensor[..., h_idx + 1, w_idx + 1]
+    grid = grid.unsqueeze(0) if grid.dim() == 3 else grid
+    grid = grid.long()
+    grid[..., 0] = grid[..., 0].clamp(0, H - 2)
+    grid[..., 1] = grid[..., 1].clamp(0, W - 2)
+
+    tensor1 = gather_2d(tensor, grid)
+    tensor2 = gather_2d(tensor, grid + torch.tensor([0, 1], device=grid.device))
+    tensor3 = gather_2d(tensor, grid + torch.tensor([1, 0], device=grid.device))
+    tensor4 = gather_2d(tensor, grid + torch.tensor([1, 1], device=grid.device))
     tensors = torch.stack([tensor1, tensor2, tensor3, tensor4], dim=-1)
     return torch.max(tensors, dim=-1).values
 
@@ -63,15 +78,16 @@ def remap_min(tensor, grid, indexing="xy"):
     H, W = tensor.shape[-2:]
     if indexing == "xy":
         grid = grid.flip(-1)
-    h_idx = grid[:, :, 0].long()
-    w_idx = grid[:, :, 1].long()
-    h_idx = h_idx.clamp(0, H - 2)
-    w_idx = w_idx.clamp(0, W - 2)
 
-    tensor1 = tensor[..., h_idx, w_idx]
-    tensor2 = tensor[..., h_idx + 1, w_idx]
-    tensor3 = tensor[..., h_idx, w_idx + 1]
-    tensor4 = tensor[..., h_idx + 1, w_idx + 1]
+    grid = grid.unsqueeze(0) if grid.dim() == 3 else grid
+    grid = grid.long()
+    grid[..., 0] = grid[..., 0].clamp(0, H - 2)
+    grid[..., 1] = grid[..., 1].clamp(0, W - 2)
+
+    tensor1 = gather_2d(tensor, grid)
+    tensor2 = gather_2d(tensor, grid + torch.tensor([0, 1], device=grid.device))
+    tensor3 = gather_2d(tensor, grid + torch.tensor([1, 0], device=grid.device))
+    tensor4 = gather_2d(tensor, grid + torch.tensor([1, 1], device=grid.device))
     tensors = torch.stack([tensor1, tensor2, tensor3, tensor4], dim=-1)
     return torch.min(tensors, dim=-1).values
 

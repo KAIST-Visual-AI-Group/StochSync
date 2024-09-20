@@ -1,4 +1,4 @@
-from .camera_dataset import CameraDataset, RandomCameraDataset, RandomMVCameraDataset, SeqTurnaroundCameraDataset, FixMVCameraDataset, AlternateMVCameraDataset
+from .camera_dataset import CameraDataset, RandomCameraDataset, RandomMVCameraDataset, SeqTurnaroundCameraDataset, FixMVCameraDataset, AlternateMVCameraDataset, AlternateCameraDataset
 from .image_dataset import ImageDataset, RotateImageDataset, RotateBatchImageDataset, ImageWideDataset, ImageWideRandomDataset, AlternateImageWideDataset
 
 DATASETs = {
@@ -14,4 +14,5 @@ DATASETs = {
     "fix_mv": FixMVCameraDataset,
     "alternate_mv": AlternateMVCameraDataset,
     "alternate_image_wide": AlternateImageWideDataset,
+    "alternate_camera": AlternateCameraDataset,
 }

@@ -46,10 +46,10 @@ class ImageWideModel(ImageModel):
                 self.cfg.initialization,
             )
         )
-        # self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
+        self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
         # self.optimizer = torch.optim.SGD([self.image], lr=self.cfg.learning_rate)
         # momentum optimizer
-        self.optimizer = torch.optim.SGD([self.image], lr=self.cfg.learning_rate, momentum=0.9)
+        # self.optimizer = torch.optim.SGD([self.image], lr=self.cfg.learning_rate, momentum=0.9)
 
     def render(self, camera) -> torch.Tensor:
         num_cameras = camera["num"]

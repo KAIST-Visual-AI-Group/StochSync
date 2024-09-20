@@ -96,9 +96,15 @@ def write_obj(file_path, v, f, vt=None, vn=None, c=None):
             file.write(f"f {face_str}\n")
 
 def convert_to_obj(src, dest):
+    flag = False
     ms = pymeshlab.MeshSet()
     if src.endswith(".glb") or src.endswith(".gltf"):
-        ms.load_new_mesh(src, load_in_a_single_layer=True)
+        ms.load_new_mesh(src, load_in_a_single_layer=False)
+        if len(ms) > 1:
+            flag = True
+            del ms
+            ms = pymeshlab.MeshSet()
+            ms.load_new_mesh(src, load_in_a_single_layer=True)
     else:
         ms.load_new_mesh(src)
     
@@ -107,6 +113,7 @@ def convert_to_obj(src, dest):
     except:
         pass
     ms.save_current_mesh(dest, save_textures=False, save_wedge_texcoord=False)
+    return flag
 
 # simplify using pymeshlab
 def simplify_mesh(v, f, target_face_num=30000):
@@ -124,7 +131,6 @@ def simplify_mesh(v, f, target_face_num=30000):
     
     face_num = len(ms.current_mesh().face_matrix())
     if face_num > target_face_num:
-        print(f"Simplifying mesh from {face_num} to {target_face_num} faces")
         ms.meshing_decimation_quadric_edge_collapse(
             targetfacenum=target_face_num, autoclean=True
         )

@@ -1,4 +1,6 @@
 from math import log, pi
+import numpy as np
+from scipy.ndimage import distance_transform_edt
 from dataclasses import fields
 import importlib
 import torch
@@ -253,3 +255,15 @@ if __name__ == "__main__":
     with redirect_stdout_to_tqdm():
         for i in redirected_trange(2, desc="outer", leave=False, position=0):
             dummy_loop()
+
+
+def calculate_distance_to_zero_level(mask_tensor):
+    mask_np = mask_tensor.cpu().numpy().astype(np.bool_)
+    distance_np = np.zeros_like(mask_np, dtype=np.float32)
+    for i in range(mask_np.shape[0]):
+        distance_np[i] = distance_transform_edt(~mask_np[i])
+    distance_tensor = torch.from_numpy(distance_np).float()
+
+    distance_tensor = distance_tensor.to(mask_tensor.device)
+    
+    return distance_tensor

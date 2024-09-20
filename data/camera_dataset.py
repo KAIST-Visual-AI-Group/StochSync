@@ -210,3 +210,31 @@ class AlternateMVCameraDataset(CameraDataset):
             elevs = elevs[::2]
         self.flag = not self.flag
         return self.params_to_cameras(dists, elevs, azims)
+    
+
+class AlternateCameraDataset(CameraDataset):
+    @ignore_kwargs
+    @dataclass
+    class Config(CameraDataset.Config):
+        batch_size: int = 1
+
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+        self.flag = False
+
+    def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
+        dists = self.cfg.dists
+        elevs = self.cfg.elevs
+        azims = self.cfg.azims
+
+        if self.flag:
+            azims = azims[1::2]
+            dists = dists[1::2]
+            elevs = elevs[1::2]
+        else:
+            azims = azims[::2]
+            dists = dists[::2]
+            elevs = elevs[::2]
+        self.flag = not self.flag
+        return self.params_to_cameras(dists, elevs, azims)

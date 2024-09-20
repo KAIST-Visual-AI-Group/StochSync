@@ -46,6 +46,7 @@ def shade(
     bsdf,
     gb_z=None,
     rast_out_s=None,
+    filter_mode="linear-mipmap-linear",
 ):
 
     ################################################################################
@@ -66,8 +67,9 @@ def shade(
             gb_texc
             + torch.normal(mean=0, std=0.005, size=gb_texc.shape, device="cuda"),
             gb_texc_deriv,
+            filter_mode=filter_mode,
         )
-        kd = material["kd"].sample(gb_texc, gb_texc_deriv)
+        kd = material["kd"].sample(gb_texc, gb_texc_deriv, filter_mode=filter_mode)
         if "ks" in material:
             ks = material["ks"].sample(gb_texc, gb_texc_deriv)[..., 0:3]  # skip alpha
         if "normal" in material:
@@ -162,7 +164,17 @@ def shade(
 #  - Single material
 # ==============================================================================================
 def render_layer(
-    rast, rast_deriv, mesh, view_pos, lgt, resolution, spp, msaa, bsdf, z_clip=None
+    rast,
+    rast_deriv,
+    mesh,
+    view_pos,
+    lgt,
+    resolution,
+    spp,
+    msaa,
+    bsdf,
+    z_clip=None,
+    filter_mode="linear-mipmap-linear",
 ):
 
     full_res = [resolution[0] * spp, resolution[1] * spp]
@@ -241,6 +253,7 @@ def render_layer(
         bsdf,
         gb_z=gb_z,
         rast_out_s=rast_out_s,
+        filter_mode=filter_mode,
     )
 
     ################################################################################
@@ -279,6 +292,8 @@ def render_mesh(
     background=None,
     bsdf=None,
     channels=3,
+    filter_mode="linear-mipmap-linear",
+    disable_aa=False,
 ):
 
     def prepare_input_vector(x):
@@ -328,7 +343,7 @@ def render_mesh(
     v_pos_clip = ru.xfm_points(
         mesh.v_pos[None, ...], mtx_in
     )  # just the mvp transform, [1, N, 3]
-    z_clip = v_pos_clip[..., 2:3] / v_pos_clip[..., 3:4]  # z_clip = z_clip / w_clip
+    z_clip = v_pos_clip[..., 2:3]
 
     # Render all layers front-to-back
     layers = []
@@ -348,6 +363,7 @@ def render_mesh(
                         msaa,
                         bsdf,
                         z_clip=z_clip,
+                        filter_mode=filter_mode,
                     ),
                     rast,
                 )
@@ -375,13 +391,12 @@ def render_mesh(
     # Composite layers front-to-back
     out_buffers = {}
     for key in layers[0][0].keys():
-        if key == "shaded":
-            if bsdf == "faceid" or bsdf == "depth" or bsdf == "cos":
-                accum = composite_buffer(
-                    key, layers, torch.zeros_like(layers[0][0][key]), False
-                )
-            else:
-                accum = composite_buffer(key, layers, background, True)
+        if bsdf == "faceid" or bsdf == "depth" or bsdf == "cos" or disable_aa:
+            accum = composite_buffer(
+                key, layers, torch.zeros_like(layers[0][0][key]), False
+            )
+        elif key == "shaded":
+            accum = composite_buffer(key, layers, background, True)
         elif key == "normal":
             accum = composite_buffer(
                 key, layers, torch.zeros_like(layers[0][0][key]), True

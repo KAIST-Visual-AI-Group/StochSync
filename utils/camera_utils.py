@@ -213,3 +213,18 @@ def index_camera(cam_list, idx):
         "elevation": [cam_list["elevation"][idx]],
         "dist": [cam_list["dist"][idx]],
     }
+
+def camera_hash(cam):
+    azimuth_int = [int(azim * 100) for azim in cam["azimuth"]]
+    elevation_int = [int(elev * 100) for elev in cam["elevation"]]
+    dist_int = [int(d * 100) for d in cam["dist"]]
+    return hash(
+        (
+            cam["width"],
+            cam["height"],
+            cam["fov"],
+            tuple(azimuth_int),
+            tuple(elevation_int),
+            tuple(dist_int),
+        )
+    )

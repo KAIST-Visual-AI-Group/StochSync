@@ -26,6 +26,7 @@ mesh_final_exp*/
 *.mtl
 *.mp4
 *.gif
+*.pt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
