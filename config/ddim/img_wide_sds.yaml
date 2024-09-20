@@ -1,31 +1,31 @@
 root_dir: "./results/img_wide"
-text_prompt: "Skyline of New York City"
+text_prompt: "A DSLR photo of Singapore skyline at night"
 tag: wide_image
-max_steps: 300
+max_steps: 1000
 
-dataset: image_wide
+dataset: image_wide 
 height: 64
 width: 64
+xscale: 2
 yscale: 1
-xscale: 4
-batch_size: 15
+batch_size: 9
 
 model: image_wide
-learning_rate: 1.5
+learning_rate: 0.05
 channels: 4
 disable_debug: False  # True to make it faster
 
 prior: sd
-guidance_scale: 7.5
+guidance_scale: 30
 
 background: solid
 rgb: [0, 0, 0, 0]
 
-time_sampler: linear_annealing
+time_sampler: sds
 noise_sampler: sds
 
 logger: simple
-log_interval: 10
+log_interval: 30
 
 recon_steps: 1
 recon_type: latent

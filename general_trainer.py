@@ -100,6 +100,17 @@ class GeneralTrainer(ABC):
             ]:
                 filename = get_class_filename(module)
                 os.system(f"cp {filename} {self.cfg.root_dir}/src/")
+            
+            from prior.base import Prior
+            filename = get_class_filename(Prior)
+            os.system(f"cp {filename} {self.cfg.root_dir}/src/base_prior.py")
+            
+            filename = get_class_filename(sm.time_sampler)
+            os.system(f"cp {filename} {self.cfg.root_dir}/src/time_sampler.py")
+            
+            filename = get_class_filename(sm.noise_sampler)
+            os.system(f"cp {filename} {self.cfg.root_dir}/src/noise_sampler.py")
+            
 
         sm.model.prepare_optimization()
 

@@ -137,8 +137,12 @@ class Prior(ABC):
         alpha = self.pipeline.scheduler.alphas_cumprod[t]
         alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
         if eta > 0:
-            assert t_next > t, "DDPM is not designed for inversion"
-            sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
+            raise NotImplementedError("Eta > 0 not implemented yet.")
+            if t_next > t:
+                # sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
+                sigma = eta * self.pipeline.scheduler._get_variance(t_next, t) ** (0.5)
+            else:
+                sigma = eta * self.pipeline.scheduler._get_variance(t, t_next) ** (0.5)
         else:
             sigma = 0
 
@@ -174,6 +178,7 @@ class Prior(ABC):
         num_steps=30,
         edge_preserve=False,
         clean=None,
+        sdi_inv=False,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):
@@ -252,5 +257,12 @@ class Prior(ABC):
             if edge_preserve:
                 M = mask[i]
                 x_t = x_t * M + self.get_noisy_sample(clean, clean_eps, t_next) * (1 - M)
+                
+            if sdi_inv:
+                assert eta == 0, "SDI eta must be 0. It uses inversion eta to only add noise to noisy sample."
+                assert t_next > t_curr, f"t_next {t_next} must be greater than t_curr {t_curr} for SDI"
+                variance = self.pipeline.scheduler._get_variance(t_next, t_curr) ** (0.5)
+                x_t += 0.3 * torch.randn_like(x_t) * variance
+                # print_info(f"sdi_inv with randn noise {variance}")
 
         return x_t

@@ -57,8 +57,11 @@ class SDISampler(NoiseSampler):
         tau = randint(0, 33)
         t_tau = min(t + tau, 999)
 
-        # ts_prev = len(sm.prior.scheduler.timesteps)
-        # sm.prior.scheduler.set_timesteps(10)
+        # ========================================
+        sdi_inv = False
+        # Adding random noise at each step
+        # ========================================
+        
         noisy_sample = sm.prior.ddim_loop(
             camera,
             images,
@@ -67,14 +70,11 @@ class SDISampler(NoiseSampler):
             guidance_scale=self.cfg.inversion_guidance_scale,
             mode="cfg",
             num_steps=10,
+            sdi_inv=sdi_inv, 
         )
-        # print("noisy_sample", torch.isnan(noisy_sample).sum().item())
-        # sm.prior.scheduler.set_timesteps(ts_prev)
 
         alpha_prod_t = sm.prior.scheduler.alphas_cumprod[t_tau]
         inverted_eps = sm.prior.get_eps(noisy_sample, images, t_tau)
-        # print("inverted_eps", torch.isnan(inverted_eps).sum().item())
-
         def fixed_point_loss(img, eps, t):
             data_dtype = img.dtype
             model_dtype = sm.prior.dtype
@@ -97,9 +97,12 @@ class SDISampler(NoiseSampler):
                 opt.zero_grad()
             inverted_eps = inverted_eps.detach().to(sm.prior.dtype)
 
-        # h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
-        # return inverted_eps + h
-        return inverted_eps
+        if sdi_inv:
+            return inverted_eps
+        
+        h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
+        return inverted_eps + h
+        
 
 
 class DDIMSampler(NoiseSampler):

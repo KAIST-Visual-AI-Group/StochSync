@@ -155,9 +155,9 @@ class ImageModel(BaseModel):
         self.optimizer.step()
         self.optimizer.zero_grad()
         if hasattr(self, "scheduler"):
-            last_lr = self.scheduler.get_lr()
+            last_lr = self.scheduler.get_last_lr()
             self.scheduler.step()
-            print_info(f"Using learning scheduler at step {step}: {last_lr} -> {self.scheduler.get_lr()}")
+            print_info(f"Using learning scheduler at step {step}: {last_lr} -> {self.scheduler.get_last_lr()}")
 
     def closed_form_optimize(self, step, camera, target):
         if self.image.shape[0] == 3:
@@ -180,3 +180,7 @@ class ImageModel(BaseModel):
             return recon_loss
         elif image.shape[1] == 4:
             return torch.tensor(0.0, device=self.cfg.device)
+
+    @torch.no_grad()
+    def render_eval(self, path) -> torch.Tensor:
+        pass 

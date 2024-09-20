@@ -9,15 +9,15 @@ import torch
 from torch.autograd import Function
 from torch.cuda.amp import custom_bwd, custom_fwd
 
-try:
-    import tinycudann as tcnn
-except ImportError as e:
-    print(
-        f"Error: {e}! "
-        "Please install tinycudann by: "
-        "pip install git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch"
-    )
-    exit()
+# try:
+#     import tinycudann as tcnn
+# except ImportError as e:
+#     print(
+#         f"Error: {e}! "
+#         "Please install tinycudann by: "
+#         "pip install git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch"
+#     )
+#     exit()
 
 
 class _TruncExp(Function):  # pylint: disable=abstract-method

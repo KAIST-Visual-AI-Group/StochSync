@@ -51,7 +51,6 @@ class PanoramaModel(ImageModel):
         self.cfg = self.Config(**cfg)
         self.image = None
         self.optimizer = None
-        self.scheduler = None 
 
     def prepare_optimization(self) -> None:
         self.image = torch.nn.Parameter(
@@ -70,8 +69,8 @@ class PanoramaModel(ImageModel):
             self.preserve_mask = self.image.norm(dim=0, keepdim=True) > 1e-6
             self.preserve_mask = self.preserve_mask.expand_as(self.image)
             print(self.preserve_mask.sum())
-        # self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
-        self.optimizer = torch.optim.AdamW([self.image], lr=self.cfg.learning_rate, weight_decay=0)
+        self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
+        # self.optimizer = torch.optim.AdamW([self.image], lr=self.cfg.learning_rate, weight_decay=0)
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, 100, int(self.cfg.max_steps*1.5))
         
 
