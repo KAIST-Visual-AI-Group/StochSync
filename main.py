@@ -3,6 +3,7 @@ import argparse
 from omegaconf import OmegaConf
 from datetime import datetime
 from time import time
+import glob 
 
 import torch
 
@@ -43,9 +44,13 @@ def main():
     strnow = now.strftime("%Y%m%d_%H%M%S")
     
     cfg.root_dir = os.path.join(cfg.root_dir.replace(" ", "_"), cfg.tag)
+    
     if os.path.exists(os.path.join(cfg.root_dir, "_output")):
-        print(f"{os.path.join(cfg.root_dir, '_output')} already exists. Exiting.")
-        exit(0)
+        eval_dir = os.path.join(cfg.root_dir, "eval")
+        n_eval = len(glob.glob(f"{eval_dir}/*.png"))    
+        if n_eval == 10:
+            print(f"{os.path.join(cfg.root_dir, '_output')} already exists. Exiting.")
+            exit(0)
 
     print_with_box(
         f"Config loaded from {args.config} with the following content:\n{OmegaConf.to_yaml(cfg)}",

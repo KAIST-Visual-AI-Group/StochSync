@@ -90,7 +90,7 @@ class PanoramaModel(ImageModel):
             self.gt_image = Image.open(self.cfg.gt_image).convert("RGB")
             self.gt_image = pil_to_torch(self.gt_image).to(self.image)
         
-        self.optimizer = torch.optim.AdamW([self.image], lr=self.cfg.learning_rate, weight_decay=0)
+        self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, 100, int(self.cfg.max_steps*1.5))
         
 

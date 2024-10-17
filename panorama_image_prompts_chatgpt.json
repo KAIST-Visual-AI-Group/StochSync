@@ -1,0 +1,604 @@
+{
+    "data": [
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_1_theta=54.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_2_theta=192.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_3_theta=5.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_4_theta=180.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_5_theta=303.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_6_theta=289.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_7_theta=34.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_8_theta=337.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_9_theta=200.png"
+            ],
+            "thetas": [
+                352,
+                74,
+                11,
+                268,
+                13,
+                46,
+                206,
+                112,
+                56,
+                316
+            ],
+            "captions": [
+                "Autumn maple forest path."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_0_theta=278.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_1_theta=102.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_2_theta=58.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_3_theta=280.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_4_theta=177.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_5_theta=27.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_6_theta=274.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_7_theta=347.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_8_theta=116.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/uNb9QFRL6hY/60c1842a4b1c4966a90d779f8ba50e38_rgb_9_theta=256.png"
+            ],
+            "thetas": [
+                352,
+                89,
+                162,
+                217,
+                333,
+                271,
+                47,
+                57,
+                283,
+                94
+            ],
+            "captions": [
+                "Tropical beach at sunset."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_0_theta=13.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_1_theta=54.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_2_theta=276.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_3_theta=226.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_4_theta=104.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_5_theta=113.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_6_theta=135.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_7_theta=157.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_8_theta=67.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d164319109654ce9b4921876003686ee_rgb_9_theta=7.png"
+            ],
+            "thetas": [
+                197,
+                169,
+                331,
+                172,
+                242,
+                18,
+                180,
+                23,
+                121,
+                93
+            ],
+            "captions": [
+                "Snowy mountain peak view."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_0_theta=255.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_1_theta=311.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_2_theta=320.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_3_theta=164.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_4_theta=180.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_5_theta=341.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_6_theta=57.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_7_theta=135.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_8_theta=263.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gTV8FGcVJC9/ee1ee5c58d2841dc967ecc731b687dae_rgb_9_theta=241.png"
+            ],
+            "thetas": [
+                195,
+                102,
+                170,
+                270,
+                273,
+                341,
+                183,
+                248,
+                155,
+                319
+            ],
+            "captions": [
+                "Tuscan vineyard in summer."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_0_theta=100.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_1_theta=114.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_2_theta=292.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_3_theta=346.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_4_theta=330.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_5_theta=252.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_6_theta=25.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_7_theta=261.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_8_theta=184.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/b8cTxDM8gDG/b2cdb1ea2d0c49d7aea08ea59c6183a9_rgb_9_theta=322.png"
+            ],
+            "thetas": [
+                217,
+                72,
+                233,
+                73,
+                330,
+                296,
+                210,
+                243,
+                312,
+                281
+            ],
+            "captions": [
+                "Desert under starlit sky."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_0_theta=35.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_1_theta=351.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_2_theta=215.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_3_theta=336.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_4_theta=218.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_5_theta=191.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_6_theta=351.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_7_theta=38.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_8_theta=173.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/RPmz2sHmrrY/53db5931a8864b769bf57ddea79a812e_rgb_9_theta=204.png"
+            ],
+            "thetas": [
+                352,
+                231,
+                299,
+                15,
+                112,
+                118,
+                217,
+                218,
+                284,
+                157
+            ],
+            "captions": [
+                "Sakura blossom park, Kyoto."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_0_theta=340.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_1_theta=38.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_2_theta=198.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_3_theta=144.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_4_theta=189.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_5_theta=258.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_6_theta=324.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_7_theta=108.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_8_theta=205.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ARNzJeq3xxb/62ecf2b3190f40a1b530a7b4ad08da6a_rgb_9_theta=58.png"
+            ],
+            "thetas": [
+                320,
+                164,
+                292,
+                6,
+                135,
+                198,
+                305,
+                146,
+                311,
+                252
+            ],
+            "captions": [
+                "Rustic Provencal lavender fields."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_0_theta=70.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_1_theta=63.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_2_theta=179.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_3_theta=353.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_4_theta=184.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_5_theta=147.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_6_theta=277.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_7_theta=295.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_8_theta=35.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/ZMojNkEp431/456873879af44c6a90ca9b2c9dcbb0f0_rgb_9_theta=97.png"
+            ],
+            "thetas": [
+                70,
+                250,
+                106,
+                174,
+                239,
+                306,
+                276,
+                346,
+                316,
+                350
+            ],
+            "captions": [
+                "Underwater coral reef scene."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_0_theta=14.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_1_theta=169.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_2_theta=89.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_3_theta=271.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_4_theta=324.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_5_theta=109.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_6_theta=328.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_7_theta=173.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_8_theta=256.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/423821b84bd641e5a1ce6cbd932fa34f_rgb_9_theta=209.png"
+            ],
+            "thetas": [
+                154,
+                298,
+                331,
+                140,
+                314,
+                342,
+                118,
+                153,
+                186,
+                316
+            ],
+            "captions": [
+                "Ancient Mayan jungle ruins."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_0_theta=234.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_1_theta=94.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_2_theta=198.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_3_theta=92.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_4_theta=358.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_5_theta=102.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_6_theta=86.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_7_theta=37.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_8_theta=353.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/d559688cd41441beabc6f8e4773b02bb_rgb_9_theta=228.png"
+            ],
+            "thetas": [
+                131,
+                4,
+                325,
+                101,
+                233,
+                176,
+                113,
+                216,
+                314,
+                251
+            ],
+            "captions": [
+                "Manhattan skyline at night."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_0_theta=154.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_1_theta=139.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_2_theta=258.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_3_theta=35.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_4_theta=17.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_5_theta=41.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_6_theta=4.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_7_theta=227.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_8_theta=90.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/cV4RVeZvu5T/c8a362a30cc24a5f952f1818a5f28048_rgb_9_theta=310.png"
+            ],
+            "thetas": [
+                67,
+                36,
+                301,
+                271,
+                208,
+                340,
+                55,
+                22,
+                119,
+                120
+            ],
+            "captions": [
+                "Victorian-era library."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_0_theta=57.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_1_theta=102.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_2_theta=153.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_3_theta=185.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_4_theta=191.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_5_theta=301.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_6_theta=266.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_7_theta=82.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_8_theta=308.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/011224faadd14fb089aa6c82623b5c72_rgb_9_theta=131.png"
+            ],
+            "thetas": [
+                164,
+                230,
+                327,
+                186,
+                237,
+                239,
+                178,
+                217,
+                58,
+                190
+            ],
+            "captions": [
+                "Rustic Italian kitchen."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_0_theta=271.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_1_theta=345.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_2_theta=25.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_3_theta=95.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_4_theta=188.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_5_theta=39.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_6_theta=353.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_7_theta=143.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_8_theta=96.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/D7N2EKCX4Sj/eeb46aee1c014c8b99009457a45838e6_rgb_9_theta=141.png"
+            ],
+            "thetas": [
+                65,
+                322,
+                163,
+                295,
+                72,
+                232,
+                11,
+                184,
+                28,
+                254
+            ],
+            "captions": [
+                "Minimalist Scandinavian bedroom."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_0_theta=155.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_1_theta=93.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_2_theta=25.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_3_theta=145.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_4_theta=150.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_5_theta=46.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_6_theta=29.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_7_theta=256.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_8_theta=126.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/Pm6F8kyY3z2/b8f49ffb1486488bbb72693578c17865_rgb_9_theta=241.png"
+            ],
+            "thetas": [
+                226,
+                6,
+                42,
+                173,
+                270,
+                144,
+                117,
+                22,
+                316,
+                125
+            ],
+            "captions": [
+                "Moorish-styled bathroom."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_0_theta=124.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_1_theta=252.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_2_theta=80.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_3_theta=8.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_4_theta=84.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_5_theta=270.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_6_theta=71.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_7_theta=175.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_8_theta=253.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/r1Q1Z4BcV1o/d60a3b43a7fd409c8c50eb46c595ced8_rgb_9_theta=313.png"
+            ],
+            "thetas": [
+                288,
+                98,
+                100,
+                197,
+                262,
+                169,
+                16,
+                50,
+                83,
+                61
+            ],
+            "captions": [
+                "Vintage record store interior."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_0_theta=153.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_1_theta=8.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_2_theta=121.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_3_theta=229.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_4_theta=64.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_5_theta=234.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_6_theta=132.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_7_theta=41.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_8_theta=301.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/SN83YJsR3w2/a94292f56d724d978c04113065d2b86b_rgb_9_theta=233.png"
+            ],
+            "thetas": [
+                352,
+                131,
+                37,
+                141,
+                211,
+                20,
+                278,
+                279,
+                316,
+                126
+            ],
+            "captions": [
+                "Luxurious Hollywood dressing room."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_0_theta=271.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_1_theta=116.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_2_theta=199.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_3_theta=314.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_4_theta=87.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_5_theta=255.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_6_theta=174.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_7_theta=220.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_8_theta=29.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/vyrNrziPKCB/ac28cb6fd2884edd8cdf715e58be5bc7_rgb_9_theta=290.png"
+            ],
+            "thetas": [
+                129,
+                99,
+                164,
+                170,
+                314,
+                112,
+                52,
+                26,
+                318,
+                351
+            ],
+            "captions": [
+                "Industrial loft-style office."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_0_theta=341.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_1_theta=307.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_2_theta=54.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_3_theta=187.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_4_theta=101.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_5_theta=138.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_6_theta=233.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_7_theta=112.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_8_theta=353.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/JF19kD82Mey/4ea1cfa67ec145b39f90056a02a43d9f_rgb_9_theta=68.png"
+            ],
+            "thetas": [
+                193,
+                130,
+                234,
+                75,
+                237,
+                271,
+                144,
+                272,
+                178,
+                155
+            ],
+            "captions": [
+                "Art Deco hotel lobby."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_0_theta=5.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_1_theta=199.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_2_theta=247.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_3_theta=240.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_4_theta=345.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_5_theta=17.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_6_theta=123.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_7_theta=291.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_8_theta=182.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/q9vSo1VnCiC/dc873df7717c43888a1cff13713fe146_rgb_9_theta=196.png"
+            ],
+            "thetas": [
+                288,
+                225,
+                354,
+                358,
+                73,
+                14,
+                143,
+                271,
+                25,
+                218
+            ],
+            "captions": [
+                "Japanese Zen meditation room."
+            ]
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_0_theta=137.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_1_theta=237.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_2_theta=312.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_3_theta=252.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_4_theta=22.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_5_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_6_theta=349.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_7_theta=106.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_8_theta=252.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/gxdoqLR6rwA/87013aae990346bc8372cce68e5d976d_rgb_9_theta=7.png"
+            ],
+            "thetas": [
+                4,
+                294,
+                167,
+                298,
+                235,
+                139,
+                205,
+                338,
+                59,
+                124
+            ],
+            "captions": [
+                "Modern living room with a sofa and a TV."
+            ]
+        }
+    ]
+}

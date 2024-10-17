@@ -1,7 +1,7 @@
 root_dir: "./results/panorama"
 tag: panorama
 text_prompt: "Interior of an old looking library"
-max_steps: 10000
+max_steps: 2000
 use_encoder_decoder: False 
 
 dataset: random
@@ -20,7 +20,7 @@ channels: 4 # 4 for latent / 3 for rgb
 disable_debug: False
 
 prior: sd
-guidance_scale: 30
+guidance_scale: 7.5
 
 background: solid
 rgb: [0, 0, 0, 0] # [0, 0, 0, 0] for latent / [0, 0, 0] for rgb
@@ -29,16 +29,16 @@ time_sampler: sds
 t_max: 980
 t_min: 100
 seam_removal_steps: 0 
-noise_sampler: sds
+noise_sampler: ism
 
 use_ode: false
 ode_steps: 50
 
 logger: self 
-log_interval: 2500
+log_interval: 200
 
 recon_steps: 1
 recon_type: latent  # optim=1: latent, optim=inf: rgb
 use_closed_form: false
-learning_rate: 0.1 # 0.1 SDS / 0.01 SDI 
+learning_rate: 0.03 # 0.1 SDS / 0.01 SDI 
 loss_scale: 1.0

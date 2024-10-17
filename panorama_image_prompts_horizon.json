@@ -1,0 +1,624 @@
+{
+    "data": [
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                357,
+                230,
+                139,
+                243,
+                244,
+                83,
+                279,
+                123,
+                125,
+                222
+            ],
+            "captions": [
+                "A photo of Venice canals at dawn with horizon"
+            ],
+            "input_image": "/home/blackhole/aaaaa/repo/distill/gt_horizon_selected/A_photo_of_the_Great_Wall_of_China_stretching_across_mountains_with_horizon_1.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                357,
+                230,
+                139,
+                243,
+                244,
+                83,
+                279,
+                123,
+                125,
+                222
+            ],
+            "captions": [
+                "A photo of the Northern Lights over a snowy landscape with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_post-apocalyptic_Earth_where_nature_has_overrun_old_cities_with_horizon_14.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                37,
+                69,
+                154,
+                104,
+                139,
+                172,
+                89,
+                250,
+                219,
+                188
+            ],
+            "captions": [
+                "A photo of a castle in Scotland with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_Patagonia_with_horizon_17.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                161,
+                292,
+                299,
+                304,
+                89,
+                315,
+                127,
+                189,
+                190,
+                287
+            ],
+            "captions": [
+                "A photo of a tropical island in the Philippines with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_the_salt_flats_in_Bolivia_with_horizon_18.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                290,
+                357,
+                199,
+                108,
+                207,
+                179,
+                149,
+                314,
+                59,
+                221
+            ],
+            "captions": [
+                "A photo of a savanna in Tanzania with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_snowy_forest_in_Siberia_with_horizon_2.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                12,
+                77,
+                47,
+                208,
+                17,
+                337,
+                180,
+                84,
+                216,
+                57
+            ],
+            "captions": [
+                "A photo of Patagonia with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/a_photo_of_a_stormy_sky_over_the_Atlantic_Ocean_with_horizon_15.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                194,
+                291,
+                295,
+                72,
+                12,
+                80,
+                177,
+                82,
+                153,
+                30
+            ],
+            "captions": [
+                "A photo of Sahara desert with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_stormy_sky_over_the_Atlantic_Ocean_with_horizon_3.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                160,
+                292,
+                5,
+                295,
+                168,
+                11,
+                301,
+                207,
+                48,
+                178
+            ],
+            "captions": [
+                "A photo of a post-apocalyptic Earth where nature has overrun old cities with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_the_Matterhorn_mountain_with_horizon_11.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                257,
+                162,
+                292,
+                74,
+                109,
+                206,
+                207,
+                248,
+                29,
+                127
+            ],
+            "captions": [
+                "A photo of a post-apocalyptic wasteland with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_post-apocalyptic_wasteland_with_horizon_0.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                99,
+                40,
+                9,
+                83,
+                309,
+                183,
+                250,
+                219,
+                190,
+                223
+            ],
+            "captions": [
+                "A photo of a rocky coastline in Big Sur with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_Sahara_desert_with_horizon_9.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                166,
+                199,
+                296,
+                330,
+                302,
+                239,
+                118,
+                150,
+                246,
+                345
+            ],
+            "captions": [
+                "A photo of a snowy forest in Siberia with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_glaciers_in_Iceland_with_horizon_6.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                67,
+                326,
+                40,
+                75,
+                108,
+                14,
+                145,
+                181,
+                184,
+                158
+            ],
+            "captions": [
+                "A photo of a stormy sky over the Atlantic Ocean with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/a_photo_of_the_salt_flats_in_Bolivia_with_horizon_12.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                160,
+                290,
+                8,
+                237,
+                16,
+                339,
+                55,
+                312,
+                187,
+                93
+            ],
+            "captions": [
+                "A photo of a sunflower field in Kansas with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/a_photo_of_Patagonia_with_horizon_7.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                321,
+                2,
+                101,
+                166,
+                230,
+                112,
+                309,
+                344,
+                154,
+                126
+            ],
+            "captions": [
+                "A photo of a vineyard in Tuscany with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_rice_terraces_in_Bali_with_horizon_8.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                65,
+                43,
+                346,
+                112,
+                273,
+                243,
+                309,
+                311,
+                282,
+                279
+            ],
+            "captions": [
+                "A photo of ancient palace in Korea with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/Skyline_of_New_York_City_13.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                296,
+                172,
+                300,
+                14,
+                219,
+                113,
+                342,
+                344,
+                27,
+                28
+            ],
+            "captions": [
+                "A photo of glaciers in Iceland with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_sunflower_field_in_Kansas_with_horizon_16.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                322,
+                324,
+                358,
+                167,
+                75,
+                76,
+                215,
+                282,
+                219,
+                351
+            ],
+            "captions": [
+                "A photo of rice terraces in Bali with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_ancient_palace_in_Korea_with_horizon_5.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                356,
+                133,
+                166,
+                103,
+                134,
+                326,
+                334,
+                146,
+                343,
+                62
+            ],
+            "captions": [
+                "A photo of the Matterhorn mountain with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_the_Grand_Canyon_at_sunrise_with_horizon_10.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                0,
+                65,
+                195,
+                359,
+                200,
+                74,
+                146,
+                18,
+                306,
+                53
+            ],
+            "captions": [
+                "A photo of the salt flats in Bolivia with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_rocky_coastline_in_Big_Sur_with_horizon_1.png"
+        },
+        {
+            "pano_path": "/home/jh27kim/code/current_projects/dataset/360MonoDepth/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb.png",
+            "pers_img_paths": [
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png",
+                "/home/jh27kim/code/current_projects/dataset/360MonoDepth_Perspective/rPc6DW4iMge/638b72f18fda418394fe583341e9c17b_rgb_0_theta=195.png"
+            ],
+            "thetas": [
+                288,
+                289,
+                354,
+                106,
+                234,
+                116,
+                54,
+                121,
+                285,
+                223
+            ],
+            "captions": [
+                "A photo of the Great Wall of China stretching across mountains with horizon"
+            ],
+            "input_image": "/home/jh27kim/code/current_projects/iclr2025/DistillAnywhere/baselines/MMPano/data/gt_horizon_selected/A_photo_of_a_vineyard_in_Tuscany_with_horizon_4.png"
+        }
+    ]
+}

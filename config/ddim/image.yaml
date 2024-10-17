@@ -9,7 +9,7 @@
 root_dir: "./results/image"
 tag: image
 output: "result.png"
-text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
+text_prompt: A DSLR photo of Singapore skyline at night'
 max_steps: 50
 
 dataset: random
@@ -26,7 +26,7 @@ prior: sd
 guidance_scale: 7.5
 
 time_sampler: linear_annealing
-noise_sampler: sdi
+noise_sampler: ddim
 
 logger: simple
 log_interval: 10
@@ -36,4 +36,4 @@ rgb: [0, 0, 0, 0]
 
 recon_steps: 1
 recon_type: latent
-use_closed_form: false
+use_closed_form: true 

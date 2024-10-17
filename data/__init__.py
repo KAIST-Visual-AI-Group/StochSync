@@ -1,6 +1,6 @@
 from .camera_dataset import CameraDataset, RandomCameraDataset, RandomMVCameraDataset, SeqTurnaroundCameraDataset, FixMVCameraDataset, AlternateMVCameraDataset, AlternateCameraDataset
 from .camera_dataset import QuatCameraDataset, TorusCameraDataset
-from .image_dataset import ImageDataset, RotateImageDataset, RotateBatchImageDataset, ImageWideDataset, ImageWideRandomDataset, AlternateImageWideDataset
+from .image_dataset import ImageDataset, RotateImageDataset, RotateBatchImageDataset, ImageWideDataset, ImageWideRandomDataset, AlternateImageWideDataset, SixViewNoOverlapCameraDataset
 from .video_dataset import VideoDataset
 
 DATASETs = {
@@ -20,4 +20,5 @@ DATASETs = {
     "alternate_image_wide": AlternateImageWideDataset,
     "alternate_camera": AlternateCameraDataset,
     "video": VideoDataset,
+    "vigilance_test": SixViewNoOverlapCameraDataset,
 }

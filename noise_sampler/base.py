@@ -57,8 +57,11 @@ class SDISampler(NoiseSampler):
         tau = randint(0, 33)
         t_tau = min(t + tau, 999)
 
-        # ts_prev = len(sm.prior.scheduler.timesteps)
-        # sm.prior.scheduler.set_timesteps(10)
+        # ========================================
+        sdi_inv = False
+        # Adding random noise at each step
+        # ========================================
+        
         noisy_sample = sm.prior.ddim_loop(
             camera,
             images,
@@ -67,14 +70,11 @@ class SDISampler(NoiseSampler):
             guidance_scale=self.cfg.inversion_guidance_scale,
             mode="cfg",
             num_steps=10,
+            sdi_inv=sdi_inv, 
         )
-        # print("noisy_sample", torch.isnan(noisy_sample).sum().item())
-        # sm.prior.scheduler.set_timesteps(ts_prev)
 
         alpha_prod_t = sm.prior.scheduler.alphas_cumprod[t_tau]
         inverted_eps = sm.prior.get_eps(noisy_sample, images, t_tau)
-        # print("inverted_eps", torch.isnan(inverted_eps).sum().item())
-
         def fixed_point_loss(img, eps, t):
             data_dtype = img.dtype
             model_dtype = sm.prior.dtype
@@ -97,9 +97,12 @@ class SDISampler(NoiseSampler):
                 opt.zero_grad()
             inverted_eps = inverted_eps.detach().to(sm.prior.dtype)
 
-        # h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
-        # return inverted_eps + h
-        return inverted_eps
+        if sdi_inv:
+            return inverted_eps
+        
+        h = 0.3 * (1 - alpha_prod_t) ** 0.5 * self.get_noise(camera, inverted_eps)
+        return inverted_eps + h
+        
 
 
 class DDIMSampler(NoiseSampler):
@@ -253,3 +256,73 @@ class GeneralizedDDIMSampler(NoiseSampler):
         ratio = self.random_ratio(x)
         # print(f"Stochasticiy ratio at t={t}: {ratio}")
         return (1 - ratio) ** 0.5 * eps_prev + ratio ** 0.5 * random_eps
+
+
+# ====================================================================
+# ======================= Distillation-based =========================
+# ====================================================================
+
+class ISMSampler(NoiseSampler):
+    @ignore_kwargs
+    @dataclass
+    class Config(NoiseSampler.Config):
+        inversion_guidance_scale: float = 0.0
+        interval_time: int = 50
+        inv_steps: int = 50
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+
+    def __call__(self, camera, images, tgt_t, eps_prev=None, *args, **kwargs):
+        src_t = tgt_t - 50
+        
+        num_steps = src_t // self.cfg.inv_steps
+        with torch.no_grad():
+            # Sample x_s with unconditional prompt embeddings 
+            src_noisy_sample = sm.prior.ddim_loop(
+                camera,
+                images,
+                0,
+                src_t,
+                guidance_scale=self.cfg.inversion_guidance_scale, 
+                mode="cfg",
+                num_steps=num_steps,
+                sdi_inv=False, 
+            )
+            # Predict noise from x_s and x_t 
+            src_noise_pred = sm.prior.predict(
+                camera=camera, 
+                x_t=src_noisy_sample, 
+                timestep=src_t,
+                return_dict=True,
+            )["noise_pred_uncond"]
+
+            # Sample x_t from x_s with unconditional prompt embeddings
+            tgt_noisy_sample = sm.prior.move_step(
+                src_noisy_sample, 
+                src_noise_pred, 
+                src_t, 
+                tgt_t, 
+                eta=0,
+            )
+            
+            tgt_noise_pred = sm.prior.predict(
+                camera=camera, 
+                x_t=tgt_noisy_sample, 
+                timestep=tgt_t,
+                guidance_scale=7.5,
+                return_dict=True,
+            )["noise_pred"]
+        
+        alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(tgt_noisy_sample)[tgt_t]
+        coeff = ((1 - alpha_t) * alpha_t) ** 0.5
+        
+        grad = coeff * (tgt_noise_pred - src_noise_pred)
+        grad = torch.nan_to_num(grad)
+        
+        targets = (images - grad).detach()
+        loss = 0.5 * F.mse_loss(images.float(), targets, reduction='sum') / images.shape[0]
+        
+        return loss 
+        

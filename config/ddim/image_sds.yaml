@@ -9,8 +9,8 @@
 root_dir: "./results/image"
 tag: image
 output: "result.png"
-text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
-max_steps: 300
+text_prompt: "A DSLR photo of Singapore skyline at night"
+max_steps: 1000
 
 dataset: random
 batch_size: 1
@@ -19,13 +19,13 @@ height: 64
 
 model: image
 initialization: random
-learning_rate: 0.1
+learning_rate: 0.05
 channels: 4
 
 prior: sd
-guidance_scale: 7.5
+guidance_scale: 30
 
-time_sampler: linear_annealing
+time_sampler: sds 
 noise_sampler: sds
 
 logger: simple
