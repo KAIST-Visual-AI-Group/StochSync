@@ -18,7 +18,8 @@ from utils.print_utils import print_info, print_warning
 
 # NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
 NEGATIVE_PROMPT = (
-    "deformed, extra digit, fewer digits, cropped, worst quality, low quality, smoke"
+    # "deformed, extra digit, fewer digits, cropped, worst quality, low quality, smoke" # Shows lower quality 
+    "low quality, blurry, bad anatomy, disfigured, poorly drawn face"
 )
 
 
@@ -135,7 +136,7 @@ class Prior(ABC):
             t_next = min(t + interval, 999)
         
         alpha = self.pipeline.scheduler.alphas_cumprod[t]
-        alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
+        # alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
         if eta > 0:
             raise NotImplementedError("Eta > 0 not implemented yet.")
             if t_next > t:

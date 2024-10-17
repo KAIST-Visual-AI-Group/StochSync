@@ -55,6 +55,13 @@ class ImageModel(BaseModel):
     @torch.no_grad()
     def save(self, path: str) -> None:
         image = self.render_self()
+        print("Resizing with hardcoded values")
+        print("Resizing with hardcoded values")
+        print("Resizing with hardcoded values")
+        print("Resizing with hardcoded values")
+
+        image = F.interpolate(image, size=(174, 1024), mode="bilinear")
+
         save_tensor(image, path)
         # if self.cfg.channels == 3:
         #     # encode-decode to remove artifacts

@@ -1,0 +1,40 @@
+root_dir: "./results/panorama"
+tag: panorama
+text_prompt: "A DSLR photo of Singapore skyline at night"
+max_steps: 25 # In ODE -> 25
+use_encoder_decoder: False 
+
+dataset: alternate_image_wide
+height: 64
+width: 64
+xscale: 2
+yscale: 1
+batch_size: 3
+
+model: image_wide
+channels: 4
+disable_debug: False  # True to make it faster
+
+prior: sd
+guidance_scale: 7.5
+
+background: solid
+rgb: [0, 0, 0, 0]
+
+time_sampler: linear_annealing 
+t_max: 900 # In Tweedie -> 999
+t_min: 330 # In Tweedie -> 0
+seam_removal_steps: 2
+noise_sampler: sds
+
+use_ode: true
+ode_steps: 50
+
+logger: self 
+log_interval: 10
+
+recon_steps: 1
+recon_type: latent # latent 
+use_closed_form: true
+learning_rate: 0.0
+loss_scale: 1.0

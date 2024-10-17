@@ -256,3 +256,73 @@ class GeneralizedDDIMSampler(NoiseSampler):
         ratio = self.random_ratio(x)
         # print(f"Stochasticiy ratio at t={t}: {ratio}")
         return (1 - ratio) ** 0.5 * eps_prev + ratio ** 0.5 * random_eps
+
+
+# ====================================================================
+# ======================= Distillation-based =========================
+# ====================================================================
+
+class ISMSampler(NoiseSampler):
+    @ignore_kwargs
+    @dataclass
+    class Config(NoiseSampler.Config):
+        inversion_guidance_scale: float = 0.0
+        interval_time: int = 50
+        inv_steps: int = 50
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+
+    def __call__(self, camera, images, tgt_t, eps_prev=None, *args, **kwargs):
+        src_t = tgt_t - 50
+        
+        num_steps = src_t // self.cfg.inv_steps
+        with torch.no_grad():
+            # Sample x_s with unconditional prompt embeddings 
+            src_noisy_sample = sm.prior.ddim_loop(
+                camera,
+                images,
+                0,
+                src_t,
+                guidance_scale=self.cfg.inversion_guidance_scale, 
+                mode="cfg",
+                num_steps=num_steps,
+                sdi_inv=False, 
+            )
+            # Predict noise from x_s and x_t 
+            src_noise_pred = sm.prior.predict(
+                camera=camera, 
+                x_t=src_noisy_sample, 
+                timestep=src_t,
+                return_dict=True,
+            )["noise_pred_uncond"]
+
+            # Sample x_t from x_s with unconditional prompt embeddings
+            tgt_noisy_sample = sm.prior.move_step(
+                src_noisy_sample, 
+                src_noise_pred, 
+                src_t, 
+                tgt_t, 
+                eta=0,
+            )
+            
+            tgt_noise_pred = sm.prior.predict(
+                camera=camera, 
+                x_t=tgt_noisy_sample, 
+                timestep=tgt_t,
+                guidance_scale=7.5,
+                return_dict=True,
+            )["noise_pred"]
+        
+        alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(tgt_noisy_sample)[tgt_t]
+        coeff = ((1 - alpha_t) * alpha_t) ** 0.5
+        
+        grad = coeff * (tgt_noise_pred - src_noise_pred)
+        grad = torch.nan_to_num(grad)
+        
+        targets = (images - grad).detach()
+        loss = 0.5 * F.mse_loss(images.float(), targets, reduction='sum') / images.shape[0]
+        
+        return loss 
+        

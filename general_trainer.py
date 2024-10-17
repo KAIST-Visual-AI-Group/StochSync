@@ -138,7 +138,8 @@ class GeneralTrainer(ABC):
 
             # 5. Perturb-recover to get the GT latent
             if step == 0:
-                latent_noisy = noise
+                t_curr = 999
+                latent_noisy = noise 
             else:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
 

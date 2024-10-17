@@ -9,7 +9,7 @@
 root_dir: "./results/image"
 tag: image
 output: "result.png"
-text_prompt: "Panoramic view of Singapore skyscrapers at night."
+text_prompt: A DSLR photo of Singapore skyline at night'
 max_steps: 50
 
 dataset: random
