@@ -3,6 +3,7 @@ tag: mesh
 text_prompt: "A DSLR photo of a 3D dragon"
 max_steps: 25
 batch_size: 10
+warmup_steps: 4
 
 dataset: camera
 height: 768
@@ -28,8 +29,8 @@ disable_debug: False # Faster
 channels: 3
 sampling_mode: nearest
 
-prior: controlnet
-guidance_scale: 15.5
+prior: sd2_depth
+guidance_scale: 7.5
 mixed_precision: true
 
 time_sampler: linear_annealing 

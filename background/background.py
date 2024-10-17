@@ -7,6 +7,7 @@ import shared_modules
 
 # Using weak_lru to avoid memory leaks in class methods
 from utils.extra_utils import weak_lru
+from utils.camera_utils import convert_camera_convention, camera_hash
 
 
 class SolidBackground(BaseBackground):
@@ -26,6 +27,35 @@ class SolidBackground(BaseBackground):
 
     def __call__(self, camera) -> torch.Tensor:
         return self.background
+    
+class CacheBackground(BaseBackground):
+    @ignore_kwargs
+    @dataclass
+    class Config:
+        width: int = 512
+        height: int = 512
+        device: str = "cuda"
+        rgb: tuple = (0.1, 0.1, 0.1)
+
+    def __init__(self, cfg) -> None:
+        self.cfg = self.Config(**cfg)
+        self.background = torch.tensor(self.cfg.rgb, device=self.cfg.device).view(
+            1, -1, 1, 1
+        )
+        self.cache_dict = {}
+
+    def __call__(self, camera) -> torch.Tensor:
+        cam_hash = camera_hash(camera)
+        return self.cache_dict.get(cam_hash, self.background)
+    
+    def cache(self, camera, bg):
+        if len(self.cfg.rgb) == 3:
+            bg = shared_modules.prior.decode_latent_if_needed(bg)
+        elif len(self.cfg.rgb) == 4:
+            bg = shared_modules.prior.encode_image_if_needed(bg)
+        
+        cam_hash = camera_hash(camera)
+        self.cache_dict[cam_hash] = bg
 
 
 class LatentSolidBackground(BaseBackground):

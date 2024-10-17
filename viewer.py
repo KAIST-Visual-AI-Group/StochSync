@@ -52,8 +52,6 @@ class Renderer:
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
         cfg_dict.update(asdict(self.cfg))  # Update the config dict with the default values
-        print(f"cfg_dict: {cfg_dict}")
-
         os.makedirs(self.cfg.root_dir, exist_ok=True)
 
         output = os.path.join(self.cfg.root_dir, self.cfg.output)
@@ -68,8 +66,9 @@ class Renderer:
         sm.dataset = DATASETs[self.cfg.dataset](cfg_dict)
         sm.background = BACKGROUNDs[self.cfg.background](cfg_dict)
         sm.model = MODELs[self.cfg.model](cfg_dict)
-        sm.prior = PRIORs[self.cfg.prior](cfg_dict)
+        # sm.prior = PRIORs[self.cfg.prior](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
+        sm.model.prepare_optimization()
 
     @torch.no_grad()
     def __call__(self) -> Any:
@@ -80,7 +79,7 @@ class Renderer:
             # Render the 3D shape from the sampled camera position
             r_pkg = sm.model.render(camera)
             bg = sm.background(camera)
-            images = r_pkg["image"] * r_pkg["alpha"] + bg * (1 - r_pkg["alpha"])
+            images = r_pkg["image"] + bg * (1 - r_pkg["alpha"])
 
             # Log the result
             sm.logger(step, camera, images)

@@ -1,18 +1,24 @@
-root_dir: "./results/panorama"
-tag: panorama
-text_prompt: "Steampunk airship, navigating cloudy skies, gears turning, propellers whirring."
-max_steps: 25 # In ODE -> 25
+root_dir: "./results/sphere"
+tag: sphere
+text_prompt: "A sweet candy texture"
+max_steps: 12 # In ODE -> 25
 use_encoder_decoder: False 
 warmup_steps: 1
 
-dataset: alternate_mv
+dataset: quat
 height: 512
 width: 512
-batch_size: 10
-fov: 72
-dist_range: [1, 1]
-elev_range: [0, 0]
-azim_range: [0, 360]
+batch_size: 6
+fov: 90
+dists: [
+  2.0, 2.0, 2.0, 2.0, 2.0, 2.0
+]
+elevs: [
+  0, 0, 0, 0, 90, -90
+]
+azims: [
+  0, 90, 180, 270, 0, 0
+]
 
 model: panorama
 pano_height: 2048
@@ -21,21 +27,24 @@ channels: 3
 disable_debug: False
 gt_azim: 0
 gt_elev: 0
+seam_removal_mode: both
+mode: sphere
 
 prior: sd
-guidance_scale: 7.5
+guidance_scale: 8.5
+mixed_precision: True
 
 background: solid
 rgb: [0, 0, 0]
 
 time_sampler: linear_annealing 
 t_max: 999 # In Tweedie -> 999
-t_min: 270 # In Tweedie -> 0
-seam_removal_steps: 2 # Use only in ODE cases 
+t_min: 400 # In Tweedie -> 0
+seam_removal_steps: 4 # Use only in ODE cases 
 noise_sampler: sds
 
 use_ode: true
-ode_steps: 50
+ode_steps: 75
 
 logger: self 
 log_interval: 1

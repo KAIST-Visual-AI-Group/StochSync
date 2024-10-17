@@ -5,6 +5,8 @@ from .image_mv import ImageMVModel
 from .image_wide import ImageWideModel
 # from .ngp import NGPModel
 from .panorama import PanoramaModel
+from .cubemap import CubemapModel
+from .video import VideoModel
 
 MODELs = {
     "gs": GSModel,
@@ -15,4 +17,6 @@ MODELs = {
     "image_wide": ImageWideModel,
     # "ngp": NGPModel,
     "panorama": PanoramaModel,
+    "cubemap": CubemapModel,
+    "video": VideoModel,
 }

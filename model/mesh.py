@@ -45,6 +45,19 @@ from utils.mesh_utils import read_obj
 from utils.extra_utils import calculate_distance_to_zero_level
 import cv2
 
+from tqdm import trange
+
+from utils.print_utils import print_info
+
+
+
+def normalize_mesh(v):
+    center = v.mean(dim=0)
+    v = v - center
+    scale = torch.max(torch.norm(v, p=2, dim=1))
+    v = v / scale
+    return v
+
 
 def load_obj_uv(obj_path, device):
     # Load the obj file using trimesh
@@ -89,6 +102,10 @@ class MeshModel(BaseModel):
         dist_range: Tuple[float, float] = (2.5, 2.5)
 
         use_selection: bool = False
+        texture_path: str = ""
+        flip_texture: bool = False
+        # max_steps: int = 10000
+        # force_optim_steps: int = 0
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -108,8 +125,10 @@ class MeshModel(BaseModel):
         f_idx = torch.tensor(f_idx, device=self.cfg.device).to(torch.int64) - 1
         v_uv = torch.tensor(v_uv, device=self.cfg.device).float()
         # f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
+        v_pos = normalize_mesh(v_pos)
         self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
-        self.mesh = unit_size(self.mesh)
+        # print_warning(f"Temporarily disable unit_size.")
+        # self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
         self.mesh = compute_tangents(self.mesh)
 
@@ -177,6 +196,14 @@ class MeshModel(BaseModel):
             self.texture = torch.full(
                 shape, 0.5, device=self.cfg.device, requires_grad=True
             )
+        elif self.cfg.initialization == "image":
+            image = Image.open(self.cfg.texture_path).convert("RGB")
+            image = pil_to_torch(image).to(self.cfg.device)
+            # vertical flip
+            if self.cfg.flip_texture:
+                image = image.flip(2)
+            self.texture = image
+            assert image.dim() == 4, f"Image must have 4 dimensions, got {image.shape}"
         else:
             raise ValueError(f"Invalid initialization: {self.cfg.initialization}")
 
@@ -207,6 +234,8 @@ class MeshModel(BaseModel):
             {
                 "bsdf": "kd",
                 "kd": Texture2D(texture),
+                "ks": Texture2D(torch.full_like(texture, 0.5)),
+                # "n": Texture2D(self.normalmap),
             }
         )
 
@@ -215,12 +244,17 @@ class MeshModel(BaseModel):
         if "filter_mode" not in kwargs:
             kwargs["filter_mode"] = self.cfg.sampling_mode
 
+        lgt = None
+        if "lgt" in kwargs:
+            lgt = kwargs["lgt"]
+            del kwargs["lgt"]
+
         render_pkg = render_mesh(
             self.glctx,
             self.mesh,
             mvp,  # B 4 4
             campos,  # B 3
-            None,
+            lgt,
             [height, width],
             msaa=True,
             background=None,
@@ -243,13 +277,13 @@ class MeshModel(BaseModel):
         elevs = [11, 7, 7, 9, 6, 24, 25, 5, 14, 26]
         azims = [25, 32, 84, 132, 138, 144, 147, 232, 295, 355]
 
-        dists = [3.0] * len(elevs)
+        dists = [2.0] * len(elevs)
         cameras = sm.dataset.params_to_cameras(
             dists,
             elevs,
             azims,
         )
-        render_pkg = self.render(cameras, filter_mode="linear-mipmap-linear")
+        render_pkg = self.render(cameras)
         images = render_pkg["image"]
         alphas = render_pkg["alpha"]
         images = images + (1 - alphas) * 1.0
@@ -270,7 +304,7 @@ class MeshModel(BaseModel):
         """
         elevs = (0, 0, 0, 0, 30, 30, 30, 30)
         azims = (0, 90, 180, 270, 45, 135, 225, 315)
-        dists = [3.0] * len(elevs)
+        dists = [2.0] * len(elevs)
 
         cameras = sm.dataset.params_to_cameras(
             dists,
@@ -296,28 +330,40 @@ class MeshModel(BaseModel):
         elif self.texture.shape[1] == 4:
             target = sm.prior.encode_image_if_needed(target)
 
-        num_cameras = camera["num"]
 
+        # if step >= self.cfg.max_steps - self.cfg.force_optim_steps:
+        #     print_info(f"Force optimization at step {step}")
+        #     for i in range(20):
+        #         r_pkg = self.render(camera)
+        #         image = r_pkg["image"]
+        #         alpha = r_pkg["alpha"]
+        #         tgt = target * alpha
+        #         loss = F.mse_loss(image, tgt)
+        #         total_loss = F.mse_loss(image, target, reduction="mean")
+        #         total_loss.backward()
+        #         self.optimize(0)
+        #     return
+
+        num_cameras = camera["num"]
         texture_new = torch.zeros_like(self.texture)
         if self.cfg.use_selection:
             max_cosmap = torch.zeros_like(self.texture, dtype=torch.float32)
-            idx = list(range(num_cameras))
-            idx = idx[step % num_cameras :] + idx[: step % num_cameras]
-            idx = [idx[0]] + np.random.permutation(idx[1:]).tolist()
-            for i in idx:
+            for i in range(num_cameras):
                 cam = index_camera(camera, i)
-                texture, mask, cosmap = self.unproject(
-                    cam,
-                    target[i : i + 1],
-                    return_mask=True,
-                    step=step,
-                    i=i,
-                )
-                # update texture_new
+                mask_dict = self.get_masks(cam)
+                gp_pos_xy = mask_dict["gp_pos_xy"]
+                cosmap = mask_dict["cosmap"].abs()
+                mask = mask_dict["mask_depth"] & self.maskmap
+                # save_tensor(
+                #     torch.cat([self.maskmap, cosmap.clamp(0.1, 1), mask_dict["mask_depth"]], dim=0).squeeze(),
+                #     os.path.join(self.cfg.root_dir, "debug", f"cosmap{step:03d}_{i:02d}.png"),
+                #     is_grayscale=True,
+                # )
+                texture = self.unproject_happy(cam, target[i : i + 1], gp_pos_xy, mask)
+
                 local_max_region = mask & (cosmap >= max_cosmap)
                 texture_new[local_max_region] = texture[local_max_region]
 
-                # update max_cosmaps
                 valid_cosmap = mask.float() * cosmap
                 max_cosmap = torch.max(max_cosmap, valid_cosmap)
                 self.max_cosmap = torch.max(self.max_cosmap, valid_cosmap)
@@ -330,14 +376,13 @@ class MeshModel(BaseModel):
             acc_softmask = torch.zeros_like(self.texture, dtype=torch.float32)
             for i in range(num_cameras):
                 cam = index_camera(camera, i)
-                texture, mask, cosmap = self.unproject(
-                    cam,
-                    target[i : i + 1],
-                    return_mask=True,
-                    step=step,
-                    i=i,
-                )
-                softmask = mask * cosmap.clamp(0, 1)
+                mask_dict = self.get_masks(cam)
+                gp_pos_xy = mask_dict["gp_pos_xy"]
+                cosmap = mask_dict["cosmap"].abs()
+                mask = mask_dict["mask_depth"] & self.maskmap
+                texture = self.unproject(cam, target[i : i + 1], gp_pos_xy, mask)
+
+                softmask = mask.float() * cosmap.clamp(0, 1)
                 texture_new += texture * softmask
                 acc_softmask += softmask
 
@@ -459,84 +504,42 @@ class MeshModel(BaseModel):
 
         return cosdist
 
-    def unproject(self, camera, target, return_mask=False, step=0, i=0):
+    def unproject(self, camera, target, gp_pos_xy, mask):
         target_h, target_w = target.shape[-2:]
-        # azims, elevs, dists = camera["azimuth"], camera["elevation"], camera["dist"]
-        # camera = sm.dataset.params_to_cameras(
-        #     dists,
-        #     elevs,
-        #     azims,
-        #     height=2048,
-        #     width=2048,
-        # )
-        # c2ws, Ks, width, height, fov = (
-        #     camera["c2w"],
-        #     camera["K"],
-        #     camera["width"],
-        #     camera["height"],
-        #     camera["fov"],
-        # )
-        # proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
-        #     c2ws.device
-        # )
-        # mvp = proj_mtx @ c2ws.inverse()
-
-        # gb_pos_clip = torch.einsum(
-        #     "bhwp,bpq->bhwq", self.coordmap, mvp.permute(0, 2, 1)
-        # )
-        # gb_pos_clip[..., :2] = gb_pos_clip[..., :2] / gb_pos_clip[..., 3:4]
-        # gp_pos_xy = 0.5 * gb_pos_clip[..., :2] + 0.5
-
-        # # Cosine mask
-        # raydirmap = c2ws[:, :3, 3].unsqueeze(1).unsqueeze(1) - self.coordmap[..., :3]
-        # raydirmap = F.normalize(raydirmap, dim=-1)
-        # cosmap = torch.sum(raydirmap * self.normalmap, dim=-1)
-
-        # # Depth mask
-        # gp_pos_z = gb_pos_clip[..., 2]
-        # render_pkg = sm.model.render(camera, bsdf="depth")
-        # front_z = render_pkg["image"][:, :1]
-        # bg = render_pkg["alpha"] < 1.0
-        # front_z[bg] = front_z.max()
-        # gp_front_z = remap_min(front_z, gp_pos_xy.squeeze() * height).squeeze(1)
-        # mask_depth = gp_pos_z <= gp_front_z + 0.06 * torch.clamp((1 - cosmap), min=0.1, max=1.0)
-
-        # # Face mask
-        # face_ids = sm.model.render(camera, bsdf="faceid")["image"][:, :1]
-        # valid_faces = torch.unique(face_ids.long())[1:]  # exclude background
-        # mask_face = torch.isin(self.facemap, valid_faces, assume_unique=False)
-
-        # print_info("face mask is disabled.")
-        # mask = mask_depth & self.maskmap
-        # mask = mask_depth & mask_face & self.maskmap
-
-        mask_dict = self.get_masks(camera)
-        mask_depth = mask_dict["mask_depth"]
-        gp_pos_xy = mask_dict["gp_pos_xy"]
-        cosmap = mask_dict["cosmap"]
-        mask = mask_depth & self.maskmap
-
-
         unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="nearest")
 
-        # mask_for_log = torch.zeros_like(unproj_texture, dtype=torch.float32)
-        # mask_for_log[:, 0, ...] = mask_depth.float() * self.maskmap.float()
-        # # mask_for_log[:, 1, ...] = mask_face.float() * self.maskmap.float()
-        # mask_for_log[:, 2, ...] = (cosmap>0).float().squeeze() * self.maskmap.float()
-        # # mask_for_log[:, 2, ...] = (cosmap.clamp(0, 1)).float().squeeze() * self.maskmap.float()
-        # save_tensor(
-        #     mask_for_log.squeeze(),
-        #     os.path.join(self.cfg.root_dir, "debug", f"mask{step:03d}_{i:02d}.png"),
-        # )
-        # save_tensor(
-        #     (1/cosmap * 0.1).clamp(0.1, 1).squeeze(),
-        #     os.path.join(self.cfg.root_dir, "debug", f"invcos{step:03d}_{i:02d}.png"),
-        #     is_grayscale=True,
-        # )
-        if return_mask:
-            return unproj_texture, mask, cosmap
         return unproj_texture
+    
+    def unproject_happy(self, camera, target, gp_pos_xy, mask):
+        target_h, target_w = target.shape[-2:]
+        unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="bilinear")
+        orig_texture = self.texture.clone().detach()
+        self.texture.data = unproj_texture * mask.float() + orig_texture * (1 - mask.float())
 
+        # Further optimization
+        first_loss, last_loss = 0, 0
+        # reset optimizer
+        self.optimizer = torch.optim.Adam(
+            [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
+        )
+        for i in range(20):
+            r_pkg = self.render(camera)
+            image = r_pkg["image"]
+            alpha = r_pkg["alpha"]
+            tgt = target * alpha
+            loss = F.mse_loss(image, tgt)
+            # if i == 0:
+            #     first_loss = loss.item()
+            # if i == 9:
+            #     last_loss = loss.item()
+            loss.backward()
+            self.optimize(0)
+        # print_info(f"First loss: {first_loss:.4f}, Last loss: {last_loss:.4f}")
+        
+        unproj_texture = self.texture.clone()
+        self.texture.data = orig_texture
+
+        return unproj_texture
 
 class PaintitMeshModel(BaseModel):
     """

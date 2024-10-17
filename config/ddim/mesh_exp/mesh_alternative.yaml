@@ -2,23 +2,36 @@ root_dir: "./mesh_final_exp3/tmp15"
 tag: mesh
 text_prompt: "A DSLR photo of a 3D dragon"
 max_steps: 25
-batch_size: 3
+batch_size: 4
+warmup_steps: 4
 
 dataset: alternate_camera
 height: 768
 width: 768
 convention: OpenGL
 up_vec: y
-fov: 45
-# dists: [2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5, 2.5]
-# elevs: [0, 30, 0, 30, 0, 30, 0, 30]
-# azims: [0, 45, 90, 135, 180, 225, 270, 315]
-dists: [3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0, 3.0]
-elevs: [0, 45, 0, -20, 0, 45, 0, -20]
-azims: [0, 45, 90, 135, 180, 225, 270, 315]
+fov: 60
+dists: [
+  2.0, 2.0, 2.0, 2.0,
+  2.0, 2.0, 2.0, 2.0,
+  2.0, 2.0, 2.0, 2.0,
+  2.0, 2.0, 2.0, 2.0
+]
+elevs: [
+  0, -15, 0, -15,
+  30, 0, 30, 0,
+  -15, 0, -15, 0,
+  0, 30, 0, 30
+]
+azims: [
+  0, 90, 180, 270,
+  45, 135, 225, 315,
+  0, 90, 180, 270,
+  45, 135, 225, 315
+]
 
 
-background: solid
+background: cache
 rgb: [0.1, 0.1, 0.1]
 
 model: mesh
@@ -27,16 +40,17 @@ texture_size: 2048
 mesh_scale: 1.0
 initialization: gray
 learning_rate: 0.05
-disable_debug: False # Faster 
+disable_debug: False # Faster
 channels: 3
 sampling_mode: nearest
 
-prior: controlnet
+prior: sd2_depth
 guidance_scale: 15.5
 mixed_precision: true
+use_view_dependent_prompt: true
 
 time_sampler: linear_annealing 
-t_max: 980 # In Tweedie -> 999
+t_max: 999 # In Tweedie -> 999
 t_min: 270 # In Tweedie -> 0
 noise_sampler: sds
 
@@ -45,7 +59,7 @@ ode_steps: 50
 seam_removal_steps: 4
 
 logger: self 
-log_interval: 1
+log_interval: 5
 
 recon_steps: 1
 recon_type: rgb

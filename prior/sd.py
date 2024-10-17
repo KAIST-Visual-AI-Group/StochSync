@@ -1,4 +1,4 @@
-from typing import Dict, Literal
+from typing import Dict, Literal, Tuple, List
 from dataclasses import dataclass, field
 from abc import ABC, abstractmethod
 
@@ -49,9 +49,9 @@ class StableDiffusionPrior(Prior):
         super().__init__()
         self.cfg = self.Config(**cfg)
 
-        if not ((self.cfg.width == self.cfg.height == 512) or (self.cfg.width == self.cfg.height == 64)):
-            print_error("Width and height must be 512(64) for Stable Diffusion")
-            raise ValueError
+        # if not ((self.cfg.width == self.cfg.height == 512) or (self.cfg.width == self.cfg.height == 64)):
+        #     print_error("Width and height must be 512(64) for Stable Diffusion")
+        #     raise ValueError
 
         self.scheduler = DDIMScheduler.from_pretrained(
             self.cfg.model_name, subfolder="scheduler"
@@ -65,6 +65,8 @@ class StableDiffusionPrior(Prior):
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
         self.pipeline.text_encoder.requires_grad_(False)
+        # self.cfg.text_prompt = self.cfg.text_prompt + ", best quality, high quality, extremely detailed, good geometry"
+        print_info(self.cfg.text_prompt)
         
     @property
     def rgb_res(self):
@@ -90,7 +92,6 @@ class StableDiffusionPrior(Prior):
             pos_embeds.append(pos)
 
         text_embeddings = torch.cat(neg_embeds + pos_embeds)
-
         self.cond = {"encoder_hidden_states": text_embeddings}
         return self.cond
 
@@ -130,6 +131,116 @@ class StableDiffusionPrior(Prior):
             }
         return noise_pred
 
+class UltimateStableDiffusionPrior(StableDiffusionPrior):
+    @ignore_kwargs
+    @dataclass
+    class Config(StableDiffusionPrior.Config):
+        angle_prompts: List[Tuple[int, int, str]] = field(
+            default_factory=lambda: {
+                # (azim, elev, prompt)
+                (0, 0): "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes",
+                (0, 90): "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes",
+                (0, 180): "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes",
+                (0, 270): "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes",
+            }
+        )
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+
+    def prepare_cond(self, camera, text_prompt=None, negative_prompt=None):
+        text_prompt = text_prompt if text_prompt is not None else self.cfg.text_prompt
+        negative_prompt = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
+
+        def sphere_dist(azim, elev, azim2, elev2):
+            return np.arccos(
+                np.sin(np.radians(elev)) * np.sin(np.radians(elev2))
+                + np.cos(np.radians(elev)) * np.cos(np.radians(elev2)) * np.cos(np.radians(azim - azim2))
+            )
+
+        azim, elev = camera["azimuth"], camera["elevation"]
+        text_prompts = []
+        for az, el in zip(azim, elev):
+            # find the closest angle on the sphere
+            min_dist = 1e9
+            min_prompt = None
+            for az2, el2, prompt in self.cfg.angle_prompts:
+                dist = sphere_dist(az, el, az2, el2)
+                if dist < min_dist:
+                    min_dist = dist
+                    min_prompt = prompt
+            text_prompts.append(min_prompt)
+        print(text_prompts)
+
+        neg_embeds, pos_embeds = [], []
+        for prompt in text_prompts:
+            text_embeddings = self.encode_text(
+                prompt, negative_prompt=negative_prompt
+            )  # neg, pos
+            neg, pos = text_embeddings.chunk(2)
+            neg_embeds.append(neg)
+            pos_embeds.append(pos)
+
+        text_embeddings = torch.cat(neg_embeds + pos_embeds)
+
+        self.cond = {"encoder_hidden_states": text_embeddings}
+        return self.cond
+
+class CubemapStableDiffusionPrior(StableDiffusionPrior):
+    @ignore_kwargs
+    @dataclass
+    class Config(StableDiffusionPrior.Config):
+        angle_prompts: Dict[int, str] = field(
+            default_factory=lambda: {
+                "front": "a room",
+                "right": "a room",
+                "back": "a room",
+                "left": "a room",
+                "top": "a ceiling",
+                "bottom": "a floor",
+            }
+        )
+
+    def __init__(self, cfg):
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+
+    def prepare_cond(self, camera, text_prompt=None, negative_prompt=None):
+        text_prompt = text_prompt if text_prompt is not None else self.cfg.text_prompt
+        negative_prompt = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
+
+        azim, elev = camera["azimuth"], camera["elevation"]
+        text_prompts = []
+        for az, el in zip(azim, elev):
+            if el == 90:
+                text_prompts.append(self.cfg.angle_prompts["top"])
+            elif el == -90:
+                text_prompts.append(self.cfg.angle_prompts["bottom"])
+            else:
+                if az == 0 or az == 45:
+                    text_prompts.append(self.cfg.angle_prompts["front"])
+                elif az == 90 or az == 135:
+                    text_prompts.append(self.cfg.angle_prompts["right"])
+                elif az == 180 or az == 225:
+                    text_prompts.append(self.cfg.angle_prompts["back"])
+                elif az == 270 or az == 315:
+                    text_prompts.append(self.cfg.angle_prompts["left"])
+        # print(text_prompts)
+
+        neg_embeds, pos_embeds = [], []
+        for prompt in text_prompts:
+            text_embeddings = self.encode_text(
+                prompt, negative_prompt=negative_prompt
+            )  # neg, pos
+            neg, pos = text_embeddings.chunk(2)
+            neg_embeds.append(neg)
+            pos_embeds.append(pos)
+
+        text_embeddings = torch.cat(neg_embeds + pos_embeds)
+
+        self.cond = {"encoder_hidden_states": text_embeddings}
+        return self.cond
 
 class ViewDependentStableDiffusionPrior(StableDiffusionPrior):
     def __init__(self, cfg):

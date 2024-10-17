@@ -3,7 +3,9 @@ from typing import Dict, Optional, List
 
 import os 
 import torch
+import torch.nn.functional as F
 import math
+from PIL import Image
 
 from .image import ImageModel
 
@@ -11,6 +13,7 @@ import shared_modules
 from torch.optim.lr_scheduler import LambdaLR
 from utils.extra_utils import ignore_kwargs
 from utils.panorama_utils import pano_to_pers_raw, pers_to_pano_raw, pano_to_pers_accum_raw
+from utils.panorama_utils import  compute_pano2pers_map, compute_pers2pano_map, compute_sp2pers_map, compute_pers2sp_map, compute_pers2torus_map, compute_torus2pers_map
 from utils.image_utils import save_tensor, pil_to_torch
 from utils.print_utils import print_warning
 
@@ -45,6 +48,12 @@ class PanoramaModel(ImageModel):
         learning_rate: float = 0.1
         eval_pos: Optional[int] = None
         max_steps: int = 10000
+        mode: str = "panorama"  # panorama, sphere, torus
+        seam_removal_mode: str = "horizontal"  # horizontal, vertical, both
+
+        gt_image: Optional[str] = None
+        gt_elev: Optional[float] = None
+        gt_azim: Optional[float] = None
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -52,6 +61,17 @@ class PanoramaModel(ImageModel):
         self.image = None
         self.optimizer = None
         self.scheduler = None 
+
+        if self.cfg.mode == "panorama":
+            self.c2i_func = compute_pano2pers_map
+            self.i2c_func = compute_pers2pano_map
+        elif self.cfg.mode == "sphere":
+            self.c2i_func = compute_sp2pers_map
+            self.i2c_func = compute_pers2sp_map
+        elif self.cfg.mode == "torus":
+            self.c2i_func = compute_torus2pers_map
+            self.i2c_func = compute_pers2torus_map
+
 
     def prepare_optimization(self) -> None:
         self.image = torch.nn.Parameter(
@@ -63,14 +83,13 @@ class PanoramaModel(ImageModel):
                 self.cfg.init_img_path,
             )
         )
-        self.preserve_mask = None
-        print(self.cfg.init_img_path, self.cfg.initialization)
-        if self.cfg.init_img_path is not None and self.cfg.initialization == "image":
-            self.preserve_img = self.image.clone()
-            self.preserve_mask = self.image.norm(dim=0, keepdim=True) > 1e-6
-            self.preserve_mask = self.preserve_mask.expand_as(self.image)
-            print(self.preserve_mask.sum())
-        # self.optimizer = torch.optim.Adam([self.image], lr=self.cfg.learning_rate)
+        self.original_img = self.image.clone()
+
+        self.gt_image = None
+        if self.cfg.gt_image is not None:
+            self.gt_image = Image.open(self.cfg.gt_image).convert("RGB")
+            self.gt_image = pil_to_torch(self.gt_image).to(self.image)
+        
         self.optimizer = torch.optim.AdamW([self.image], lr=self.cfg.learning_rate, weight_decay=0)
         self.scheduler = get_cosine_schedule_with_warmup(self.optimizer, 100, int(self.cfg.max_steps*1.5))
         
@@ -110,6 +129,8 @@ class PanoramaModel(ImageModel):
         )
 
         img_projected = []
+        mask_projected = []
+        mask = (self.image != self.original_img).float()
         for i in range(num_cameras):
             img_projected.append(
                 pano_to_pers_raw(
@@ -119,13 +140,28 @@ class PanoramaModel(ImageModel):
                     elev[i],
                     height,
                     width,
+                    mapping_func=self.c2i_func,
+                    quat=camera.get("quat", None),
+                )
+            )
+            mask_projected.append(
+                pano_to_pers_raw(
+                    mask.unsqueeze(0),
+                    fov,
+                    azim[i],
+                    elev[i],
+                    height,
+                    width,
+                    mapping_func=self.c2i_func,
+                    quat=camera.get("quat", None),
                 )
             )
         img_projected = torch.cat(img_projected, dim=0)
+        mask_projected = torch.cat(mask_projected, dim=0)
 
         return {
             "image": img_projected,
-            "alpha": torch.ones(num_cameras, 1, height, width, device=self.cfg.device),
+            "alpha": mask_projected,
         }
         
     @torch.no_grad()
@@ -156,8 +192,8 @@ class PanoramaModel(ImageModel):
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
-        # print_warning("Directly returning the raw image for stability. This is a temporary solution.")
-        # return image
+        print_warning("Directly returning the raw image for stability. This is a temporary solution.")
+        return image
         
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
         azims = (0, 36, 72, 108, 144, 180, 216, 252, 288, 324)
@@ -182,17 +218,18 @@ class PanoramaModel(ImageModel):
             cameras["elevation"],
         )
 
-        img_new = torch.zeros(1, 3, 2048, 4096, device=self.cfg.device)
-        img_cnt = torch.zeros(1, 1, 2048, 4096, device=self.cfg.device)
+        img_new = torch.zeros(1, 3, self.cfg.pano_height, self.cfg.pano_width, device=self.cfg.device)
+        img_cnt = torch.zeros(1, 1, self.cfg.pano_height, self.cfg.pano_width, device=self.cfg.device)
         for i in range(num_cameras):
             img_tmp, mask = pers_to_pano_raw(
                 rgbs[i:i+1],
                 fov,
                 azim[i],
                 elev[i],
-                2048,
-                4096,
+                self.cfg.pano_height,
+                self.cfg.pano_width,
                 return_mask=True,
+                xy_to_lonlat=self.xy_to_lonlat,
             )
             img_new += img_tmp.squeeze(0)
             img_cnt += mask.squeeze(0).long()
@@ -200,6 +237,30 @@ class PanoramaModel(ImageModel):
         image = img_new / (img_cnt + 1e-6)
 
         return image
+    
+
+    def get_diffusion_softmask(self, camera):
+        num_cameras = camera["num"]
+        width, height = (
+            camera["width"],
+            camera["height"]
+        )
+        
+        H, W = height, width
+        x = torch.linspace(0, 1, W//2)  # from 0 to 1 in 32 steps
+        x = torch.cat([x, torch.flip(x, dims=[0])])  # mirror it to go back to 0 (64 steps in total)
+        mask = x.repeat(H, 1).to(self.device)
+        mask = mask.unsqueeze(0).unsqueeze(0).repeat(num_cameras, 1, 1, 1)
+
+        if self.cfg.seam_removal_mode == "horizontal":
+            return mask
+        elif self.cfg.seam_removal_mode == "vertical":
+            return mask.permute(0, 1, 3, 2)
+        elif self.cfg.seam_removal_mode == "both":
+            h_mask = mask
+            v_mask = mask.permute(0, 1, 3, 2)
+            # take minimum
+            return torch.min(h_mask, v_mask)
 
     @torch.no_grad()
     def closed_form_optimize(self, step, camera, target):
@@ -220,6 +281,9 @@ class PanoramaModel(ImageModel):
         img_new = torch.zeros_like(self.image)
         img_cnt = torch.zeros_like(self.image, dtype=torch.long)
         for i in range(num_cameras):
+            if self.gt_image is not None and azim[i] == self.cfg.gt_azim and elev[i] == self.cfg.gt_elev:
+                print("GT image found!")
+                target[i] = F.interpolate(self.gt_image, size=(height, width), mode="bilinear", align_corners=False)[i]
             img_tmp, mask = pers_to_pano_raw(
                 target[i:i+1],
                 fov,
@@ -228,23 +292,25 @@ class PanoramaModel(ImageModel):
                 self.cfg.pano_height,
                 self.cfg.pano_width,
                 return_mask=True,
+                mapping_func=self.i2c_func,
+                quat=camera.get("quat", None),
             )
-            img_new += img_tmp.squeeze(0)
+            img_new[img_cnt==0] += img_tmp.squeeze(0)[img_cnt==0]
             # round mask
-            img_cnt += mask.squeeze(0).long()
+            img_cnt[img_cnt==0] += mask.unsqueeze(0).expand(3,-1,-1).long()[img_cnt==0]
         
         img_new = img_new / (img_cnt + 1e-6)
         img_new[img_cnt == 0] = self.image[img_cnt == 0]
 
-        if self.preserve_mask is not None:
-            print_info("Preserving the original image...")
-            img_new[self.preserve_mask] = self.preserve_img[self.preserve_mask]
+        # if self.preserve_mask is not None:
+        #     print_info("Preserving the original image...")
+        #     img_new[self.preserve_mask] = self.preserve_img[self.preserve_mask]
         
         self.image.data = img_new
     
 
     def get_noise(self, camera):
-        noise_map = torch.randn(1, 4, 2048, 4096, device=self.cfg.device)
+        noise_map = torch.randn(1, 4, self.cfg.pano_height, self.cfg.pano_width, device=self.cfg.device)
         num_cameras = camera["num"]
         fov, azim, elev = (
             camera["fov"],

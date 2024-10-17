@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 
 import torch
 
-from utils.image_utils import save_tensor, convert_to_video
+from utils.image_utils import save_tensor, convert_to_video, convert_to_gif
 from utils.print_utils import print_info, print_warning, print_error
 from utils.extra_utils import ignore_kwargs
 from utils.camera_utils import generate_camera, merge_camera
@@ -121,6 +121,8 @@ class SimpleLogger(BaseLogger):
         log_interval: int = 100
         prefix: str = ""
         use_encoder_decoder: bool = False
+        save_type: str = "cat_image"
+        save_video: bool = False
 
     def __init__(self, cfg) -> None:
         super().__init__()
@@ -152,8 +154,37 @@ class SimpleLogger(BaseLogger):
         save_tensor(
             images,
             os.path.join(self.training_dir, f"training_{step:05d}.png"),
-            save_type="cat_image",
+            save_type=self.cfg.save_type,
         )
+
+    def end_logging(self):
+        if not self.cfg.save_video:
+            return
+        
+        num_files = len(os.listdir(self.training_dir))
+
+        if num_files == 1:
+            import shutil
+
+            shutil.copyfile(
+                os.path.join(self.training_dir, "training_00000.png"),
+                os.path.join(self.cfg.root_dir, "result.png"),
+            )
+        else:
+            if num_files < 20:  # lerp between 1 and 4fps for 2-20 files
+                fps = int(2 + (num_files - 2) * 3 / 18)
+            elif num_files < 100:  # lerp between 4 and 20fps for 20-100 files
+                fps = int(4 + (num_files - 20) * 16 / 80)
+            elif num_files < 1000:  # lerp between 20 and 30fps for 100-1000 files
+                fps = int(20 + (num_files - 100) * 10 / 900)
+            else:  # 30fps for 1000+ files
+                fps = 30
+
+            convert_to_video(
+                self.training_dir,
+                os.path.join(self.cfg.root_dir, "result.mp4"),
+                fps=fps,
+            )
 
 
 class SimpleLatentRawLogger(SimpleLogger):

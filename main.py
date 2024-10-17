@@ -21,7 +21,7 @@ from utils.random_utils import seed_everything
 class Config:
     root_dir: str = "./results/default"
     save_source: bool = False
-    seed: int = 0
+    seed: int = 1
     tag: str = ""
 
 

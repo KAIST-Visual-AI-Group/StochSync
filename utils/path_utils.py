@@ -44,7 +44,7 @@ def gather_paths(pattern):
             if j < len(pattern) and pattern[j] == ':':
                 # Found a complete :n: pattern
                 key_number = int(pattern[i+1:j])  # Extract the number in :n:
-                regex_pattern += r'([^/-]+)'  # Match anything except hyphen (-)
+                regex_pattern += r'([^/]+)'  # Match anything except hyphen (-)
                 glob_pattern += '*'  # Add * to the glob pattern
                 keys_indices[key_count] = key_number
                 key_count += 1

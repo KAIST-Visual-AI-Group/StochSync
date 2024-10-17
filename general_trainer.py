@@ -71,7 +71,7 @@ class GeneralTrainer(ABC):
         init_step: int = 0
         output: str = "output"
         prefix: str = ""
-        save_source: bool = True
+        save_source: bool = False
         recon_steps: int = 30
         initial_recon_steps: Optional[int] = None
         recon_type: str = "rgb"
@@ -83,7 +83,8 @@ class GeneralTrainer(ABC):
         ode_steps: int = 100
         log_interval: int = 100
         seam_removal_steps: int = 0
-        loss_scale: float = 2000
+        force_optim_steps: int = 0
+        warmup_steps: int = 0
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -123,14 +124,6 @@ class GeneralTrainer(ABC):
         def g(camera):
             r_pkg = sm.model.render(camera)
             bg = sm.background(camera)
-            # if self.prev_target is not None:
-            #     print_warning("Using the previous target as the background...")
-            #     bg = self.prev_target
-            #     with torch.no_grad():
-            #         if r_pkg["image"].shape[1] < bg.shape[1]:
-            #             bg = sm.prior.decode_latent(bg)
-            #         elif r_pkg["image"].shape[1] > bg.shape[1]:
-            #             bg = sm.prior.encode_image_if_needed(bg)
             return r_pkg["image"] + bg * (1 - r_pkg["alpha"])
 
         with torch.no_grad():
@@ -150,9 +143,10 @@ class GeneralTrainer(ABC):
             noise = sm.noise_sampler(camera, latent, t_curr, prev_eps)
 
             # 5. Perturb-recover to get the GT latent
-            if step == 0:
+            if step < self.cfg.warmup_steps:
                 latent_noisy = noise
                 t_curr = 999
+                print("Warmup step")
             else:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
 
@@ -164,6 +158,7 @@ class GeneralTrainer(ABC):
                     # alpha = render_pkg["alpha"][:, 0]
                     # cosmap[alpha == 0] = 1.0
                     cosmap = sm.model.get_diffusion_softmask(camera)
+                    cosmap = cosmap.squeeze(1)
                     cosmap = downscale_min(cosmap, 8)
                     save_tensor(cosmap, f"{self.cfg.root_dir}/debug/cosmap_{step}.png", save_type="cat_image", is_grayscale=True)
 
@@ -203,13 +198,16 @@ class GeneralTrainer(ABC):
                 target = gt_image
             else:
                 target = gt_tweedie
-        self.prev_target = target
+        
+        if hasattr(sm.background, "cache"):
+            sm.background.cache(camera, target)
 
         # 7. Optimize the rendering to match the target
         final_loss = 0.0
         if self.cfg.use_closed_form:
             sm.model.closed_form_optimize(step, camera, target)
         else:
+            print_info("Optimizing the latent...")
             recon_steps = self.cfg.recon_steps
             if self.cfg.initial_recon_steps is not None and step == 0:
                 print_info("Using another # of steps for the first step...")
@@ -228,7 +226,7 @@ class GeneralTrainer(ABC):
                         coeff
                         * F.mse_loss(source, target, reduction="sum")
                         / camera["num"]
-                    ) * self.cfg.loss_scale
+                    )
                     total_loss.backward()
 
                     global_step = (step * recon_steps) + in_step

@@ -127,8 +127,12 @@ class EnvironmentLight(torch.nn.Module):
 ######################################################################################
 
 # Load from latlong .HDR file
-def _load_env_hdr(fn, scale=1.0):
+def _load_env_hdr(fn, scale=1.0, invert=False):
     latlong_img = torch.tensor(util.load_image(fn), dtype=torch.float32, device='cuda')*scale
+    if invert:
+        # 180 degree rotation
+        print(latlong_img.shape)
+        latlong_img = torch.flip(latlong_img, [0])
     cubemap = util.latlong_to_cubemap(latlong_img, [512, 512])
 
     l = EnvironmentLight(cubemap)
@@ -136,9 +140,9 @@ def _load_env_hdr(fn, scale=1.0):
 
     return l
 
-def load_env(fn, scale=1.0):
+def load_env(fn, scale=1.0, invert=False):
     if os.path.splitext(fn)[1].lower() == ".hdr":
-        return _load_env_hdr(fn, scale)
+        return _load_env_hdr(fn, scale, invert)
     else:
         assert False, "Unknown envlight extension %s" % os.path.splitext(fn)[1]
 

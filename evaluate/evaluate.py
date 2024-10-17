@@ -12,6 +12,7 @@ import tempfile
 import shutil
 from cleanfid import fid
 from clip_eval import ClipEvaluator
+from giqa_eval import GIQAEvaluator
 from utils.print_utils import print_info, print_error, print_warning, print_with_box
 from utils.path_utils import gather_paths, filter_paths, collect_keys
 from natsort import natsorted
@@ -23,7 +24,7 @@ def evaluate_fid(fdir1, fdir2):
 
 
 def evaluate_kid(fdir1, fdir2):
-    score = fid.compute_kid(fdir1, fdir2)
+    score = fid.compute_kid(fdir1, fdir2) * 1000
     return score
 
 
@@ -36,11 +37,12 @@ def evaluate_clip(fdir, prompt, model):
         cos_sim_list.append(cos_sim)
 
     clip_score = sum(cos_sim_list) / len(cos_sim_list)
-    return clip_score
+    return clip_score.item() * 100
 
 
 def eval_experiment(ref_pattern, fake_pattern, output=None):
     clip_evaluator = ClipEvaluator().cuda()
+    giqa_evaluator = GIQAEvaluator()
     print_with_box(
         f"Reference: {ref_pattern}\n" f"Fake: {fake_pattern}",
         title="Evaluation Setup",
@@ -72,7 +74,7 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
         # temp_ref_dir = "temp_ref_dir"
         # temp_fake_dir = "temp_fake_dir"
         # if True:
-        with tempfile.TemporaryDirectory() as temp_ref_dir, tempfile.TemporaryDirectory() as temp_fake_dir:
+        with tempfile.TemporaryDirectory() as temp_ref_dir, tempfile.TemporaryDirectory() as temp_fake_dir, tempfile.TemporaryDirectory() as temp_feature_dir:
             for ref_path in ref_paths:
                 # concatenate the path into a single filename to prevent collision
                 ref_path_str = "_".join(ref_path.split(os.sep))
@@ -88,8 +90,9 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
 
             fid_score = evaluate_fid(temp_fake_dir, temp_ref_dir)
             kid_score = evaluate_kid(temp_fake_dir, temp_ref_dir)
-
-        print_info(f"FID: {fid_score}, KID: {kid_score}")
+            giqa_scores = giqa_evaluator(temp_ref_dir, temp_fake_dir, temp_feature_dir)
+        # print(giqa_scores)
+        print_info(f"FID: {fid_score}, KID: {kid_score}, GIQA: {giqa_scores}")
 
         # measure clip
         clip_scores = []
@@ -109,26 +112,29 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
                     continue
 
                 prompt = prompt_key.replace("_", " ")
+                # print_info(f"Prompt: {prompt}")
                 clip_score = evaluate_clip(temp_fake_dir, prompt, clip_evaluator)
                 # print(f"Prompt: {prompt}, Clip: {clip_score}")
                 clip_scores.append(clip_score)
+        print_info(f"Number of prompts: {len(clip_scores)}")
         clip_score = sum(clip_scores) / len(clip_scores)
         print_info(f"Average Clip: {clip_score}")
 
         exp_keys_str = ", ".join(exp_keys)
         result_dict[exp_keys_str] = {
-            "clip": clip_score,
             "fid": fid_score,
             "kid": kid_score,
+            "giqa": giqa_scores,
+            "clip": clip_score,
         }
 
     print_with_box(
         f"Results\n"
-        + f"{'Experiment':<20}{'Clip':<10}{'FID':<10}{'KID':<10}\n"
+        + f"{'Experiment':<20}{'FID':<10}{'KID':<10}{'GIQA':<10}{'Clip':<10}\n"
         + f"{'-'*50}\n"
         + "\n".join(
             [
-                f"{exp:<20}{scores['clip']:<10.4f}{scores['fid']:<10.4f}{scores['kid']:<10.4f}"
+                f"{exp:<20}{scores['fid']:<10.4f}{scores['kid']:<10.4f}{scores['giqa']:<10.4f}{scores['clip']:<10.4f}"
                 for exp, scores in result_dict.items()
             ]
         ),
@@ -138,9 +144,9 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
     if output:
         with open(output, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["Experiment", "Clip", "FID", "KID"])
+            writer.writerow(["Experiment", "FID", "KID", "GIQA", "Clip"])
             for exp, scores in result_dict.items():
-                writer.writerow([exp, scores["clip"], scores["fid"], scores["kid"]])
+                writer.writerow([exp, scores["fid"], scores["kid"], scores["giqa"], scores["clip"]])
         print_info(f"Results saved in {output}")
 
 

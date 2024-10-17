@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import random
 from torch.utils.data import Dataset, IterableDataset
 from utils.camera_utils import generate_camera_params
 from typing import Literal, Tuple
@@ -221,20 +222,45 @@ class AlternateCameraDataset(CameraDataset):
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
         self.cfg = self.Config(**cfg)
-        self.flag = False
+        self.cnt = 0
+        assert len(self.cfg.dists) == len(self.cfg.elevs) == len(self.cfg.azims), "Length of dists, elevs, and azims must be the same"
+        # assert len(self.cfg.dists) % self.cfg.batch_size == 0, "Number of cameras must be divisible by batch size"
 
     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
         dists = self.cfg.dists
         elevs = self.cfg.elevs
         azims = self.cfg.azims
 
-        if self.flag:
-            azims = azims[1::2]
-            dists = dists[1::2]
-            elevs = elevs[1::2]
-        else:
-            azims = azims[::2]
-            dists = dists[::2]
-            elevs = elevs[::2]
-        self.flag = not self.flag
+        B = self.cfg.batch_size
+        chunk = B * (self.cnt % ((len(dists) + B - 1) // B))
+        azims = azims[chunk:chunk+B]
+        dists = dists[chunk:chunk+B]
+        elevs = elevs[chunk:chunk+B]
+        self.cnt += 1
         return self.params_to_cameras(dists, elevs, azims)
+    
+
+
+class QuatCameraDataset(CameraDataset):
+    def generate_sample(self):
+        cameras = self.params_to_cameras(self.cfg.dists, self.cfg.elevs, self.cfg.azims)
+        q = torch.randn(4)
+        q = q / torch.norm(q)
+        cameras['quat'] = q
+        return cameras
+    
+class TorusCameraDataset(CameraDataset):
+    def __init__(self, cfg) -> None:
+        super().__init__(cfg)
+        self.cfg = self.Config(**cfg)
+        self.cnt = 0
+
+    def generate_sample(self):
+        cameras = self.params_to_cameras(self.cfg.dists, self.cfg.elevs, self.cfg.azims)
+        azim_offset = (self.cnt * 45) % 180
+        elev_offset = (self.cnt * 60) % 180
+        cameras['azimuth'] = [(azim + azim_offset) % 360 for azim in cameras['azimuth']]
+        cameras['elevation'] = [(elev + elev_offset) % 360 if elev != 0 else elev for elev in cameras['elevation']]
+
+        self.cnt += 1
+        return cameras

@@ -104,21 +104,51 @@ def attach_direction_prompt(prompt, elevs, azims):
 
     for elev, azim in zip(elevs, azims):
         direction_prompt = ""
-        # elev 60~: top view
-        # azim -45~45: front view
-        # azim 45~135: right view
-        # azim 135~225: back view
-        # azim 225~315: left view
         if elev > 60:
-            direction_prompt = "top view"
+            direction_prompt = "overhead view"
         elif azim < 45 or azim > 315:
-            direction_prompt = "front view"
+            direction_prompt = "side view"
         elif azim < 135:
-            direction_prompt = "right view"
+            direction_prompt = "front view"
         elif azim < 225:
+            direction_prompt = "side view"
+        else:
+            direction_prompt = "back view"
+        output_prompts.append(f"{prompt}, {direction_prompt}")
+
+    return output_prompts
+
+
+def attach_detailed_direction_prompt(prompt, elevs, azims):
+    if type(elevs) == float:
+        elevs = [elevs]
+    if type(azims) == float:
+        azims = [azims]
+
+    output_prompts = []
+
+    for elev, azim in zip(elevs, azims):
+        # make sure the values are in the range of 0~360
+        azim = (azim + 360) % 360
+        direction_prompt = ""
+        if elev > 60:
+            direction_prompt = "overhead view"
+        elif azim < 22.5 or azim > 337.5:
+            direction_prompt = "side view"
+        elif azim < 67.5:
+            direction_prompt = "front-side view"
+        elif azim < 112.5:
+            direction_prompt = "front view"
+        elif azim < 157.5:
+            direction_prompt = "front-side view"
+        elif azim < 202.5:
+            direction_prompt = "side view"
+        elif azim < 247.5:
+            direction_prompt = "back-side view"
+        elif azim < 292.5:
             direction_prompt = "back view"
         else:
-            direction_prompt = "left view"
+            direction_prompt = "back-side view"
         output_prompts.append(f"{prompt}, {direction_prompt}")
 
     return output_prompts

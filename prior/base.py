@@ -19,7 +19,7 @@ from utils.image_utils import save_tensor
 
 # NEGATIVE_PROMPT = "ugly, bad anatomy, blurry, pixelated obscure, unnatural colors, poor lighting, dull, and unclear, cropped, lowres, low quality, artifacts, duplicate, morbid, mutilated, poorly drawn face, deformed, dehydrated, bad proportions"
 NEGATIVE_PROMPT = (
-    "deformed, extra digit, fewer digits, cropped, worst quality, low quality, smoke"
+    "low quality, blurry, bad anatomy, disfigured, poorly drawn face"
 )
 
 
@@ -226,7 +226,8 @@ class Prior(ABC):
             guidance_scale if guidance_scale is not None else self.cfg.guidance_scale
         )
 
-        x_t = x_t.detach()
+        orig_dtype = x_t.dtype
+        x_t = x_t.detach().to(self.dtype)
 
         # linearly interpolate between 1000 and 0
         raw_timesteps = torch.linspace(999, 0, num_steps, dtype=torch.long)
@@ -276,6 +277,7 @@ class Prior(ABC):
 
         for i, (t_curr, t_next) in enumerate(zip(timesteps[:-1], timesteps[1:])):
             # print(f"DDIM step {i+1}/{len(timesteps)-1}")
+
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs
             )
@@ -296,7 +298,7 @@ class Prior(ABC):
                 x_t, noise_pred, t_curr, t_next, renoise_eps=renoise_eps, eta=eta
             )
             if edge_preserve:
-                M = (mask >= (1 - i / N)).float()
+                M = (mask >= (1 - i / N)).to(x_t.dtype)
                 x_t = x_t * M + self.get_noisy_sample(clean, clean_eps, t_next) * (1 - M)
 
-        return x_t
+        return x_t.to(orig_dtype)

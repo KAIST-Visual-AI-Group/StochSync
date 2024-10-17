@@ -4,6 +4,7 @@ import numpy as np
 import pymeshlab
 import xatlas
 from .matrix_utils import rodrigues, apply_projection
+import tempfile
 
 def read_obj(file_path):
     vertices = []
@@ -115,6 +116,14 @@ def convert_to_obj(src, dest):
     ms.save_current_mesh(dest, save_textures=False, save_wedge_texcoord=False)
     return flag
 
+def extract_texture(src, dest):
+    ms = pymeshlab.MeshSet()
+    assert src.endswith(".glb") or src.endswith(".gltf")
+    ms.load_new_mesh(src, load_in_a_single_layer=False)
+    assert len(ms) == 1
+    assert ms.current_mesh().texture_number() == 1
+    ms.current_mesh().texture(0).save(dest)
+
 # simplify using pymeshlab
 def simplify_mesh(v, f, target_face_num=30000):
     m = pymeshlab.Mesh(v, f - 1)  # pymeshlab uses 0-based indexing
@@ -137,25 +146,6 @@ def simplify_mesh(v, f, target_face_num=30000):
 
     m = ms.current_mesh()
     return m.vertex_matrix(), m.face_matrix() + 1
-
-def wedge_uv_to_vertex_uv(v, f, uv):
-    """
-    Converts per-wedge UV coordinates to per-vertex UV coordinates.
-    
-    Parameters:
-    -----------
-    v : np.ndarray
-        Vertex positions (N, 3).
-    f : np.ndarray
-        Face indices (F, 3).
-    uv : np.ndarray
-        Per-wedge UV coordinates (F*3, 2).
-        
-    Returns:
-    --------
-    vertex_uv : np.ndarray
-        Per-vertex UV coordinates (N, 2).
-    """
 
 def unwrap_mesh(v, f):
     """
