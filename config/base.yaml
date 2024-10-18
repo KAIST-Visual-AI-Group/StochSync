@@ -1,0 +1,139 @@
+root_dir: ./results
+tag: tag_name
+text_prompt: "Your text prompt here"
+
+#===============================================================================
+# Trainer settings
+#===============================================================================
+max_steps: 25
+warmup_steps: 4
+
+use_ode: true
+ode_steps: 50
+seam_removal_steps: 4
+
+use_closed_form: true
+recon_type: rgb
+recon_steps: 1
+
+disable_debug: False
+
+#===============================================================================
+# Dataset
+#===============================================================================
+dataset: alternate_camera
+batch_size: 4
+height: 768
+width: 768
+convention: OpenGL
+up_vec: y
+fov: 60
+dists: [
+  2.0, 2.0, 2.0, 2.0,
+  2.0, 2.0, 2.0, 2.0,
+]
+elevs: [
+  0, 0, 0, 0,
+  30, 30, 30, 30,
+]
+azims: [
+  0, 90, 180, 270,
+  45, 135, 225, 315,
+]
+# or ==========================================
+dataset: random_mv
+height: 512
+width: 512
+batch_size: 5
+fov: 72
+dist_range: [1.0, 1.2]
+elev_range: [0, 30]
+azim_range: [0, 360]
+
+#===============================================================================
+# Background
+#===============================================================================
+background: solid
+rgb: [0, 0, 0, 0]
+# or ==========================================
+background: cache
+rgb: [0.1, 0.1, 0.1]
+# or ==========================================
+background: nerf
+learning_rate: 0.01
+
+#===============================================================================
+# Model
+#===============================================================================
+model: mesh
+mesh_path: "/home/aaaaa/data/texgen/processed/dragon.obj"
+texture_size: 2048
+mesh_scale: 1.0
+initialization: gray
+learning_rate: 0.05
+channels: 3
+sampling_mode: nearest
+use_selection: true
+# or ==========================================
+model: panorama
+mode: panorama
+pano_height: 2048
+pano_width: 4096
+channels: 3
+seam_removal_mode: horizontal
+# or ==========================================
+model: panorama
+mode: torus
+pano_height: 1024
+pano_width: 3072
+channels: 3
+seam_removal_mode: both
+# or ==========================================
+model: panorama
+mode: sphere
+pano_height: 2048
+pano_width: 4096
+channels: 3
+seam_removal_mode: both
+# or ==========================================
+model: ngp
+
+#===============================================================================
+# Prior
+#===============================================================================
+prior: sd
+guidance_scale: 7.5
+mixed_precision: True
+# or ==========================================
+prior: sd2_depth
+guidance_scale: 15.5
+mixed_precision: true
+use_view_dependent_prompt: true
+# or ==========================================
+prior: mvdream
+guidance_scale: 7.5
+
+#===============================================================================
+# Time sampler
+#===============================================================================
+time_sampler: sds
+# or ==========================================
+time_sampler: linear_annealing 
+t_max: 999
+t_min: 270
+
+#===============================================================================
+# Noise sampler
+#===============================================================================
+noise_sampler: sds
+# or ==========================================
+noise_sampler: ddim
+
+#===============================================================================
+# Logger
+#===============================================================================
+logger: self
+log_interval: 5
+# or ==========================================
+logger: simple
+log_interval: 1

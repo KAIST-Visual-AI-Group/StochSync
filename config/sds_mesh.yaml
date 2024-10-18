@@ -1,0 +1,78 @@
+root_dir: ./results/
+tag: mesh_sds
+text_prompt: "a DSLR photo of face of Kratos, god of war, best quality, high quality, extremely detailed, good geometry"
+
+#===============================================================================
+# Trainer settings
+#===============================================================================
+max_steps: 800
+warmup_steps: 0
+
+use_ode: false
+ode_steps: -1
+seam_removal_steps: 0
+
+use_closed_form: false
+recon_type: latent
+recon_steps: 1
+
+disable_debug: False
+
+#===============================================================================
+# Dataset
+#===============================================================================
+dataset: random
+batch_size: 2
+height: 512
+width: 512
+convention: OpenGL
+up_vec: y
+fov: 60
+dist_range: [2.0, 2.0]
+elev_range: [-5, 40]
+azim_range: [0, 360]
+
+#===============================================================================
+# Background
+#===============================================================================
+background: cache
+rgb: [0.1, 0.1, 0.1]
+
+#===============================================================================
+# Model
+#===============================================================================
+model: mesh
+mesh_path: "./data/mesh/face.obj"
+texture_size: 2048
+mesh_scale: 1.0
+initialization: gray
+learning_rate: 0.06
+channels: 3
+sampling_mode: linear-mipmap-linear
+use_selection: true
+
+#===============================================================================
+# Prior
+#===============================================================================
+prior: sd2_depth
+guidance_scale: 15.5
+mixed_precision: true
+use_view_dependent_prompt: true
+
+#===============================================================================
+# Time sampler
+#===============================================================================
+time_sampler: linear_annealing 
+t_max: 999
+t_min: 270
+
+#===============================================================================
+# Noise sampler
+#===============================================================================
+noise_sampler: sds
+
+#===============================================================================
+# Logger
+#===============================================================================
+logger: self
+log_interval: 20

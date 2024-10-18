@@ -1,20 +1,19 @@
 import os
 import argparse
-from omegaconf import OmegaConf
-from datetime import datetime
 from time import time
+from datetime import datetime
 import glob 
+from dataclasses import dataclass
 
 import torch
+from omegaconf import OmegaConf
 
-from utils.config_utils import load_config
-from distillation_trainer import DistillationTrainer
-from general_trainer import GeneralTrainer
-# from rewind_trainer import RewindTrainer
-from dataclasses import dataclass
-from utils.extra_utils import ignore_kwargs
-from utils.print_utils import print_with_box, print_info
-from utils.random_utils import seed_everything
+from stochsync.utils.config_utils import load_config
+from stochsync.distillation_trainer import DistillationTrainer
+from stochsync.general_trainer import GeneralTrainer
+from stochsync.utils.extra_utils import ignore_kwargs
+from stochsync.utils.print_utils import print_with_box, print_info
+from stochsync.utils.random_utils import seed_everything
 
 
 @ignore_kwargs
@@ -34,7 +33,7 @@ def main():
         "-t",
         "--trainer_type",
         default="general",
-        choices=["general", "distillation", "rewind"],
+        choices=["general", "distillation"],
         help="type of trainer to use",
     )
     args, extras = parser.parse_known_args()
@@ -46,11 +45,7 @@ def main():
     cfg.root_dir = os.path.join(cfg.root_dir.replace(" ", "_"), cfg.tag)
     
     if os.path.exists(os.path.join(cfg.root_dir, "_output")):
-        eval_dir = os.path.join(cfg.root_dir, "eval")
-        n_eval = len(glob.glob(f"{eval_dir}/*.png"))    
-        if n_eval == 10:
-            print(f"{os.path.join(cfg.root_dir, '_output')} already exists. Exiting.")
-            exit(0)
+        cfg.root_dir = cfg.root_dir + "_" + strnow
 
     print_with_box(
         f"Config loaded from {args.config} with the following content:\n{OmegaConf.to_yaml(cfg)}",
@@ -65,17 +60,14 @@ def main():
     with open(os.path.join(main_cfg.root_dir, "config.yaml"), "w") as f:
         f.write(OmegaConf.to_yaml(cfg))
 
-    print("trainer_type", args.trainer_type)
-    if args.trainer_type == "distillation":
-        trainer = DistillationTrainer(cfg)
-    elif args.trainer_type == "general":
+    print_info("trainer_type", args.trainer_type)
+    if args.trainer_type == "general":
         trainer = GeneralTrainer(cfg)
-    # elif args.trainer_type == "rewind":
-    #     trainer = RewindTrainer(cfg)
+    elif args.trainer_type == "distillation":
+        trainer = DistillationTrainer(cfg)
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 
-    # seed_everything(main_cfg.seed)
     start_time = time()
     output_filename = trainer.train()
     collapse_time = time() - start_time
