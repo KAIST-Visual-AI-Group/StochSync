@@ -12,7 +12,7 @@ from ..utils.extra_utils import ignore_kwargs
 from ..utils.panorama_utils import pano_to_pers_raw, pers_to_pano_raw, pano_to_pers_accum_raw
 from ..utils.panorama_utils import  compute_pano2pers_map, compute_pers2pano_map, compute_sp2pers_map, compute_pers2sp_map, compute_pers2torus_map, compute_torus2pers_map
 from ..utils.image_utils import save_tensor, pil_to_torch
-from ..utils.print_utils import print_warning
+from ..utils.print_utils import print_warning, print_info
 
 from .image import ImageModel
 
@@ -189,7 +189,7 @@ class PanoramaModel(ImageModel):
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
-        print_warning("Directly returning the raw image for stability. This is a temporary solution.")
+        print_info("Directly returning the raw image for stability.")
         return image
         
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)

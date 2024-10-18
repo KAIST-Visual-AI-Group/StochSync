@@ -191,10 +191,10 @@ class GeneralTrainer:
 
             # 5.5. Calculate the weighting coefficient
             if self.cfg.weighting_scheme == "sds":
-                alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(latent)[t_curr]
+                alpha_t = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)[t_curr]
                 coeff = (1 - alpha_t) ** 1.5 * alpha_t**0.5
             elif self.cfg.weighting_scheme == "fixed":
-                alphas = sm.prior.pipeline.scheduler.alphas_cumprod.to(latent)
+                alphas = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)
                 coeffs = (1 - alphas) ** 1.5 * alphas**0.5
                 coeff = coeffs.mean()
             else:

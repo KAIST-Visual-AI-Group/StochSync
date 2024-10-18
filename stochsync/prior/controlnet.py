@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import torch
 from diffusers import StableDiffusionControlNetPipeline
 from diffusers import StableDiffusionDepth2ImgPipeline
-from diffusers import DDIMScheduler
+from diffusers import DDIMScheduler, DPMSolverMultistepScheduler
 from diffusers import ControlNetModel
 
 from ..utils.camera_utils import convert_camera_convention, camera_hash
@@ -56,15 +56,18 @@ class SD2DepthPrior(Prior):
             print_error("Width and height must be 768(96) for Stable Diffusion")
             raise ValueError
 
-        self.scheduler = DDIMScheduler.from_pretrained(
+        self.ddim_scheduler = DDIMScheduler.from_pretrained(
+            self.cfg.model_name, subfolder="scheduler"
+        )
+        self.fast_scheduler = DPMSolverMultistepScheduler.from_pretrained(
             self.cfg.model_name, subfolder="scheduler"
         )
         self.pipeline = StableDiffusionDepth2ImgPipeline.from_pretrained(
             self.cfg.model_name,
-            scheduler=self.scheduler,
+            scheduler=self.fast_scheduler,
             torch_dtype=torch.float16 if self.cfg.mixed_precision else torch.float32,
         ).to("cuda")
-        self.scheduler.set_timesteps(30)
+        self.ddim_scheduler.set_timesteps(30)
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
         self.pipeline.text_encoder.requires_grad_(False)
@@ -124,6 +127,14 @@ class SD2DepthPrior(Prior):
     def sample(self, text_prompt, num_samples=1):
         raise NotImplementedError
 
+    def fast_sample(self, camera, x_t, timesteps, guidance_scale=None, text_prompt=None, negative_prompt=None):
+        self.fast_scheduler.set_timesteps(timesteps=timesteps)
+        for t in timesteps:
+            noise_pred = self.predict(camera, x_t, t, guidance_scale, text_prompt, negative_prompt)
+            x_t = self.fast_scheduler.step(noise_pred, t, x_t, return_dict=False)[0]
+
+        return x_t
+    
     def predict(
         self,
         camera,
@@ -192,7 +203,10 @@ class ControlNetPrior(Prior):
             print_error("Width and height must be 768(96) for Stable Diffusion")
             raise ValueError
 
-        self.scheduler = DDIMScheduler.from_pretrained(
+        self.ddim_scheduler = DDIMScheduler.from_pretrained(
+            self.cfg.model_name, subfolder="scheduler"
+        )
+        self.fast_scheduler = DPMSolverMultistepScheduler.from_pretrained(
             self.cfg.model_name, subfolder="scheduler"
         )
 
@@ -203,11 +217,11 @@ class ControlNetPrior(Prior):
         self.pipeline = StableDiffusionControlNetPipeline.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
             controlnet=self.controlnet,
-            scheduler=self.scheduler,
+            scheduler=self.fast_scheduler,
             torch_dtype=torch.float16 if self.cfg.mixed_precision else torch.float32,
         ).to("cuda")
 
-        self.scheduler.set_timesteps(30)
+        self.ddim_scheduler.set_timesteps(30)
         self.controlnet.requires_grad_(False)
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
@@ -268,6 +282,14 @@ class ControlNetPrior(Prior):
     def sample(self, text_prompt, num_samples=1):
         raise NotImplementedError
 
+    def fast_sample(self, camera, x_t, timesteps, guidance_scale=None, text_prompt=None, negative_prompt=None):
+        self.fast_scheduler.set_timesteps(timesteps=timesteps)
+        for t in timesteps:
+            noise_pred = self.predict(camera, x_t, t, guidance_scale, text_prompt, negative_prompt)
+            x_t = self.fast_scheduler.step(noise_pred, t, x_t, return_dict=False)[0]
+
+        return x_t
+    
     def predict(
         self,
         camera,

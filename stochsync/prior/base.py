@@ -151,7 +151,7 @@ class Prior(ABC):
     def add_noise(self, x, t, noise=None):
         if noise is None:
             noise = torch.randn_like(x)
-        alpha_t = self.pipeline.scheduler.alphas_cumprod[t].to(x)
+        alpha_t = self.ddim_scheduler.alphas_cumprod[t].to(x)
         noisy_sample = alpha_t**0.5 * x + (1 - alpha_t)**0.5 * noise
 
         # assert torch.allclose(
@@ -160,29 +160,29 @@ class Prior(ABC):
         return noisy_sample
 
     def get_tweedie(self, noisy_sample, eps_pred, t):
-        alpha = self.pipeline.scheduler.alphas_cumprod[t]
+        alpha = self.ddim_scheduler.alphas_cumprod[t]
         tweedie = (noisy_sample - (1 - alpha) ** 0.5 * eps_pred) / alpha**0.5
         return tweedie
 
     def get_eps(self, noisy_sample, tweedie, t):
-        alpha = self.pipeline.scheduler.alphas_cumprod[t]
+        alpha = self.ddim_scheduler.alphas_cumprod[t]
         eps = (noisy_sample - (alpha**0.5) * tweedie) / (1 - alpha) ** 0.5
         return eps
 
     def get_noisy_sample(self, pred_original_sample, eps, t, eta=0, t_next=None, noise=None):
         if t_next is None:
-            interval = 1000 // self.pipeline.scheduler.num_inference_steps
+            interval = 1000 // self.ddim_scheduler.num_inference_steps
             t_next = min(t + interval, 999)
         
-        alpha = self.pipeline.scheduler.alphas_cumprod[t]
-        # alpha_next = self.pipeline.scheduler.alphas_cumprod[t_next]
+        alpha = self.ddim_scheduler.alphas_cumprod[t]
+        # alpha_next = self.ddim_scheduler.alphas_cumprod[t_next]
         if eta > 0:
             raise NotImplementedError("Eta > 0 not implemented yet.")
             if t_next > t:
                 # sigma = eta * ((1 - alpha)/(1 - alpha_next) * (1 - alpha_next/alpha)) ** 0.5
-                sigma = eta * self.pipeline.scheduler._get_variance(t_next, t) ** (0.5)
+                sigma = eta * self.ddim_scheduler._get_variance(t_next, t) ** (0.5)
             else:
-                sigma = eta * self.pipeline.scheduler._get_variance(t, t_next) ** (0.5)
+                sigma = eta * self.ddim_scheduler._get_variance(t, t_next) ** (0.5)
         else:
             sigma = 0
 
@@ -220,6 +220,7 @@ class Prior(ABC):
         clean=None,
         soft_mask=None,
         sdi_inv=False,
+        try_fast=True,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):
@@ -266,6 +267,12 @@ class Prior(ABC):
                 ]
             )
         
+        if try_fast and not edge_preserve and mode == "cfg":
+            if hasattr(self, "fast_sample"):
+                print_info("Fast sampling enabled")
+                output = self.fast_sample(camera, x_t, timesteps[:-1], guidance_scale=guidance_scale, **kwargs)
+                return output
+        
         if edge_preserve:
             N = len(timesteps - 1)
             H, W = x_t.shape[-2:]
@@ -309,7 +316,7 @@ class Prior(ABC):
             if sdi_inv:
                 assert eta == 0, "SDI eta must be 0. It uses inversion eta to only add noise to noisy sample."
                 assert t_next > t_curr, f"t_next {t_next} must be greater than t_curr {t_curr} for SDI"
-                variance = self.pipeline.scheduler._get_variance(t_next, t_curr) ** (0.5)
+                variance = self.ddim_scheduler._get_variance(t_next, t_curr) ** (0.5)
                 x_t += 0.3 * torch.randn_like(x_t) * variance
                 # print_info(f"sdi_inv with randn noise {variance}")
 

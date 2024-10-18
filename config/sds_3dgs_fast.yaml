@@ -1,19 +1,19 @@
-root_dir: ./results/
-tag: mesh
-text_prompt: "A face of Tom Cruise"
+root_dir: ./results
+tag: mvdream_3dgs_fast
+text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
 
 #===============================================================================
 # Trainer settings
 #===============================================================================
-max_steps: 25
-warmup_steps: 4
+max_steps: 500
+warmup_steps: 0
 
-use_ode: true
-ode_steps: 20
-seam_removal_steps: 4
+use_ode: false
+ode_steps: -1
+seam_removal_steps: 0
 
-use_closed_form: true
-recon_type: rgb
+use_closed_form: false
+recon_type: latent
 recon_steps: 1
 
 disable_debug: False
@@ -21,65 +21,47 @@ disable_debug: False
 #===============================================================================
 # Dataset
 #===============================================================================
-dataset: alternate_camera
+dataset: random_mv
 batch_size: 4
-height: 768
-width: 768
-convention: OpenGL
-up_vec: y
-fov: 60
-dists: [
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0
-]
-elevs: [
-  0, -15, 0, -15,
-  30, 0, 30, 0,
-  -15, 0, -15, 0,
-  0, 30, 0, 30
-]
-azims: [
-  0, 90, 180, 270,
-  45, 135, 225, 315,
-  0, 90, 180, 270,
-  45, 135, 225, 315
-]
+height: 256
+width: 256
+convention: RDF
+up_vec: z
+fov: 72
+dist_range: [1.8, 2.2]
+elev_range: [-5, 40]
+azim_range: [0, 360]
 
 #===============================================================================
 # Background
 #===============================================================================
-background: cache
-rgb: [0.1, 0.1, 0.1]
+background: black_white
 
 #===============================================================================
 # Model
 #===============================================================================
-model: mesh
-mesh_path: "./data/mesh/face.obj"
-texture_size: 2048
-mesh_scale: 1.0
-initialization: gray
-learning_rate: 0.05
-channels: 3
-sampling_mode: nearest
-use_selection: true
+model: gs
+xyz_lr: 0.0002
+scale_lr: 0.008
+quat_lr: 0.0005
+opacity_lr: 0.04
+feature_lr: 0.008
+refine_every: 50
+refine_start_iter: 50
+refine_stop_iter: 30000
 
 #===============================================================================
 # Prior
 #===============================================================================
-prior: sd2_depth
-guidance_scale: 15.5
-mixed_precision: true
-use_view_dependent_prompt: true
+prior: mvdream
+guidance_scale: 7.5
 
 #===============================================================================
 # Time sampler
 #===============================================================================
 time_sampler: linear_annealing 
 t_max: 999
-t_min: 270
+t_min: 200
 
 #===============================================================================
 # Noise sampler
@@ -90,4 +72,4 @@ noise_sampler: sds
 # Logger
 #===============================================================================
 logger: self
-log_interval: 5
+log_interval: 20

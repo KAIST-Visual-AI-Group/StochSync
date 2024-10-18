@@ -23,7 +23,6 @@ from .nvdiff_render.render import *
 from .nvdiff_render.texture import *
 from .nvdiff_render.material import *
 from .nvdiff_render.obj import *
-from .dc_pbr import skip
 from .base import BaseModel
 
 

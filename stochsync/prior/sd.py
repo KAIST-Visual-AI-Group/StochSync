@@ -17,6 +17,7 @@ from diffusers import (
     EulerAncestralDiscreteScheduler,
     AutoencoderKL,
     DDIMScheduler,
+    DPMSolverMultistepScheduler,
 )
 from third_party.mvdream.pipeline_mvdream import MVDreamPipeline
 
@@ -54,15 +55,18 @@ class StableDiffusionPrior(Prior):
         #     print_error("Width and height must be 512(64) for Stable Diffusion")
         #     raise ValueError
 
-        self.scheduler = DDIMScheduler.from_pretrained(
+        self.ddim_scheduler = DDIMScheduler.from_pretrained(
+            self.cfg.model_name, subfolder="scheduler"
+        )
+        self.fast_scheduler = DPMSolverMultistepScheduler.from_pretrained(
             self.cfg.model_name, subfolder="scheduler"
         )
         self.pipeline = StableDiffusionPipeline.from_pretrained(
             self.cfg.model_name,
-            scheduler=self.scheduler,
+            scheduler=self.fast_scheduler,
             torch_dtype=torch.float16 if self.cfg.mixed_precision else torch.float32,
         ).to("cuda")
-        self.scheduler.set_timesteps(30)
+        self.ddim_scheduler.set_timesteps(30)
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
         self.pipeline.text_encoder.requires_grad_(False)
@@ -105,6 +109,14 @@ class StableDiffusionPrior(Prior):
                 [text_prompt], negative_prompt=[self.cfg.negative_prompt]
             ).images
         return images
+    
+    def fast_sample(self, camera, x_t, timesteps, guidance_scale=None, text_prompt=None, negative_prompt=None):
+        self.fast_scheduler.set_timesteps(timesteps=timesteps)
+        for t in timesteps:
+            noise_pred = self.predict(camera, x_t, t, guidance_scale, text_prompt, negative_prompt)
+            x_t = self.fast_scheduler.step(noise_pred, t, x_t, return_dict=False)[0]
+
+        return x_t
 
     def predict(self, camera, x_t, timestep, guidance_scale=None, return_dict=False, text_prompt=None, negative_prompt=None):
         # Predict the noise using the UNet model
@@ -172,61 +184,6 @@ class UltimateStableDiffusionPrior(StableDiffusionPrior):
                     min_prompt = prompt
             text_prompts.append(min_prompt)
         print(text_prompts)
-
-        neg_embeds, pos_embeds = [], []
-        for prompt in text_prompts:
-            text_embeddings = self.encode_text(
-                prompt, negative_prompt=negative_prompt
-            )  # neg, pos
-            neg, pos = text_embeddings.chunk(2)
-            neg_embeds.append(neg)
-            pos_embeds.append(pos)
-
-        text_embeddings = torch.cat(neg_embeds + pos_embeds)
-
-        self.cond = {"encoder_hidden_states": text_embeddings}
-        return self.cond
-
-class CubemapStableDiffusionPrior(StableDiffusionPrior):
-    @ignore_kwargs
-    @dataclass
-    class Config(StableDiffusionPrior.Config):
-        angle_prompts: Dict[int, str] = field(
-            default_factory=lambda: {
-                "front": "a room",
-                "right": "a room",
-                "back": "a room",
-                "left": "a room",
-                "top": "a ceiling",
-                "bottom": "a floor",
-            }
-        )
-
-    def __init__(self, cfg):
-        super().__init__(cfg)
-        self.cfg = self.Config(**cfg)
-
-    def prepare_cond(self, camera, text_prompt=None, negative_prompt=None):
-        text_prompt = text_prompt if text_prompt is not None else self.cfg.text_prompt
-        negative_prompt = negative_prompt if negative_prompt is not None else self.cfg.negative_prompt
-
-        azim, elev = camera["azimuth"], camera["elevation"]
-        text_prompts = []
-        for az, el in zip(azim, elev):
-            if el == 90:
-                text_prompts.append(self.cfg.angle_prompts["top"])
-            elif el == -90:
-                text_prompts.append(self.cfg.angle_prompts["bottom"])
-            else:
-                if az == 0 or az == 45:
-                    text_prompts.append(self.cfg.angle_prompts["front"])
-                elif az == 90 or az == 135:
-                    text_prompts.append(self.cfg.angle_prompts["right"])
-                elif az == 180 or az == 225:
-                    text_prompts.append(self.cfg.angle_prompts["back"])
-                elif az == 270 or az == 315:
-                    text_prompts.append(self.cfg.angle_prompts["left"])
-        # print(text_prompts)
 
         neg_embeds, pos_embeds = [], []
         for prompt in text_prompts:

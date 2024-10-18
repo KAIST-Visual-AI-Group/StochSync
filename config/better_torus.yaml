@@ -9,7 +9,7 @@ max_steps: 12
 warmup_steps: 1
 
 use_ode: true
-ode_steps: 75
+ode_steps: 50
 seam_removal_steps: 4
 
 use_closed_form: true

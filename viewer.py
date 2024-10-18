@@ -6,15 +6,15 @@ from typing import Any, Optional
 import torch
 import tqdm
 
-import shared_modules as sm
+import stochsync.shared_modules as sm
 from data import DATASETs
-from background import BACKGROUNDs
-from model import MODELs
-from prior import PRIORs
-from logger import LOGGERs
-from utils.config_utils import load_config
-from utils.extra_utils import ignore_kwargs
-from utils.print_utils import print_info, print_error, print_warning
+from stochsync.background import BACKGROUNDs
+from stochsync.model import MODELs
+from stochsync.prior import PRIORs
+from stochsync.logger import LOGGERs
+from stochsync.utils.config_utils import load_config
+from stochsync.utils.extra_utils import ignore_kwargs
+from stochsync.utils.print_utils import print_info, print_error, print_warning
 
 
 class Renderer:

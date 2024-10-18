@@ -3,7 +3,6 @@ from .sd import (
     AngleDependentStableDiffusionPrior,
     ViewDependentStableDiffusionPrior,
     ElevDependentStableDiffusionPrior,
-    CubemapStableDiffusionPrior,
     UltimateStableDiffusionPrior
 )
 from .inpainting import InpaintingPrior
@@ -18,7 +17,6 @@ PRIORs = {
     "elev_sd": ElevDependentStableDiffusionPrior,
     "angle_sd": AngleDependentStableDiffusionPrior,
     "ultimate_sd": UltimateStableDiffusionPrior,
-    "cubemap_sd": CubemapStableDiffusionPrior,
     "inpainting": InpaintingPrior,
     "sd2_depth": SD2DepthPrior,
     "controlnet": ControlNetPrior,

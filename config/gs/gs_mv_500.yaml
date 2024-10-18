@@ -7,6 +7,8 @@ scale_lr: 0.008
 quat_lr: 0.0005
 opacity_lr: 0.04
 feature_lr: 0.008
+
+
 batch_size: 4
 dataset: random_mv
 background: black_white

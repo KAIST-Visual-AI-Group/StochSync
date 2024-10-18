@@ -68,7 +68,7 @@ class SDISampler(NoiseSampler):
             sdi_inv=self.cfg.sdi_inv,
         )
 
-        alpha_prod_t = sm.prior.scheduler.alphas_cumprod[t_tau]
+        alpha_prod_t = sm.prior.ddim_scheduler.alphas_cumprod[t_tau]
         inverted_eps = sm.prior.get_eps(noisy_sample, images, t_tau)
 
         if self.cfg.sdi_inv:
@@ -163,7 +163,7 @@ class ISMSampler(NoiseSampler):
                 return_dict=True,
             )["noise_pred"]
         
-        alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(tgt_noisy_sample)[tgt_t]
+        alpha_t = sm.prior.ddim_scheduler.alphas_cumprod.to(tgt_noisy_sample)[tgt_t]
         coeff = ((1 - alpha_t) * alpha_t) ** 0.5
         
         grad = coeff * (tgt_noise_pred - src_noise_pred)

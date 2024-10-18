@@ -52,16 +52,16 @@ class MVDreamPrior(Prior):
             print_error("Width and height must be 256(32) for MVDream")
             raise ValueError
 
-        self.scheduler = DDIMScheduler.from_pretrained(
+        self.ddim_scheduler = DDIMScheduler.from_pretrained(
             self.cfg.model_name, subfolder="scheduler"
         )
         self.pipeline = MVDreamPipeline.from_pretrained(
             self.cfg.model_name,
             torch_dtype=torch.float16 if self.cfg.mixed_precision else torch.float32,
-            scheduler=self.scheduler,
+            scheduler=self.ddim_scheduler,
             trust_remote_code=True,
         ).to("cuda")
-        self.scheduler.set_timesteps(30)
+        self.ddim_scheduler.set_timesteps(30)
         self.pipeline.unet.requires_grad_(False)
         self.pipeline.vae.requires_grad_(False)
         self.pipeline.text_encoder.requires_grad_(False)

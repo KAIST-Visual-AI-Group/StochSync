@@ -83,10 +83,11 @@ def main():
     commands = [
         "python main.py --config config/ddim_image.yaml root_dir=./unit_test_results/",
         "python main.py --config config/sds_image.yaml root_dir=./unit_test_results/ max_steps=100",
-        "python main.py --config config/better_pano.yaml root_dir=./unit_test_results/ max_steps=5",
-        "python main.py --config config/better_mesh.yaml root_dir=./unit_test_results/ max_steps=5",
-        "python main.py --config config/better_torus.yaml root_dir=./unit_test_results/ max_steps=5",
+        "python main.py --config config/better_pano.yaml root_dir=./unit_test_results/ max_steps=10",
+        "python main.py --config config/better_mesh.yaml root_dir=./unit_test_results/ max_steps=10",
+        "python main.py --config config/better_torus.yaml root_dir=./unit_test_results/ max_steps=6",
         "python main.py --config config/synctweedies_wide.yaml root_dir=./unit_test_results/",
+        "python main.py --config config/sds_3dgs_fast.yaml root_dir=./unit_test_results/ max_steps=300",
     ]
 
     # Run asynchronous tests
