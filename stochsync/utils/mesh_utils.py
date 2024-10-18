@@ -3,8 +3,7 @@ import torch
 import numpy as np
 import pymeshlab
 import xatlas
-from .matrix_utils import rodrigues, apply_projection
-import tempfile
+from .matrix_utils import rodrigues
 
 def read_obj(file_path):
     vertices = []

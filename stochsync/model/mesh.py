@@ -1,6 +1,5 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Tuple, Any
-import copy
 
 import numpy as np
 import torch
@@ -131,28 +130,6 @@ class MeshModel(BaseModel):
         self.facemap = rast[..., 3].long()
         self.maskmap = self.facemap > 0
         self.max_cosmap = torch.zeros_like(self.facemap)
-
-        # save the coordmap and facemap to root dir
-        def color_hash(ren):
-            # convert B H W 1 to B H W 3 using factid-color mapping
-            R = (ren * 15731) % 256
-            G = (ren * 31313) % 256
-            B = (ren * 43451) % 256
-            return torch.stack([R, G, B], dim=-1).float() / 255.0
-
-        # print(self.coordmap.shape, self.facemap.shape)
-        # save_tensor(
-        #     self.coordmap[..., :3].permute(0, 3, 1, 2) * 0.5 + 0.5,
-        #     os.path.join(self.cfg.root_dir, "coordmap.coordmap.png"),
-        # )
-        # save_tensor(
-        #     self.normalmap.permute(0, 3, 1, 2) * 0.5 + 0.5,
-        #     os.path.join(self.cfg.root_dir, "normalmap.normalmap.png"),
-        # )
-        # save_tensor(
-        #     color_hash(self.facemap).permute(0, 3, 1, 2),
-        #     os.path.join(self.cfg.root_dir, "facemap.facemap.png"),
-        # )
 
     @torch.no_grad()
     def save(self, path: str) -> None:
@@ -307,20 +284,6 @@ class MeshModel(BaseModel):
         elif self.texture.shape[1] == 4:
             target = sm.prior.encode_image_if_needed(target)
 
-
-        # if step >= self.cfg.max_steps - self.cfg.force_optim_steps:
-        #     print_info(f"Force optimization at step {step}")
-        #     for i in range(20):
-        #         r_pkg = self.render(camera)
-        #         image = r_pkg["image"]
-        #         alpha = r_pkg["alpha"]
-        #         tgt = target * alpha
-        #         loss = F.mse_loss(image, tgt)
-        #         total_loss = F.mse_loss(image, target, reduction="mean")
-        #         total_loss.backward()
-        #         self.optimize(0)
-        #     return
-
         num_cameras = camera["num"]
         texture_new = torch.zeros_like(self.texture)
         if self.cfg.use_selection:
@@ -385,7 +348,7 @@ class MeshModel(BaseModel):
         Adjust the learning rate (optional).
         """
         return
-    
+
     def get_masks(self, camera):
         azims, elevs, dists = camera["azimuth"], camera["elevation"], camera["dist"]
         camera = sm.dataset.params_to_cameras(
@@ -406,7 +369,9 @@ class MeshModel(BaseModel):
         )
         mvp = proj_mtx @ c2ws.inverse()
 
-        gb_pos_clip = torch.einsum("bhwp,bpq->bhwq", self.coordmap, mvp.permute(0, 2, 1))
+        gb_pos_clip = torch.einsum(
+            "bhwp,bpq->bhwq", self.coordmap, mvp.permute(0, 2, 1)
+        )
         gb_pos_clip[..., :2] = gb_pos_clip[..., :2] / gb_pos_clip[..., 3:4]
         gp_pos_xy = 0.5 * gb_pos_clip[..., :2] + 0.5
 
@@ -436,28 +401,32 @@ class MeshModel(BaseModel):
             "mask_depth": mask_depth,
             "mask_face": mask_face,
             "cosmap": cosmap,
-    }
-
+        }
 
     def get_diffusion_softmask(self, camera):
         masks = self.get_masks(camera)
         cosmaps = masks["cosmap"] * masks["mask_depth"]  # B H W
-        cosmaps = torch.cat([torch.full_like(cosmaps[:1], 0.01), cosmaps], dim=0)  # B+1 H W
+        cosmaps = torch.cat(
+            [torch.full_like(cosmaps[:1], 0.01), cosmaps], dim=0
+        )  # B+1 H W
         cosmask_idx = torch.argmax(cosmaps, dim=0)  # H W
-        texture = cosmask_idx.unsqueeze(0).unsqueeze(0).expand(-1, 3, -1, -1).float()  # 1 3 H W
+        texture = (
+            cosmask_idx.unsqueeze(0).unsqueeze(0).expand(-1, 3, -1, -1).float()
+        )  # 1 3 H W
 
-        
         render_pkg = sm.model.render(camera, texture, disable_aa=True)
         cosmask_idx_view = render_pkg["image"][:, 0]
         alpha = render_pkg["alpha"][:, 0]
         indices = (
-            torch.arange(1, camera["num"]+1, device=cosmask_idx_view.device)
+            torch.arange(1, camera["num"] + 1, device=cosmask_idx_view.device)
             .view(camera["num"], 1, 1)
             .expand_as(cosmask_idx_view)
         )
-        cosmask_view = (cosmask_idx_view == indices) | (cosmask_idx_view == 0) # B H W
+        cosmask_view = (cosmask_idx_view == indices) | (cosmask_idx_view == 0)  # B H W
 
-        cosmask_view = (~cosmask_view).cpu().numpy().astype(np.uint8)  # Convert to uint8 for OpenCV
+        cosmask_view = (
+            (~cosmask_view).cpu().numpy().astype(np.uint8)
+        )  # Convert to uint8 for OpenCV
         kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
         for i in range(len(cosmask_view)):
             cosmask_view[i] = cv2.morphologyEx(cosmask_view[i], cv2.MORPH_OPEN, kernel)
@@ -481,12 +450,14 @@ class MeshModel(BaseModel):
         unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="nearest")
 
         return unproj_texture
-    
+
     def unproject_happy(self, camera, target, gp_pos_xy, mask):
         target_h, target_w = target.shape[-2:]
         unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="bilinear")
         orig_texture = self.texture.clone().detach()
-        self.texture.data = unproj_texture * mask.float() + orig_texture * (1 - mask.float())
+        self.texture.data = unproj_texture * mask.float() + orig_texture * (
+            1 - mask.float()
+        )
 
         # Further optimization
         first_loss, last_loss = 0, 0
@@ -507,186 +478,8 @@ class MeshModel(BaseModel):
             loss.backward()
             self.optimize(0)
         # print_info(f"First loss: {first_loss:.4f}, Last loss: {last_loss:.4f}")
-        
+
         unproj_texture = self.texture.clone()
         self.texture.data = orig_texture
 
         return unproj_texture
-
-class PaintitMeshModel(BaseModel):
-    """
-    Model for rendering and optimizing a 2D image with sigmoid activation for each pixel.
-    """
-
-    @ignore_kwargs
-    @dataclass
-    class Config:
-        root_dir: str = "./results/default"
-        device: str = "cuda"
-        mesh_path: str = ""
-        texture_size: int = 512
-        mesh_scale: float = 1.0
-        sampling_mode: str = "nearest"
-        initialization: str = "gray"  # random, zero
-        channels: int = 3
-
-        learning_rate: float = 0.0005
-        decay: float = 0
-        lr_decay: float = 0.9
-        decay_step: int = 100
-        lr_plateau: bool = False
-
-        dist_range: Tuple[float, float] = (1.5, 1.5)
-
-    def __init__(self, cfg={}):
-        super().__init__()
-        self.cfg = self.Config(**cfg)
-        self.optimizer = None
-
-        self.glctx = dr.RasterizeCudaContext()
-        self.network_input = None
-        self.net = None
-        self.mesh = None
-        self.load(self.cfg.mesh_path)
-
-    def load(self, path: str) -> None:
-        f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
-        self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
-        self.mesh = unit_size(self.mesh)
-        self.mesh = auto_normals(self.mesh)
-        self.mesh = compute_tangents(self.mesh)
-
-    def save(self, path: str) -> None:
-        pass
-
-    def prepare_optimization(self) -> None:
-        input_uv_ = torch.randn(
-            (3, self.cfg.texture_size, self.cfg.texture_size), device=self.cfg.device
-        )
-        input_uv = (
-            input_uv_ - torch.mean(input_uv_, dim=(1, 2)).reshape(-1, 1, 1)
-        ) / torch.std(input_uv_, dim=(1, 2)).reshape(-1, 1, 1)
-        self.network_input = copy.deepcopy(input_uv.unsqueeze(0))
-
-        self.net, self.optimizer, activate_scheduler, self.lr_scheduler = get_model(
-            self.cfg
-        )
-
-    def render(self, camera, *args, **kwargs):
-        c2ws, Ks, width, height, fov = (
-            camera["c2w"],
-            camera["K"],
-            camera["width"],
-            camera["height"],
-            camera["fov"],
-        )
-        proj_mtx = util.perspective(fov * np.pi / 180, width / height, 0.1, 1000.0).to(
-            self.cfg.device
-        )
-        mv = c2ws.inverse()
-        mvp = proj_mtx @ mv
-        campos = c2ws[:, :3, 3]
-
-        net_output = self.net(self.network_input)  # [B, 3, H, W]
-        texture = net_output.permute(0, 2, 3, 1).clamp(0, 1)
-        pred_material = Material(
-            {
-                "bsdf": "kd",
-                "kd": Texture2D(texture),
-            }
-        )
-        self.mesh.material = pred_material
-
-        render_pkg = render_mesh(
-            self.glctx,
-            self.mesh,
-            mvp,  # B 4 4
-            campos,  # B 3
-            None,
-            [height, width],
-            msaa=True,
-            background=None,
-            channels=self.cfg.channels,
-            *args,
-            **kwargs,
-        )
-        image = (
-            render_pkg["shaded"][..., :-1].permute(0, 3, 1, 2).contiguous()
-        )  # [B, 3, H, W]
-        alpha = render_pkg["shaded"][..., -1].unsqueeze(1)  # [B, 1, H, W]
-
-        return {
-            "image": image,
-            "alpha": alpha.detach(),
-        }
-
-    @torch.no_grad()
-    def render_self(self) -> torch.Tensor:
-        """
-        Render the splats to an image.
-
-        :return: The rendered image. Shape [B, 3, H, W].
-        """
-        elevs = (0, 0, 0, 0, 30, 30, 30, 30)
-        azims = (0, 90, 180, 270, 45, 135, 225, 315)
-        dists = [sum(self.cfg.dist_range) / 2] * len(elevs)
-
-        cameras = sm.dataset.params_to_cameras(
-            dists,
-            elevs,
-            azims,
-        )
-
-        image = self.render(cameras)["image"]
-        # encode then decode to remove artifacts
-        image = sm.prior.encode_image_if_needed(image)
-        image = sm.prior.decode_latent(image)
-
-        return image
-
-    def optimize(self, step: int) -> None:
-        torch.nn.utils.clip_grad_norm_(self.net.parameters(), max_norm=10.0)
-        self.schedule_lr(step)
-        self.optimizer.step()
-        self.optimizer.zero_grad()
-
-    def schedule_lr(self, step):
-        if self.lr_scheduler is not None:
-            self.lr_scheduler.step()
-
-
-def get_model(cfg):
-    # MLP Settings
-    net = skip(
-        3,
-        3,
-        num_channels_down=[128] * 5,
-        num_channels_up=[128] * 5,
-        num_channels_skip=[128] * 5,
-        filter_size_up=3,
-        filter_size_down=3,
-        upsample_mode="nearest",
-        filter_skip_size=1,
-        need_sigmoid=True,
-        need_bias=True,
-        pad="reflection",
-        act_fun="LeakyReLU",
-    ).type(torch.cuda.FloatTensor)
-
-    params = list(net.parameters())
-
-    optim = torch.optim.Adam(params, cfg.learning_rate, weight_decay=cfg.decay)
-    activate_scheduler = cfg.lr_decay < 1 and cfg.decay_step > 0 and not cfg.lr_plateau
-    if activate_scheduler:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(
-            optim, step_size=cfg.decay_step, gamma=cfg.lr_decay
-        )
-
-    optim = torch.optim.Adam(params, cfg.learning_rate, weight_decay=cfg.decay)
-    activate_scheduler = cfg.lr_decay < 1 and cfg.decay_step > 0 and not cfg.lr_plateau
-    if activate_scheduler:
-        lr_scheduler = torch.optim.lr_scheduler.StepLR(
-            optim, step_size=cfg.decay_step, gamma=cfg.lr_decay
-        )
-
-    return net, optim, activate_scheduler, lr_scheduler

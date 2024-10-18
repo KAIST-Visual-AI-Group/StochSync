@@ -3,6 +3,7 @@ _*/
 local/
 test/
 results/
+unit_test_results/
 scripts/
 *_backup
 *pano_results

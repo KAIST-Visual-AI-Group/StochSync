@@ -26,7 +26,6 @@ class Config:
 
 
 def main():
-    torch.autograd.set_detect_anomaly(False)
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", required=True, help="path to the yaml config file")
     parser.add_argument(

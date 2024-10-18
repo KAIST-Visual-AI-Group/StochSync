@@ -89,13 +89,13 @@ class SelfLogger(BaseLogger):
                 os.path.join(self.root_dir, "result.png"),
             )
         else:
-            if num_files < 20:      # lerp between 1 and 4fps for 2-20 files
+            if num_files < 20:  # lerp between 1 and 4fps for 2-20 files
                 fps = int(2 + (num_files - 2) * 3 / 18)
-            elif num_files < 100:   # lerp between 4 and 20fps for 20-100 files
+            elif num_files < 100:  # lerp between 4 and 20fps for 20-100 files
                 fps = int(4 + (num_files - 20) * 16 / 80)
             elif num_files < 1000:  # lerp between 20 and 30fps for 100-1000 files
                 fps = int(20 + (num_files - 100) * 10 / 900)
-            else:                   # 30fps for 1000+ files
+            else:  # 30fps for 1000+ files
                 fps = 30
 
             convert_to_video(
@@ -147,7 +147,7 @@ class SimpleLogger(BaseLogger):
             if self.cfg.use_encoder_decoder:
                 latents = shared_modules.prior.encode_image_if_needed(images)
                 images = shared_modules.prior.decode_latent(latents)
-                
+
         save_tensor(
             images,
             os.path.join(self.training_dir, f"training_{step:05d}.png"),
@@ -157,7 +157,7 @@ class SimpleLogger(BaseLogger):
     def end_logging(self):
         if not self.cfg.save_video:
             return
-        
+
         num_files = len(os.listdir(self.training_dir))
 
         if num_files == 1:
@@ -194,10 +194,10 @@ class SimpleLatentPreviewLogger(SimpleLogger):
         super().__init__(cfg)
         self.decode_mtx = torch.tensor(
             [
-                #   R       G       B
-                [0.298, 0.207, 0.208],  # L1
-                [0.187, 0.286, 0.173],  # L2
-                [-0.158, 0.189, 0.264],  # L3
+                #  R       G       B
+                [0.298, 0.207, 0.208],     # L1
+                [0.187, 0.286, 0.173],     # L2
+                [-0.158, 0.189, 0.264],    # L3
                 [-0.184, -0.271, -0.473],  # L4
             ]
         ).cuda()

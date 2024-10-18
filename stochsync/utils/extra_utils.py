@@ -13,70 +13,6 @@ from tqdm.contrib import DummyTqdmFile
 import tqdm
 
 
-def rescale_tensor(tensor, width, height):
-    assert tensor.dim() == 3 and tensor.shape[0] == 3, "tensor must be 3xHxW"
-    tensor = tensor.unsqueeze(0)
-    tensor = interpolate(tensor, (height, width), mode="bilinear", align_corners=False)
-    return tensor.squeeze(0)
-
-
-def tensor(*v, dtype=torch.float32, device=None):
-    return torch.tensor(v, dtype=dtype, device=device)
-
-
-def ishomo(points):
-    if points.dim() == 1:
-        return points.shape[0] == 4
-    elif points.dim() == 2:
-        return points.shape[1] == 4
-    return False
-
-
-def homo(points):
-    if points.dim() == 1:
-        if points.shape[0] == 4:
-            return points
-        elif points.shape[0] == 3:
-            return torch.cat(
-                [points, torch.tensor([1], dtype=points.dtype, device=points.device)]
-            )
-    elif points.dim() == 2:
-        if points.shape[1] == 4:
-            return points
-        if points.shape[1] == 3:
-            return torch.cat(
-                [
-                    points,
-                    torch.ones(
-                        (points.shape[0], 1), dtype=points.dtype, device=points.device
-                    ),
-                ]
-            )
-
-    raise ValueError(f"points does not match with any valid shapes. {points.shape}")
-
-
-def unhomo(points):
-    if points.dim() == 1:
-        if points.shape[0] == 3:
-            return points
-        elif points.shape[0] == 4:
-            return points[:3] / (points[3])
-    elif points.dim() == 2:
-        if points.shape[1] == 3:
-            return points
-        if points.shape[1] == 4:
-            return points[:, 3] / (points[:, 3])
-
-    raise ValueError(f"points does not match with any valid shapes. {points.shape}")
-
-
-def inverse_sigmoid(x):
-    if isinstance(x, float):
-        return -log(1 / x - 1)
-    return torch.log(x / (1 - x))
-
-
 def accumulate_tensor(tensor, index, value):
     assert (
         tensor.shape[:-1] == value.shape[:-1]
@@ -295,5 +231,5 @@ def calculate_distance_to_zero_level(mask_tensor):
     distance_tensor = torch.from_numpy(distance_np).float()
 
     distance_tensor = distance_tensor.to(mask_tensor.device)
-    
+
     return distance_tensor

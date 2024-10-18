@@ -2,8 +2,7 @@ import math
 import torch
 import torch.nn.functional as F
 from .extra_utils import accumulate_tensor
-from .print_utils import print_warning
-from .matrix_utils import quat_to_rot, make_quat
+from .matrix_utils import quat_to_rot
 
 
 def normalize_grid(grid, height, width):

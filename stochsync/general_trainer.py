@@ -116,6 +116,7 @@ class GeneralTrainer:
                 os.system(f"cp {filename} {self.cfg.root_dir}/src/")
 
             from .prior.base import Prior
+
             filename = get_class_filename(Prior)
             os.system(f"cp {filename} {self.cfg.root_dir}/src/base_prior.py")
 
@@ -135,6 +136,7 @@ class GeneralTrainer:
 
             # 1.5. Define helper function
             bg = sm.background(camera)
+
             def g(camera):
                 r_pkg = sm.model.render(camera)
                 return r_pkg["image"] + bg * (1 - r_pkg["alpha"])
@@ -190,10 +192,10 @@ class GeneralTrainer:
             # 5.5. Calculate the weighting coefficient
             if self.cfg.weighting_scheme == "sds":
                 alpha_t = sm.prior.pipeline.scheduler.alphas_cumprod.to(latent)[t_curr]
-                coeff = (1 - alpha_t) ** 1.5 * alpha_t ** 0.5
+                coeff = (1 - alpha_t) ** 1.5 * alpha_t**0.5
             elif self.cfg.weighting_scheme == "fixed":
                 alphas = sm.prior.pipeline.scheduler.alphas_cumprod.to(latent)
-                coeffs = (1 - alphas) ** 1.5 * alphas ** 0.5
+                coeffs = (1 - alphas) ** 1.5 * alphas**0.5
                 coeff = coeffs.mean()
             else:
                 raise ValueError(
@@ -228,10 +230,11 @@ class GeneralTrainer:
                         source = sm.prior.encode_image_if_needed(g(camera))
                     else:
                         source = sm.prior.decode_latent_if_needed(g(camera))
-                    
+
                     total_loss = (
                         coeff
-                        * 0.5 * F.mse_loss(source, target, reduction="sum")
+                        * 0.5
+                        * F.mse_loss(source, target, reduction="sum")
                         / camera["num"]
                     )
 
