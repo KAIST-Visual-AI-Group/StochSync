@@ -116,7 +116,6 @@ class SimpleLogger(BaseLogger):
     class Config:
         root_dir: str = "./results/default"
         log_interval: int = 100
-        prefix: str = ""
         use_encoder_decoder: bool = False
         save_type: str = "cat_image"
         save_video: bool = False
@@ -124,10 +123,7 @@ class SimpleLogger(BaseLogger):
     def __init__(self, cfg) -> None:
         super().__init__()
         self.cfg = self.Config(**cfg)
-        self.training_dir = os.path.join(
-            self.cfg.root_dir,
-            f"{self.cfg.prefix}_training" if self.cfg.prefix else "training",
-        )
+        self.training_dir = os.path.join(self.cfg.root_dir, "training")
         self.debug_dir = os.path.join(self.cfg.root_dir, f"debug")
         self.post_processor = lambda x: x
 
@@ -195,9 +191,9 @@ class SimpleLatentPreviewLogger(SimpleLogger):
         self.decode_mtx = torch.tensor(
             [
                 #  R       G       B
-                [0.298, 0.207, 0.208],     # L1
-                [0.187, 0.286, 0.173],     # L2
-                [-0.158, 0.189, 0.264],    # L3
+                [0.298, 0.207, 0.208],  # L1
+                [0.187, 0.286, 0.173],  # L2
+                [-0.158, 0.189, 0.264],  # L3
                 [-0.184, -0.271, -0.473],  # L4
             ]
         ).cuda()

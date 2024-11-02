@@ -1,6 +1,6 @@
 root_dir: ./results/
 tag: mesh
-text_prompt: "A face of Tom Cruise"
+text_prompt: "A DSLR photo of a face of Tom Cruise"
 
 #===============================================================================
 # Trainer settings

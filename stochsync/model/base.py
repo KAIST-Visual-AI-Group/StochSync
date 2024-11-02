@@ -2,6 +2,8 @@ import torch
 from abc import ABC, abstractmethod
 from typing import Optional, Dict, Any
 
+from ..utils.print_utils import print_info
+
 class BaseModel(ABC):
     """
     Abstract base class for all 3D models. This class defines the interface that
@@ -79,6 +81,13 @@ class BaseModel(ABC):
         :return: A tensor containing the rendered image.
         """
         pass
+    
+    @torch.no_grad()
+    def render_eval(self, path):
+        """
+        Render the current model for evaluation.
+        """
+        print_info("render_eval not implemented.")
 
     @abstractmethod
     def optimize(self, step: int) -> None:

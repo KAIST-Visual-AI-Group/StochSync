@@ -391,19 +391,23 @@ def save_tensor(
         raise ValueError(f"Invalid save_type: {save_type}")
 
     if save_type == "images":
-        if fns is None:
-            fns = [f"{i:03d}" for i in range(len(images))]
-        
-        for (fn, img) in zip(fns, images):
-            if output_path.endswith(".png"):
-                output_full_path = output_path[:-4] + f"_{fn}.png"
-            else:
-                assert not os.path.exists(output_path) or os.path.isdir(
-                    output_path
-                ), f"output_path {output_path} should be a directory or non-existing file."
-                os.makedirs(output_path, exist_ok=True)
-                output_full_path = os.path.join(output_path, f"{fn}.png")
-            img.save(output_full_path)
+        if len(images) == 1:
+            output_path = attach_ext(output_path, ".png")
+            images[0].save(output_path)
+        else:
+            if fns is None:
+                fns = [f"{i:03d}" for i in range(len(images))]
+            
+            for (fn, img) in zip(fns, images):
+                if output_path.endswith(".png"):
+                    output_full_path = output_path[:-4] + f"_{fn}.png"
+                else:
+                    assert not os.path.exists(output_path) or os.path.isdir(
+                        output_path
+                    ), f"output_path {output_path} should be a directory or non-existing file."
+                    os.makedirs(output_path, exist_ok=True)
+                    output_full_path = os.path.join(output_path, f"{fn}.png")
+                img.save(output_full_path)
 
     elif save_type == "video":
         output_path = attach_ext(output_path, ".mp4")  # attach extension if not exists

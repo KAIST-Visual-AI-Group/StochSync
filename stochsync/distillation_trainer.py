@@ -46,7 +46,6 @@ class DistillationTrainer(ABC):
         max_steps: int = 10000
         init_step: int = 0
         output: str = "output"
-        prefix: str = ""
         save_source: bool = False
         recon_steps: int = 30
         initial_recon_steps: Optional[int] = 1
@@ -170,7 +169,7 @@ class DistillationTrainer(ABC):
             sm.logger.end_logging()
 
             output_filename = os.path.join(
-                self.cfg.root_dir, f"{self.cfg.prefix}_{self.cfg.output}"
+                self.cfg.root_dir, self.cfg.output
             )
             sm.model.save(output_filename)
             sm.model.render_eval(self.eval_dir)

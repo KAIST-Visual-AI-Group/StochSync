@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import Dict, Optional, Tuple, Any
+import os
 
 import numpy as np
 import torch
@@ -13,16 +14,16 @@ from ..utils.image_utils import save_tensor, pil_to_torch
 from ..utils.print_utils import print_info, print_warning
 from ..utils.panorama_utils import remap, remap_min
 from ..utils.camera_utils import index_camera
-from ..utils.mesh_utils import read_obj
+from ..utils.mesh_utils import read_obj, write_obj
 from ..utils.extra_utils import calculate_distance_to_zero_level
 from .. import shared_modules as sm
 
 from nvdiffrast.torch import rasterize, interpolate  # low-level rasterization functions
-from .nvdiff_render.mesh import *
-from .nvdiff_render.render import *
-from .nvdiff_render.texture import *
-from .nvdiff_render.material import *
-from .nvdiff_render.obj import *
+from .nvdiff_render.mesh import Mesh, auto_normals, compute_tangents
+from .nvdiff_render.render import dr, render_mesh
+from .nvdiff_render.texture import Texture2D
+from .nvdiff_render.material import Material
+from .nvdiff_render import util
 from .base import BaseModel
 
 
@@ -79,8 +80,6 @@ class MeshModel(BaseModel):
         use_selection: bool = False
         texture_path: str = ""
         flip_texture: bool = False
-        # max_steps: int = 10000
-        # force_optim_steps: int = 0
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -99,11 +98,9 @@ class MeshModel(BaseModel):
         v_pos = torch.tensor(v_pos, device=self.cfg.device).float()
         f_idx = torch.tensor(f_idx, device=self.cfg.device).to(torch.int64) - 1
         v_uv = torch.tensor(v_uv, device=self.cfg.device).float()
-        # f_idx, v_pos, v_uv = load_obj_uv(obj_path=path, device=self.cfg.device)
+        
         v_pos = normalize_mesh(v_pos)
         self.mesh = Mesh(v_pos, f_idx, v_tex=v_uv, t_tex_idx=f_idx)
-        # print_warning(f"Temporarily disable unit_size.")
-        # self.mesh = unit_size(self.mesh)
         self.mesh = auto_normals(self.mesh)
         self.mesh = compute_tangents(self.mesh)
 
@@ -132,8 +129,11 @@ class MeshModel(BaseModel):
 
     @torch.no_grad()
     def save(self, path: str) -> None:
+        base, ext = os.path.splitext(path)
+
         image = sm.prior.decode_latent_fast_if_needed(self.texture)
-        save_tensor(image, path)
+        save_tensor(image, base + ".png")
+        write_obj(base + ".obj", self.mesh.v_pos, self.mesh.t_pos_idx + 1, vt=self.mesh.v_tex)
 
     def prepare_optimization(self) -> None:
         shape = (1, self.cfg.channels, self.cfg.texture_size, self.cfg.texture_size)
@@ -293,7 +293,7 @@ class MeshModel(BaseModel):
                 gp_pos_xy = mask_dict["gp_pos_xy"]
                 cosmap = mask_dict["cosmap"].abs()
                 mask = mask_dict["mask_depth"] & self.maskmap
-                texture = self.unproject_happy(cam, target[i : i + 1], gp_pos_xy, mask)
+                texture = self.unproject_stable(cam, target[i : i + 1], gp_pos_xy, mask)
 
                 local_max_region = mask & (cosmap >= max_cosmap)
                 texture_new[local_max_region] = texture[local_max_region]
@@ -450,7 +450,7 @@ class MeshModel(BaseModel):
 
         return unproj_texture
 
-    def unproject_happy(self, camera, target, gp_pos_xy, mask):
+    def unproject_stable(self, camera, target, gp_pos_xy, mask):
         target_h, target_w = target.shape[-2:]
         unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="bilinear")
         orig_texture = self.texture.clone().detach()
@@ -458,25 +458,18 @@ class MeshModel(BaseModel):
             1 - mask.float()
         )
 
-        # Further optimization
-        first_loss, last_loss = 0, 0
         # reset optimizer
         self.optimizer = torch.optim.Adam(
             [self.texture], self.cfg.learning_rate, weight_decay=self.cfg.decay
         )
-        for i in range(20):
+        for _ in range(20):
             r_pkg = self.render(camera)
             image = r_pkg["image"]
             alpha = r_pkg["alpha"]
             tgt = target * alpha
             loss = F.mse_loss(image, tgt)
-            # if i == 0:
-            #     first_loss = loss.item()
-            # if i == 9:
-            #     last_loss = loss.item()
             loss.backward()
             self.optimize(0)
-        # print_info(f"First loss: {first_loss:.4f}, Last loss: {last_loss:.4f}")
 
         unproj_texture = self.texture.clone()
         self.texture.data = orig_texture

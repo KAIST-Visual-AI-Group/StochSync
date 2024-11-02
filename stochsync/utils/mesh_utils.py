@@ -61,6 +61,18 @@ def read_obj(file_path):
 
 
 def write_obj(file_path, v, f, vt=None, vn=None, c=None):
+    # Convert torch tensors to numpy arrays if necessary
+    if isinstance(v, torch.Tensor):
+        v = v.cpu().numpy()
+    if isinstance(f, torch.Tensor):
+        f = f.cpu().numpy()
+    if vt is not None and isinstance(vt, torch.Tensor):
+        vt = vt.cpu().numpy()
+    if vn is not None and isinstance(vn, torch.Tensor):
+        vn = vn.cpu().numpy()
+    if c is not None and isinstance(c, torch.Tensor):
+        c = c.cpu().numpy()
+    
     with open(file_path, "w") as file:
         # Write vertices and optional colors
         for i, vertex in enumerate(v):
@@ -114,6 +126,12 @@ def convert_to_obj(src, dest):
         pass
     ms.save_current_mesh(dest, save_textures=False, save_wedge_texcoord=False)
     return flag
+
+def convert_to_glb(obj_path, texture_path, dest):
+    ms = pymeshlab.MeshSet()
+    ms.load_new_mesh(obj_path)
+    ms.current_mesh().texture_from_file(texture_path)
+    ms.save_current_mesh(dest, save_textures=True)
 
 def extract_texture(src, dest):
     ms = pymeshlab.MeshSet()
