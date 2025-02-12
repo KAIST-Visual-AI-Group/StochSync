@@ -221,7 +221,7 @@ class Prior(ABC):
         clean=None,
         soft_mask=None,
         sdi_inv=False,
-        try_fast=True,
+        try_fast=False,
         **kwargs,
     ):
         if isinstance(src_t, torch.Tensor):

@@ -1,9 +1,8 @@
-from .base import SDSSampler, SDISampler, DDIMSampler, GeneralizedDDIMSampler, ISMSampler
+from .base import SDSSampler, SDISampler, DDIMSampler, GeneralizedDDIMSampler
 
 NOISE_SAMPLERs = {
     "sds": SDSSampler,
     "sdi": SDISampler,
-    "ism": ISMSampler,
     "ddim": DDIMSampler,
     "generalized_ddim": GeneralizedDDIMSampler,
 }

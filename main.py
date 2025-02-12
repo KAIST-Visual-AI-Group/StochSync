@@ -9,8 +9,6 @@ import torch
 from omegaconf import OmegaConf
 
 from stochsync.utils.config_utils import load_config
-from stochsync.distillation_trainer import DistillationTrainer
-from stochsync.rebuttal_trainer import RebuttalTrainer
 from stochsync.general_trainer import GeneralTrainer
 from stochsync.utils.extra_utils import ignore_kwargs
 from stochsync.utils.print_utils import print_with_box, print_info
@@ -33,7 +31,7 @@ def main():
         "-t",
         "--trainer_type",
         default="general",
-        choices=["general", "distillation", "rebuttal"],
+        choices=["general", "distillation"],
         help="type of trainer to use",
     )
     args, extras = parser.parse_known_args()
@@ -64,9 +62,8 @@ def main():
     if args.trainer_type == "general":
         trainer = GeneralTrainer(cfg)
     elif args.trainer_type == "distillation":
-        trainer = DistillationTrainer(cfg)
-    elif args.trainer_type == "rebuttal":
-        trainer = RebuttalTrainer(cfg)
+        # trainer = DistillationTrainer(cfg)
+        raise ValueError("DistillationTrainer is deprecated. Please use GeneralTrainer instead.")
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 

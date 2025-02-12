@@ -83,7 +83,6 @@ class GeneralTrainer:
         force_optim_steps: int = 0
         warmup_steps: int = 0
         try_fast_sampling: bool = False
-        temp_evil: bool = False
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -266,17 +265,6 @@ class GeneralTrainer:
                 image = g(camera)
                 tmp_latent = sm.prior.encode_image_if_needed(image)
                 self.prev_eps = sm.prior.get_eps(latent_noisy, tmp_latent, t_curr)
-
-                # Exceptional case: if the model is ImageInpaintingModel
-                if sm.model.__class__.__name__ == "ImageInpaintingModel" and self.cfg.temp_evil:
-                    print_warning("ImageInpaintingModel detected. Randomizing the previous epsilon...")
-                    randomize_mask = sm.model.gt_mask.unsqueeze(0)
-                    randomize_mask = F.interpolate(
-                        randomize_mask,
-                        (self.prev_eps.shape[-2], self.prev_eps.shape[-1]),
-                        mode="nearest",
-                    )
-                    self.prev_eps = torch.randn_like(self.prev_eps) * randomize_mask + self.prev_eps * (1 - randomize_mask)
 
             # Log the result
             if not self.cfg.disable_debug and step % self.cfg.log_interval == 0:
