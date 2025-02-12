@@ -160,6 +160,7 @@ class Prior(ABC):
         return noisy_sample
 
     def get_tweedie(self, noisy_sample, eps_pred, t):
+        # print(self.ddim_scheduler.alphas_cumprod.device, t.device, noisy_sample.device, eps_pred.device)
         alpha = self.ddim_scheduler.alphas_cumprod[t]
         tweedie = (noisy_sample - (1 - alpha) ** 0.5 * eps_pred) / alpha**0.5
         return tweedie

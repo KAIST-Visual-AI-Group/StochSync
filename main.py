@@ -10,6 +10,7 @@ from omegaconf import OmegaConf
 
 from stochsync.utils.config_utils import load_config
 from stochsync.distillation_trainer import DistillationTrainer
+from stochsync.rebuttal_trainer import RebuttalTrainer
 from stochsync.general_trainer import GeneralTrainer
 from stochsync.utils.extra_utils import ignore_kwargs
 from stochsync.utils.print_utils import print_with_box, print_info
@@ -32,7 +33,7 @@ def main():
         "-t",
         "--trainer_type",
         default="general",
-        choices=["general", "distillation"],
+        choices=["general", "distillation", "rebuttal"],
         help="type of trainer to use",
     )
     args, extras = parser.parse_known_args()
@@ -64,6 +65,8 @@ def main():
         trainer = GeneralTrainer(cfg)
     elif args.trainer_type == "distillation":
         trainer = DistillationTrainer(cfg)
+    elif args.trainer_type == "rebuttal":
+        trainer = RebuttalTrainer(cfg)
     else:
         raise ValueError(f"Unknown trainer type: {args.trainer}")
 
@@ -77,6 +80,9 @@ def main():
         ),
         title="DistillAnything Results",
     )
+    # save the time taken to train under the root directory
+    with open(os.path.join(main_cfg.root_dir, "time.txt"), "w") as f:
+        f.write(f"{collapse_time:.3f}\n")
 
 
 if __name__ == "__main__":

@@ -17,6 +17,7 @@ recon_type: rgb
 recon_steps: 1
 
 disable_debug: False
+try_fast_sampling: False
 
 #===============================================================================
 # Dataset

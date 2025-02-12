@@ -67,9 +67,8 @@ class ImageModel(BaseModel):
                 image = torch.full((3, H, W), 0.5, device=self.cfg.device)
             elif init_method == "image":
                 print_info(f"Loading image from {img_path}")
-                # image = Image.open(img_path).convert("RGB")
-                # image = pil_to_torch(image).to(self.cfg.device).squeeze(0)
                 image = self.load(img_path)
+                image = F.interpolate(image.unsqueeze(0), (H, W), mode="bilinear").squeeze(0)
             else:
                 raise ValueError(f"Invalid initialization: {init_method}")
         elif self.cfg.channels == 4:
@@ -87,11 +86,11 @@ class ImageModel(BaseModel):
                 image = torch.full((3, H * S, W * S), 0.5, device=self.cfg.device)
                 image = shared_modules.prior.encode_image(image)
             elif init_method == "image":
+                S = int(shared_modules.prior.pipeline.vae_scale_factor)
                 print_info(f"Loading image from {img_path}")
-                # image = Image.open(img_path).convert("RGB")
-                # image = pil_to_torch(image).to(self.cfg.device)
-                # image = shared_modules.prior.encode_image(image).squeeze(0)
                 image = self.load(img_path)
+                image = F.interpolate(image.unsqueeze(0), (H * S, W * S), mode="bilinear").squeeze(0)
+                image = shared_modules.prior.encode_image(image)
             else:
                 raise ValueError(f"Invalid initialization: {init_method}")
         else:

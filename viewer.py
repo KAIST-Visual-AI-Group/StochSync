@@ -7,7 +7,7 @@ import torch
 import tqdm
 
 import stochsync.shared_modules as sm
-from data import DATASETs
+from stochsync.data import DATASETs
 from stochsync.background import BACKGROUNDs
 from stochsync.model import MODELs
 from stochsync.prior import PRIORs

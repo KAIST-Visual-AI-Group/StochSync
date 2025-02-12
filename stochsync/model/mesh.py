@@ -197,6 +197,11 @@ class MeshModel(BaseModel):
         if "filter_mode" not in kwargs:
             kwargs["filter_mode"] = self.cfg.sampling_mode
 
+        if "depth_mode" in kwargs:
+            if kwargs["depth_mode"] == True:
+                kwargs["bsdf"] = "depth"
+            del kwargs["depth_mode"]
+
         lgt = None
         if "lgt" in kwargs:
             lgt = kwargs["lgt"]
@@ -240,12 +245,8 @@ class MeshModel(BaseModel):
         images = render_pkg["image"]
         alphas = render_pkg["alpha"]
         images = images + (1 - alphas) * 1.0
-        # latents = sm.prior.encode_image_if_needed(images)
-        # images = sm.prior.decode_latent(latents)
-        # images.clip_(0, 1)
 
         fns = [f"{azi}_{_i}" for _i, azi in enumerate(azims)]
-        # Save perspective view images 09.10
         save_tensor(images, path, fns=fns)
 
     @torch.no_grad()

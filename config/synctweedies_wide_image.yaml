@@ -1,19 +1,19 @@
 root_dir: ./results/
-tag: mesh
-text_prompt: "A DSLR photo of a face of Tom Cruise"
+tag: synctweedies_wide_image
+text_prompt: "A photo of a lake under the northern lights"
 
 #===============================================================================
 # Trainer settings
 #===============================================================================
-max_steps: 25
-warmup_steps: 4
+max_steps: 50
+warmup_steps: 0
 
-use_ode: true
-ode_steps: 20
-seam_removal_steps: 4
+use_ode: false
+ode_steps: -1
+seam_removal_steps: 0
 
 use_closed_form: true
-recon_type: rgb
+recon_type: latent
 recon_steps: 1
 
 disable_debug: False
@@ -21,70 +21,44 @@ disable_debug: False
 #===============================================================================
 # Dataset
 #===============================================================================
-dataset: alternate_camera
-batch_size: 4
-height: 768
-width: 768
-convention: OpenGL
-up_vec: y
-fov: 60
-dists: [
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0,
-  2.0, 2.0, 2.0, 2.0
-]
-elevs: [
-  0, -15, 0, -15,
-  30, 0, 30, 0,
-  -15, 0, -15, 0,
-  0, 30, 0, 30
-]
-azims: [
-  0, 90, 180, 270,
-  45, 135, 225, 315,
-  0, 90, 180, 270,
-  45, 135, 225, 315
-]
+dataset: image_wide
+batch_size: 15
+height: 64
+width: 64
+xscale: 4
+yscale: 1
 
 #===============================================================================
 # Background
 #===============================================================================
-background: cache
-rgb: [0.1, 0.1, 0.1]
+background: solid
+rgb: [0, 0, 0, 0]
 
 #===============================================================================
 # Model
 #===============================================================================
-model: mesh
-mesh_path: "./data/mesh/face.obj"
-texture_size: 2048
-mesh_scale: 1.0
-initialization: gray
-learning_rate: 0.05
-channels: 3
-sampling_mode: nearest
-use_selection: true
+model: image_wide
+channels: 4
 
 #===============================================================================
 # Prior
 #===============================================================================
-prior: sd2_depth
-guidance_scale: 15.5
-mixed_precision: true
-use_view_dependent_prompt: true
+prior: sd
+guidance_scale: 7.5
+mixed_precision: True
 
 #===============================================================================
 # Time sampler
 #===============================================================================
 time_sampler: linear_annealing 
 t_max: 999
-t_min: 270
+t_min: 0
 
 #===============================================================================
 # Noise sampler
 #===============================================================================
-noise_sampler: sds
+noise_sampler: ddim
+get_noise_from_model: True
 
 #===============================================================================
 # Logger

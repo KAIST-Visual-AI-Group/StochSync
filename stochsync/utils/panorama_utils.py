@@ -1,6 +1,7 @@
 import math
 import torch
 import torch.nn.functional as F
+from functools import lru_cache
 from .extra_utils import accumulate_tensor
 from .matrix_utils import quat_to_rot
 
@@ -221,7 +222,7 @@ def xy_to_lonlat_plane(xy, height, width, center_lat=90, edge_lat=-36):
     lat = lat * math.pi / 180
     return torch.stack([lon, lat], dim=-1)
 
-
+@lru_cache(maxsize=32)
 def compute_pano2pers_map(
     fov,
     theta,
@@ -256,6 +257,7 @@ def compute_pano2pers_map(
     return lonlat_to_xy(lonlat, pano_height, pano_width)
 
 
+@lru_cache(maxsize=32)
 def compute_pers2pano_map(
     fov,
     theta,

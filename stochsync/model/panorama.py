@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from typing import Dict, Optional, List
 import math
@@ -53,6 +54,8 @@ class PanoramaModel(ImageModel):
         gt_image: Optional[str] = None
         gt_elev: Optional[float] = None
         gt_azim: Optional[float] = None
+
+        root_dir: str = "./results/default"
 
     def __init__(self, cfg={}):
         super().__init__()
@@ -279,7 +282,7 @@ class PanoramaModel(ImageModel):
         img_cnt = torch.zeros_like(self.image, dtype=torch.long)
         for i in range(num_cameras):
             if self.gt_image is not None and azim[i] == self.cfg.gt_azim and elev[i] == self.cfg.gt_elev:
-                print("GT image found!")
+                print_info("GT image found!")
                 target[i] = F.interpolate(self.gt_image, size=(height, width), mode="bilinear", align_corners=False)[i]
             img_tmp, mask = pers_to_pano_raw(
                 target[i:i+1],
@@ -292,16 +295,12 @@ class PanoramaModel(ImageModel):
                 mapping_func=self.i2c_func,
                 quat=camera.get("quat", None),
             )
-            img_new[img_cnt==0] += img_tmp.squeeze(0)[img_cnt==0]
+            img_new += img_tmp.squeeze(0)
             # round mask
-            img_cnt[img_cnt==0] += mask.unsqueeze(0).expand(3,-1,-1).long()[img_cnt==0]
+            img_cnt += mask.unsqueeze(0).expand(3,-1,-1).long()
         
         img_new = img_new / (img_cnt + 1e-6)
         img_new[img_cnt == 0] = self.image[img_cnt == 0]
-
-        # if self.preserve_mask is not None:
-        #     print_info("Preserving the original image...")
-        #     img_new[self.preserve_mask] = self.preserve_img[self.preserve_mask]
         
         self.image.data = img_new
     

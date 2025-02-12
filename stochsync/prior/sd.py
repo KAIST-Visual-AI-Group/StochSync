@@ -13,7 +13,7 @@ from diffusers import (
 )
 from diffusers import (
     StableDiffusionXLPipeline,
-    MarigoldDepthPipeline,
+    # MarigoldDepthPipeline,
     EulerAncestralDiscreteScheduler,
     AutoencoderKL,
     DDIMScheduler,
@@ -289,22 +289,22 @@ class AngleDependentStableDiffusionPrior(StableDiffusionPrior):
         return self.cond
 
 
-class MarigoldPrior(Prior):
-    def __init__(
-        self, model_name="prs-eth/marigold-depth-lcm-v1-0", condition_parameters=None
-    ):
-        super().__init__()
-        self.pipeline = MarigoldDepthPipeline.from_pretrained(model_name).to("cuda")
+# class MarigoldPrior(Prior):
+#     def __init__(
+#         self, model_name="prs-eth/marigold-depth-lcm-v1-0", condition_parameters=None
+#     ):
+#         super().__init__()
+#         self.pipeline = MarigoldDepthPipeline.from_pretrained(model_name).to("cuda")
 
-        self.condition_parameters = condition_parameters
+#         self.condition_parameters = condition_parameters
 
-    def sample(self, image, num_samples=1):
-        with torch.no_grad():
-            res = self.pipeline(image)
-        return res
+#     def sample(self, image, num_samples=1):
+#         with torch.no_grad():
+#             res = self.pipeline(image)
+#         return res
 
-    def predict(self, x_t, timestep, text_prompt, condition_images):
-        pass
+#     def predict(self, x_t, timestep, text_prompt, condition_images):
+#         pass
 
 
 class ControlNetPrior(Prior):

@@ -1,70 +1,65 @@
 root_dir: ./results/
-tag: mesh_sds
-text_prompt: "a DSLR photo of face of Kratos, god of war, best quality, high quality, extremely detailed, good geometry"
+tag: stochsync_sphere
+text_prompt: "A sweet candy texture"
 
 #===============================================================================
 # Trainer settings
 #===============================================================================
-max_steps: 800
-warmup_steps: 0
+max_steps: 12
+warmup_steps: 1
 
-use_ode: false
-ode_steps: -1
-seam_removal_steps: 0
+use_ode: true
+ode_steps: 25
+seam_removal_steps: 4
 
-use_closed_form: false
-recon_type: latent
+use_closed_form: true
+recon_type: rgb
 recon_steps: 1
 
 disable_debug: False
+try_fast_sampling: True
 
 #===============================================================================
 # Dataset
 #===============================================================================
-dataset: random
-batch_size: 2
+dataset: quat
 height: 512
 width: 512
-convention: OpenGL
-up_vec: y
-fov: 60
-dist_range: [2.0, 2.0]
-elev_range: [-5, 40]
-azim_range: [0, 360]
+batch_size: 6
+fov: 90
+dists: [2.0, 2.0, 2.0, 2.0, 2.0, 2.0]
+elevs: [0, 0, 0, 0, 90, -90]
+azims: [0, 90, 180, 270, 0, 0]
 
 #===============================================================================
 # Background
 #===============================================================================
-background: cache
-rgb: [0.1, 0.1, 0.1]
+background: solid
+rgb: [0, 0, 0]
 
 #===============================================================================
 # Model
 #===============================================================================
-model: mesh
-mesh_path: "./data/mesh/face.obj"
-texture_size: 2048
-mesh_scale: 1.0
-initialization: gray
-learning_rate: 0.06
+model: panorama
+mode: sphere
+pano_height: 2048
+pano_width: 4096
 channels: 3
-sampling_mode: linear-mipmap-linear
-use_selection: true
+seam_removal_mode: both
 
 #===============================================================================
 # Prior
 #===============================================================================
-prior: sd2_depth
-guidance_scale: 15.5
-mixed_precision: true
-use_view_dependent_prompt: true
+prior: sd
+guidance_scale: 8.5
+mixed_precision: True
 
 #===============================================================================
 # Time sampler
 #===============================================================================
 time_sampler: linear_annealing 
 t_max: 999
-t_min: 270
+t_min: 400
 
 #===============================================================================
 # Noise sampler
@@ -75,4 +70,4 @@ noise_sampler: sds
 # Logger
 #===============================================================================
 logger: self
-log_interval: 20
+log_interval: 1

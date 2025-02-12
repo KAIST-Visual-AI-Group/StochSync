@@ -14,7 +14,6 @@ config/ddim/img_wide*
 baselines/
 weights/
 make_data.py
-mesh_final_exp*/
 GIQA
 
 # Ignore jupyter notebook files

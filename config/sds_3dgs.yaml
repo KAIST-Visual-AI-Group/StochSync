@@ -1,5 +1,5 @@
 root_dir: ./results
-tag: mvdream_3dgs
+tag: sds_3dgs
 text_prompt: "a zoomed out DSLR photo of a baby bunny sitting on top of a stack of pancakes, no background"
 
 #===============================================================================

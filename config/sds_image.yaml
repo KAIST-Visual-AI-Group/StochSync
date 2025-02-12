@@ -1,11 +1,11 @@
 root_dir: ./results/
-tag: image_sds
+tag: sds_image
 text_prompt: "A DSLR photo of a baby bunny sitting on top of a stack of pancakes"
 
 #===============================================================================
 # Trainer settings
 #===============================================================================
-max_steps: 1000
+max_steps: 300
 warmup_steps: 0
 
 use_ode: false
@@ -37,22 +37,20 @@ rgb: [0, 0, 0, 0]
 #===============================================================================
 model: image
 initialization: random
-learning_rate: 0.01
+learning_rate: 0.1
 channels: 4
 
 #===============================================================================
 # Prior
 #===============================================================================
 prior: sd
-guidance_scale: 7.5
+guidance_scale: 15
 mixed_precision: false
 
 #===============================================================================
 # Time sampler
 #===============================================================================
-time_sampler: sds 
-t_max: 999
-t_min: 0
+time_sampler: sds
 
 #===============================================================================
 # Noise sampler
@@ -62,6 +60,5 @@ noise_sampler: sds
 #===============================================================================
 # Logger
 #===============================================================================
-logger: simple_latent_preview
+logger: self
 log_interval: 10
-save_video: True

@@ -48,7 +48,7 @@ def downscale_min(tensor, scale_factor):
     return tensor_min
 
 
-class GeneralTrainer:
+class RebuttalTrainer:
     """
     Abstract base class for all trainers.
     """
@@ -285,6 +285,30 @@ class GeneralTrainer:
                 sm.logger(
                     step, camera, torch.cat([images_for_log, gt_images_for_log], dim=0)
                 )
+        
+        # Save latent_noisy, gt_tweedie, gt_clean
+        if step % 5 == 0 or step == self.cfg.max_steps - 1:
+            print_info("Rebuttal mode: saving latent_noisy, gt_tweedie, gt_clean")
+            gt_clean = sm.prior.ddim_loop(
+                camera, latent_noisy, t_curr, 0, num_steps=50, try_fast=True,
+            )
+            save_tensor(sm.prior.decode_latent_if_needed(latent_noisy), f"{self.cfg.root_dir}/debug/latent_noisy_{step}_{t_curr}.png")
+            save_tensor(sm.prior.decode_latent_if_needed(gt_tweedie), f"{self.cfg.root_dir}/debug/gt_tweedie_{step}_{t_curr}.png")
+            save_tensor(sm.prior.decode_latent_if_needed(gt_clean), f"{self.cfg.root_dir}/debug/gt_clean_{step}_{t_curr}.png")
+
+            # Calculate measurement loss according to
+            # self.image = self.gt_image * self.gt_mask + self.image * (1 - self.gt_mask)
+
+            gt_region = sm.model.gt_image * sm.model.gt_mask
+            tweedie_region = gt_tweedie * sm.model.gt_mask
+            clean_region = gt_clean * sm.model.gt_mask
+            tweedie_loss = F.mse_loss(gt_region, tweedie_region, reduction="mean")
+            clean_loss = F.mse_loss(gt_region, clean_region, reduction="mean")
+
+            # write to the debug/loss.txt
+            # step, t_curr, tweedie_loss, clean_loss
+            with open(f"{self.cfg.root_dir}/debug/loss.txt", "a") as f:
+                f.write(f"{step}, {t_curr}, {tweedie_loss}, {clean_loss}\n")
 
         return final_loss
 
@@ -307,13 +331,13 @@ class GeneralTrainer:
                 self.cfg.root_dir, self.cfg.output
             )
             sm.model.save(output_filename)
-            if hasattr(sm.model, "render_eval"):
-                print_info("render_eval detected. Rendering the final image...")
-                sm.model.render_eval(self.eval_dir)
+            # if hasattr(sm.model, "render_eval"):
+            #     print_info("render_eval detected. Rendering the final image...")
+            #     sm.model.render_eval(self.eval_dir)
 
-            # save NFE under the root directory
-            with open(os.path.join(self.cfg.root_dir, "NFE.txt"), "w") as f:
-                f.write(f"{self.NFE}\n")
+            # # save NFE under the root directory
+            # with open(os.path.join(self.cfg.root_dir, "NFE.txt"), "w") as f:
+            #     f.write(f"{self.NFE}\n")
 
             return output_filename
         

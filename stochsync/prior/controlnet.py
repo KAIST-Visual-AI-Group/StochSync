@@ -112,7 +112,8 @@ class SD2DepthPrior(Prior):
         # Depth caching for efficient ODE solving
         cam_hash = camera_hash(camera)
         if cam_hash != self.prev_camera_hash:
-            rendered_pkg = sm.model.render(camera, bsdf="depth")
+            rendered_pkg = sm.model.render(camera, depth_mode=True)
+            # rendered_pkg = sm.model.render(camera, render_mode="ED")
             depth = rendered_pkg["image"][:, 0:1]
             mask = rendered_pkg["alpha"] > 0.99
             disp = preprocess_depth(depth, mask)
@@ -248,7 +249,6 @@ class ControlNetPrior(Prior):
             text_prompts = attach_detailed_direction_prompt(
                 self.cfg.text_prompt, camera["elevation"], camera["azimuth"]
             )
-            # print(text_prompts)
         else:
             text_prompts = [self.cfg.text_prompt] * camera["num"]
 
@@ -267,11 +267,10 @@ class ControlNetPrior(Prior):
 
         cam_hash = camera_hash(camera)
         if cam_hash != self.prev_camera_hash:
-            rendered_pkg = sm.model.render(camera, bsdf="depth")
+            rendered_pkg = sm.model.render(camera, depth_mode=True)
             depth = rendered_pkg["image"][:, 0:1]
             mask = rendered_pkg["alpha"] > 0.99
             disp = preprocess_depth(depth, mask)
-            # disp = torch.nn.functional.interpolate(disp, (64, 64), mode="bicubic")
             disp = (disp - disp.min()) / (disp.max() - disp.min())
             disp = torch.cat([disp.expand(-1, 3, -1, -1)] * 2)
             self.depth = disp.to(self.dtype)

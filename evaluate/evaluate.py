@@ -13,8 +13,8 @@ import shutil
 from cleanfid import fid
 from clip_eval import ClipEvaluator
 from giqa_eval import GIQAEvaluator
-from utils.print_utils import print_info, print_error, print_warning, print_with_box
-from utils.path_utils import gather_paths, filter_paths, collect_keys
+from stochsync.utils.print_utils import print_info, print_error, print_warning, print_with_box
+from stochsync.utils.path_utils import gather_paths, filter_paths, collect_keys
 from natsort import natsorted
 
 
@@ -50,6 +50,7 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
     # Gather paths
     ref_paths = list(gather_paths(ref_pattern).values())
     fake_dict = gather_paths(fake_pattern)
+    assert fake_dict, "No fake images found"
     num_keys = len(list(fake_dict.keys())[0])
 
     print_info(f"Number of reference paths: {len(ref_paths)}")

@@ -8,6 +8,7 @@ from .sd import (
 from .inpainting import InpaintingPrior
 from .controlnet import ControlNetPrior, SD2DepthPrior
 from .mvdream import MVDreamPrior
+# from .camctrl import CameraCtrlPrior
 
 from .deepfloyd import DeepFloydPrior
 
@@ -22,4 +23,5 @@ PRIORs = {
     "controlnet": ControlNetPrior,
     "mvdream": MVDreamPrior,
     "df": DeepFloydPrior,
+    # "cameractrl": CameraCtrlPrior,
 }

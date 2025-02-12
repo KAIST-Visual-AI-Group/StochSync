@@ -1,5 +1,5 @@
 root_dir: ./results/
-tag: image
+tag: ddim_image
 text_prompt: "A DSLR photo of a baby bunny sitting on top of a stack of pancakes"
 
 #===============================================================================
