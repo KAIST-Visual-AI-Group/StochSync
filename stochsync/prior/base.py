@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+import math
 import torch
 from diffusers import (
     StableDiffusionPipeline,
@@ -95,7 +96,93 @@ class Prior(ABC):
         if flag:
             y = y.squeeze(0)
         return y
+    
+    def encode_image_precise(self, img_tensor, num_steps=30, num_warmup_steps=None, lr=0.01, float=False, adam=True, LR_scheduling=True):
+        """
+        This is the core contribution of our paper: Gradient-free decoder inversion in LDMs
 
+        INPUT
+        x : image data (1, 3, 512, 512)
+        OUTPUT
+        z : modified latent data (1, 4, 64, 64)
+        """
+        def get_lr_cosine_with_warmup(i, num_steps=100, num_warmup_steps=10, lr_max=0.01):
+            assert i>=0 and i<num_steps
+            if i<num_warmup_steps:
+                lr = (i+1)/num_warmup_steps * lr_max
+            else:
+                lr = lr_max * (1 + math.cos(math.pi * (i-num_warmup_steps)/ (num_steps - num_warmup_steps)))/2
+            return lr
+        
+        if num_steps > 100:
+            num_steps_cutoff = 100
+        else:
+            num_steps_cutoff = num_steps
+        if num_warmup_steps is None:
+            num_warmup_steps = num_steps_cutoff // 10
+        
+        if float==False:
+            if adam:
+                beta1, beta2 = 0.9 , 0.999
+                eps = 1e-4
+                m, v = 0, 0
+            z0 = self.encode_image(img_tensor)
+            z = z0.clone()
+
+            for i in range(num_steps):
+                Dz = self.decode_latent(z)
+                EDz = self.encode_image(Dz)
+                grad = EDz - z0
+
+                if adam:
+                    if LR_scheduling:
+                        if i < 0.8 * num_steps_cutoff:
+                            lr_now = get_lr_cosine_with_warmup(i, num_steps=num_steps_cutoff, num_warmup_steps=num_warmup_steps, lr_max=lr)
+                            lr_min = lr_now
+                        else:
+                            lr_now = lr_min
+                    else:
+                        lr_now = lr
+                    m = beta1 * m + (1 - beta1) * grad
+                    v = beta2 * v + (1 - beta2) * (grad**2)
+                    m_corr = m / (1 - beta1**(i+1))
+                    v_corr = v / (1 - beta2**(i+1))
+                    z -= lr_now * m_corr / (torch.sqrt(v_corr) + eps)
+                else:
+                    z -= lr * grad
+
+        else:
+            if adam:
+                beta1, beta2 = 0.9 , 0.999
+                eps = 1e-8
+                m, v = 0, 0
+            z0 = self.encode_image(img_tensor).float()
+            z = z0.clone().float()
+
+            for i in range(num_steps):
+                Dz = self.decode_latent(z, float=float)
+                EDz = self.encode_image_float(Dz)
+                grad = EDz - z0
+
+                if adam:
+                    if LR_scheduling:
+                        if i < 0.8 * num_steps_cutoff:
+                            lr_now = get_lr_cosine_with_warmup(i, num_steps=num_steps_cutoff, num_warmup_steps=num_warmup_steps, lr_max=lr)
+                            lr_min = lr_now
+                        else:
+                            lr_now = lr_min
+                    else:
+                        lr_now = lr
+                    m = beta1 * m + (1 - beta1) * grad
+                    v = beta2 * v + (1 - beta2) * (grad**2)
+                    m_corr = m / (1 - beta1**(i+1))
+                    v_corr = v / (1 - beta2**(i+1))
+                    z -= lr_now * m_corr / (torch.sqrt(v_corr) + eps)        
+                    
+                else:
+                    z -= lr * grad         
+        return z
+    
     def decode_latent(self, latent):
         assert self.pipeline is not None, "Pipeline not initialized"
         vae = self.pipeline.vae
@@ -136,6 +223,11 @@ class Prior(ABC):
     def encode_image_if_needed(self, img_tensor):
         if img_tensor.shape[-3] == 3:
             return self.encode_image(img_tensor)
+        return img_tensor
+    
+    def encode_image_precise_if_needed(self, img_tensor):
+        if img_tensor.shape[-3] == 3:
+            return self.encode_image_precise(img_tensor)
         return img_tensor
     
     def decode_latent_if_needed(self, latent):
@@ -237,6 +329,14 @@ class Prior(ABC):
         x_t = x_t.detach().to(self.dtype)
 
         # linearly interpolate between 1000 and 0
+        if try_fast and edge_preserve and num_steps < 50:
+            print_warning(
+                "Fast sampling is disabled because edge preservation is enabled. "
+                "However, num_steps is too low for DDIM. "
+                "Setting num_steps to 50."
+            )
+            num_steps = 50
+            
         raw_timesteps = torch.linspace(999, 0, num_steps, dtype=torch.long)
 
         if src_t == tgt_t:
@@ -270,7 +370,7 @@ class Prior(ABC):
         
         if try_fast and not edge_preserve and mode == "cfg":
             if hasattr(self, "fast_sample"):
-                print_info("Fast sampling enabled")
+                # print_info("Fast sampling enabled")
                 output = self.fast_sample(camera, x_t, timesteps[:-1], guidance_scale=guidance_scale, **kwargs)
                 return output
         
@@ -289,7 +389,6 @@ class Prior(ABC):
             clean_eps = torch.randn_like(x_t)
 
         for i, (t_curr, t_next) in enumerate(zip(timesteps[:-1], timesteps[1:])):
-            # print(f"DDIM step {i+1}/{len(timesteps)-1}")
 
             noise_pred_dict = self.predict(
                 camera, x_t, t_curr, guidance_scale=guidance_scale, return_dict=True, **kwargs

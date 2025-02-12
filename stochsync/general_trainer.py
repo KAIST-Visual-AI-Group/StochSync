@@ -79,10 +79,10 @@ class GeneralTrainer:
 
         ode_steps: int = 100
         log_interval: int = 100
-        seam_removal_steps: int = 0
-        force_optim_steps: int = 0
-        warmup_steps: int = 0
-        try_fast_sampling: bool = False
+        seam_removal_steps: int = 0          # Number of steps to apply the soft-mask strategy.
+        warmup_steps: int = 0                # Set t=999 until fully cover the canonical space. 
+        try_fast_sampling: bool = False      # Use the advanced DPM++ solver if possible.
+        use_decoder_inversion: bool = False  # Mitigate repetitive encoder-decoder artifacts. Suggested by https://github.com/smhongok/dec-inv
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
@@ -160,16 +160,22 @@ class GeneralTrainer:
                 t_curr = min(int(2.0 * t_curr), 999)
 
             # 3. Render image
-            latent = sm.prior.encode_image_if_needed(g(camera))
+            latent = None
+            if self.cfg.use_decoder_inversion:
+                print_info("Using decoder inversion...")
+                latent = sm.prior.encode_image_precise_if_needed(g(camera))
+            else:
+                latent = sm.prior.encode_image_if_needed(g(camera))
 
             # 4. Sample noise
             noise = sm.noise_sampler(camera, latent, t_curr, self.prev_eps)
 
             # 5. Perturb-recover to get the GT latent
             if step < self.cfg.warmup_steps:
-                latent_noisy = noise
                 t_curr = 999
-                print_info("Warmup step")
+            
+            if t_curr == 999:
+                latent_noisy = noise
             else:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
             latent_noisy = latent_noisy.to(sm.prior.dtype)

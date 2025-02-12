@@ -101,9 +101,6 @@ class InpaintingPrior(StableDiffusionPrior):
         self.cond_image = masked_image_latents[:1]
         self.cond_mask = mask[:1]
 
-        # self.cond_image = self.encode_image(images * (mask < 0.5))  # B 4 64 64
-        # self.cond_mask = F.interpolate(mask, size=(64, 64), mode="nearest")  # B 1 64 64
-
         return self.cond
 
     def sample(self, camera, text_prompt=None):

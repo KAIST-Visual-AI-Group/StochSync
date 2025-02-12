@@ -100,25 +100,6 @@ class PanoramaModel(ImageModel):
     def save(self, path: str) -> None:
         image = self.render_self()
         save_tensor(image, path)
-    # @torch.no_grad()
-    # def save(self, path: str) -> None:
-    #     if self.cfg.channels == 3:
-    #         img = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-    #         # crop based on gray-color search
-    #         print_warning('Manually cropping panorama image before saving. This is a temporary solution.')
-    #         img_col = img[0, :, :, 0]
-    #         first_pixel = img_col[:, 0:1]
-    #         # search the first non-gray pixel index
-    #         first_non_gray_idx = torch.where(img_col != first_pixel)[-1][0]
-    #         last_non_gray_idx = torch.where(img_col != first_pixel)[-1][-1]
-    #         img = img[:, :, first_non_gray_idx:last_non_gray_idx + 1, :]
-    #         save_tensor(img, path)
-    #     elif self.cfg.channels == 4:
-    #         latent = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
-    #         img = shared_modules.prior.decode_latent(latent)
-    #         save_tensor(img, path)
-    #     else:
-    #         raise ValueError(f"Channels must be 3 or 4, got {self.cfg.channels}")
     
     def render(self, camera) -> torch.Tensor:
         num_cameras = camera["num"]
@@ -180,8 +161,7 @@ class PanoramaModel(ImageModel):
             azims,
         )
         images = self.render(cameras)["image"]
-        latents = shared_modules.prior.encode_image_if_needed(images)
-        rgbs = shared_modules.prior.decode_latent(latents)
+        rgbs = shared_modules.prior.decode_latent_if_needed(images)
         rgbs.clip_(0, 1)
         
         fns = [f"{azi}_{_i}" for _i, azi in enumerate(azims)]
@@ -192,7 +172,7 @@ class PanoramaModel(ImageModel):
     def render_self(self) -> torch.Tensor:
         image = self.image if self.image.dim() == 4 else self.image.unsqueeze(0)
 
-        print_info("Directly returning the raw image for stability.")
+        # print_info("Directly returning the raw image for stability.")
         return image
         
         elevs = (0, 0, 0, 0, 0, 0, 0, 0, 0, 0)

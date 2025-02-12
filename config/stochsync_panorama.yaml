@@ -9,7 +9,7 @@ max_steps: 25
 warmup_steps: 2
 
 use_ode: true
-ode_steps: 20
+ode_steps: 25
 seam_removal_steps: 2
 
 use_closed_form: true
@@ -55,6 +55,7 @@ pano_height: 2048
 pano_width: 4096
 channels: 3
 seam_removal_mode: horizontal
+initialization: zero
 
 #===============================================================================
 # Prior
