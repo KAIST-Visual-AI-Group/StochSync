@@ -1,6 +1,6 @@
 root_dir: ./results/
-tag: stochsync_mesh
-text_prompt: "Kratos bust, God of War, god of power, hyper-realistic and extremely detailed."
+tag: stochsync_mesh_flux
+text_prompt: "Kratos, God of War, god of power, hyper-realistic and extremely detailed."
 
 #===============================================================================
 # Trainer settings
@@ -9,7 +9,7 @@ max_steps: 25
 warmup_steps: 4
 
 use_ode: true
-ode_steps: 25
+ode_steps: 20
 seam_removal_steps: 4
 
 use_closed_form: true
@@ -17,7 +17,7 @@ recon_type: rgb
 recon_steps: 1
 
 disable_debug: False
-try_fast_sampling: True
+try_fast_sampling: False
 
 #===============================================================================
 # Dataset
@@ -70,8 +70,8 @@ use_selection: true
 #===============================================================================
 # Prior
 #===============================================================================
-prior: sd2_depth
-guidance_scale: 15.5
+prior: flux
+guidance_scale: 6
 mixed_precision: true
 use_view_dependent_prompt: true
 

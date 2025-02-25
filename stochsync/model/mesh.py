@@ -7,6 +7,7 @@ import torch
 import torch.nn.functional as F
 from PIL import Image
 import trimesh
+from trimesh.ray.ray_pyembree import RayMeshIntersector
 import cv2
 
 from ..utils.extra_utils import ignore_kwargs
@@ -28,7 +29,9 @@ from .base import BaseModel
 
 
 def normalize_mesh(v):
-    center = v.mean(dim=0)
+    # center = v.mean(dim=0)
+    # center is not the mean, but the center of the bounding box
+    center = (v.max(dim=0)[0] + v.min(dim=0)[0]) / 2
     v = v - center
     scale = torch.max(torch.norm(v, p=2, dim=1))
     v = v / scale
@@ -88,6 +91,7 @@ class MeshModel(BaseModel):
 
         self.glctx = dr.RasterizeCudaContext()
         self.texture = None
+        self.ks = None
         self.mesh = None
         self.load(self.cfg.mesh_path)
 
@@ -125,7 +129,28 @@ class MeshModel(BaseModel):
         self.normalmap = gb_normal  # [B, H, W, 3], -1~1
         self.facemap = rast[..., 3].long()
         self.maskmap = self.facemap > 0
+
+        i0 = self.mesh.t_pos_idx[:, 0]
+        i1 = self.mesh.t_pos_idx[:, 1]
+        i2 = self.mesh.t_pos_idx[:, 2]
+
+        v0 = self.mesh.v_pos[i0, :]
+        v1 = self.mesh.v_pos[i1, :]
+        v2 = self.mesh.v_pos[i2, :]
+
+        face_normals = torch.cross(v1 - v0, v2 - v0)
+        self.normalmap_face = face_normals[self.facemap - 1]  # [B, H, W, 3], -1~1
+        self.normalmap_face = self.normalmap_face * self.maskmap.unsqueeze(-1).float()
+        self.normalmap_face = F.normalize(self.normalmap_face, dim=-1)
+
         self.max_cosmap = torch.zeros_like(self.facemap)
+
+        V = self.mesh.v_pos.cpu().numpy()
+        T = self.mesh.t_pos_idx.cpu().numpy()
+        mesh = trimesh.Trimesh(vertices=V, faces=T)
+        self.intersector = RayMeshIntersector(mesh)
+
+        self.ks = torch.full((1, 3, self.cfg.texture_size, self.cfg.texture_size), 0.5, device=self.cfg.device)
 
     @torch.no_grad()
     def save(self, path: str) -> None:
@@ -183,11 +208,12 @@ class MeshModel(BaseModel):
             texture = texture.permute(0, 2, 3, 1)  # .clamp(0, 1)
         else:
             texture = self.texture.permute(0, 2, 3, 1)  # .clamp(0, 1)
+        
         pred_material = Material(
             {
                 "bsdf": "kd",
                 "kd": Texture2D(texture),
-                "ks": Texture2D(torch.full_like(texture, 0.5)),
+                "ks": Texture2D(self.ks.permute(0, 2, 3, 1)),
                 # "n": Texture2D(self.normalmap),
             }
         )
@@ -232,8 +258,8 @@ class MeshModel(BaseModel):
 
     @torch.no_grad()
     def render_eval(self, path) -> torch.Tensor:
-        elevs = [11, 7, 7, 9, 6, 24, 25, 5, 14, 26]
-        azims = [25, 32, 84, 132, 138, 144, 147, 232, 295, 355]
+        elevs = [0] * 10 + [30] * 10
+        azims = [0, 36, 72, 108, 144, 180, 216, 252, 288, 324] * 2
 
         dists = [2.0] * len(elevs)
         cameras = sm.dataset.params_to_cameras(
@@ -293,8 +319,8 @@ class MeshModel(BaseModel):
                 mask_dict = self.get_masks(cam)
                 gp_pos_xy = mask_dict["gp_pos_xy"]
                 cosmap = mask_dict["cosmap"].abs()
-                mask = mask_dict["mask_depth"] & self.maskmap
-                texture = self.unproject_stable(cam, target[i : i + 1], gp_pos_xy, mask)
+                mask = mask_dict["vismap"]
+                texture = self.unproject(cam, target[i : i + 1], gp_pos_xy, mask)
 
                 local_max_region = mask & (cosmap >= max_cosmap)
                 texture_new[local_max_region] = texture[local_max_region]
@@ -314,7 +340,7 @@ class MeshModel(BaseModel):
                 mask_dict = self.get_masks(cam)
                 gp_pos_xy = mask_dict["gp_pos_xy"]
                 cosmap = mask_dict["cosmap"].abs()
-                mask = mask_dict["mask_depth"] & self.maskmap
+                mask = mask_dict["vismap"]
                 texture = self.unproject(cam, target[i : i + 1], gp_pos_xy, mask)
 
                 softmask = mask.float() * cosmap.clamp(0, 1)
@@ -380,32 +406,59 @@ class MeshModel(BaseModel):
         raydirmap = F.normalize(raydirmap, dim=-1)
         cosmap = torch.sum(raydirmap * self.normalmap, dim=-1)
 
-        # Depth mask
-        gp_pos_z = gb_pos_clip[..., 2]
-        render_pkg = sm.model.render(camera, bsdf="depth")
-        front_z = render_pkg["image"][:, :1]
-        bg = render_pkg["alpha"] < 1.0
-        front_z[bg] = front_z.max()
-        gp_front_z = remap_min(front_z, gp_pos_xy * height).squeeze(1)
-        mask_depth = gp_pos_z <= gp_front_z + 0.06 * torch.clamp(
-            (1 - cosmap), min=0.1, max=1.0
+        # Visibility mask
+        B = cosmap.shape[0]
+        testmask = (cosmap > 0).view(B, -1)
+        origins = (sm.model.coordmap[..., :-1] + sm.model.normalmap * 1e-4).view(1, -1, 3).expand(B, -1, -1)
+        endpoints = c2ws[:, :3, 3].view(-1, 1, 3).expand_as(origins)
+
+        # Filter rays using the test mask
+        origins = origins[testmask]
+        endpoints = endpoints[testmask]
+
+        # Compute ray segments and directions
+        ray_vectors = endpoints - origins
+        segment_lengths = torch.norm(ray_vectors, dim=-1)
+        ray_directions = ray_vectors / segment_lengths[:, None]
+
+        # Ray-mesh intersection using PyEmbree
+        hit_distances = self.intersector.intersects_first(
+            origins.cpu().numpy(), ray_directions.cpu().numpy()
         )
+        hit_distances = torch.from_numpy(hit_distances).to(testmask.device)
+        hit_mask = (~torch.isnan(hit_distances)) & (hit_distances <= segment_lengths)
+
+        # Build final visibility mask
+        vis_mask = testmask.clone()
+        vis_mask[testmask] = hit_mask
+        vis_mask = vis_mask.view(-1, self.cfg.texture_size, self.cfg.texture_size)
+        vis_mask |= (torch.roll(vis_mask, 1, 1) & torch.roll(vis_mask, -1, 1) & torch.roll(vis_mask, 1, 2) & torch.roll(vis_mask, -1, 2))
+
+        # Depth mask
+        # gp_pos_z = gb_pos_clip[..., 2]
+        # render_pkg = sm.model.render(camera, bsdf="depth")
+        # front_z = render_pkg["image"][:, :1]
+        # bg = render_pkg["alpha"] < 1.0
+        # front_z[bg] = front_z.max()
+        # gp_front_z = remap_min(front_z, gp_pos_xy * height).squeeze(1)
+        # mask_depth = gp_pos_z <= gp_front_z + 0.08 * torch.clamp(
+        #     (1 - cosmap), min=0.1, max=1.0
+        # )
 
         # Face mask
-        face_ids = sm.model.render(camera, bsdf="faceid")["image"][:, :1]
-        valid_faces = torch.unique(face_ids.long())[1:]  # exclude background
-        mask_face = torch.isin(self.facemap, valid_faces, assume_unique=False)
+        # face_ids = sm.model.render(camera, bsdf="faceid")["image"][:, :1]
+        # valid_faces = torch.unique(face_ids.long())[1:]  # exclude background
+        # mask_face = torch.isin(self.facemap, valid_faces, assume_unique=False)
 
         return {
             "gp_pos_xy": gp_pos_xy,
-            "mask_depth": mask_depth,
-            "mask_face": mask_face,
             "cosmap": cosmap,
+            "vismap": vis_mask,
         }
 
     def get_diffusion_softmask(self, camera):
         masks = self.get_masks(camera)
-        cosmaps = masks["cosmap"] * masks["mask_depth"]  # B H W
+        cosmaps = masks["cosmap"] * masks["vismap"]  # B H W
         cosmaps = torch.cat(
             [torch.full_like(cosmaps[:1], 0.01), cosmaps], dim=0
         )  # B+1 H W
@@ -447,7 +500,7 @@ class MeshModel(BaseModel):
 
     def unproject(self, camera, target, gp_pos_xy, mask):
         target_h, target_w = target.shape[-2:]
-        unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="nearest")
+        unproj_texture = remap(target, gp_pos_xy.squeeze() * target_h, mode="bilinear")
 
         return unproj_texture
 

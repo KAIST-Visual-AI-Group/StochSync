@@ -97,12 +97,12 @@ class GeneralTrainer:
         print_warning("Measuring NFE.")
         self.NFE = 0
 
-        original_predict = sm.prior.pipeline.unet.__class__.__call__
+        # original_predict = sm.prior.pipeline.unet.__class__.__call__
 
-        def predict_wrapper(other, x_t_stack, *args, **kwargs):
-            self.NFE += x_t_stack.shape[0]
-            return original_predict(other, x_t_stack, *args, **kwargs)
-        sm.prior.pipeline.unet.__class__.__call__ = predict_wrapper
+        # def predict_wrapper(other, x_t_stack, *args, **kwargs):
+        #     self.NFE += x_t_stack.shape[0]
+        #     return original_predict(other, x_t_stack, *args, **kwargs)
+        # sm.prior.pipeline.unet.__class__.__call__ = predict_wrapper
 
         if self.cfg.eval_dir is None:
             self.eval_dir = os.path.join(self.cfg.root_dir, "eval")
@@ -180,6 +180,10 @@ class GeneralTrainer:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
             latent_noisy = latent_noisy.to(sm.prior.dtype)
 
+            print_warning("Temporary debugging images for Prof. M.H.")
+            rgb_noisy = sm.prior.decode_latent(latent_noisy)
+            save_tensor(rgb_noisy, f"{self.cfg.root_dir}/debug/rgb_noisy_{step}.png", save_type="cat_image", row_size=2)
+
             if self.cfg.use_ode:
                 if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                     print_warning("Edge-preserving sampling")
@@ -196,6 +200,7 @@ class GeneralTrainer:
                         edge_preserve=True,
                         clean=latent,
                         soft_mask=soft_mask,
+                        try_fast=self.cfg.try_fast_sampling
                     )
                 else:
                     gt_tweedie = sm.prior.ddim_loop(
@@ -206,17 +211,18 @@ class GeneralTrainer:
                 gt_tweedie = sm.prior.get_tweedie(latent_noisy, eps_pred, t_curr)
 
             # 5.5. Calculate the weighting coefficient
-            if self.cfg.weighting_scheme == "sds":
-                alpha_t = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)[t_curr]
-                coeff = (1 - alpha_t) ** 1.5 * alpha_t**0.5
-            elif self.cfg.weighting_scheme == "fixed":
-                alphas = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)
-                coeffs = (1 - alphas) ** 1.5 * alphas**0.5
-                coeff = coeffs.mean()
-            else:
-                raise ValueError(
-                    f"Unknown weighting scheme: {self.cfg.weighting_scheme}"
-                )
+            if not self.cfg.use_closed_form:
+                if self.cfg.weighting_scheme == "sds":
+                    alpha_t = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)[t_curr]
+                    coeff = (1 - alpha_t) ** 1.5 * alpha_t**0.5
+                elif self.cfg.weighting_scheme == "fixed":
+                    alphas = sm.prior.ddim_scheduler.alphas_cumprod.to(latent)
+                    coeffs = (1 - alphas) ** 1.5 * alphas**0.5
+                    coeff = coeffs.mean()
+                else:
+                    raise ValueError(
+                        f"Unknown weighting scheme: {self.cfg.weighting_scheme}"
+                    )
 
             # 6. Define the target image depending on the reconstruction type
             if self.cfg.recon_type == "rgb":

@@ -109,7 +109,8 @@ class EnvironmentLight(torch.nn.Module):
             NdotV = torch.clamp(util.dot(wo, gb_normal), min=1e-4)
             fg_uv = torch.cat((NdotV, roughness), dim=-1)
             if not hasattr(self, '_FG_LUT'):
-                self._FG_LUT = torch.as_tensor(np.fromfile('data/irrmaps/bsdf_256_256.bin', dtype=np.float32).reshape(1, 256, 256, 2), dtype=torch.float32, device='cuda')
+                curdir = os.path.dirname(os.path.abspath(__file__))
+                self._FG_LUT = torch.as_tensor(np.fromfile(os.path.join(curdir, 'bsdf_256_256.bin'), dtype=np.float32).reshape(1, 256, 256, 2), dtype=torch.float32, device='cuda')
             fg_lookup = dr.texture(self._FG_LUT, fg_uv, filter_mode='linear', boundary_mode='clamp')
 
             # Roughness adjusted specular env lookup
@@ -117,7 +118,7 @@ class EnvironmentLight(torch.nn.Module):
             spec = dr.texture(self.specular[0][None, ...], reflvec.contiguous(), mip=list(m[None, ...] for m in self.specular[1:]), mip_level_bias=miplevel[..., 0], filter_mode='linear-mipmap-linear', boundary_mode='cube')
 
             # Compute aggregate lighting
-            reflectance = spec_col * fg_lookup[...,0:1] + fg_lookup[...,1:2]
+            reflectance = spec_col * fg_lookup[..., 0:1] + fg_lookup[..., 1:2]
             shaded_col += spec * reflectance
 
         return shaded_col * (1.0 - ks[..., 0:1]) # Modulate by hemisphere visibility
@@ -127,8 +128,12 @@ class EnvironmentLight(torch.nn.Module):
 ######################################################################################
 
 # Load from latlong .HDR file
-def _load_env_hdr(fn, scale=1.0, invert=False):
+def _load_env_hdr(fn, scale=1.0, invert=False, offset=0.0):
     latlong_img = torch.tensor(util.load_image(fn), dtype=torch.float32, device='cuda')*scale
+    # rotate horizontally by offset degrees
+    if offset != 0:
+        amount = offset / 360.0
+        latlong_img = torch.roll(latlong_img, int(amount * latlong_img.shape[1]), dims=1)
     if invert:
         # 180 degree rotation
         print(latlong_img.shape)
@@ -140,9 +145,9 @@ def _load_env_hdr(fn, scale=1.0, invert=False):
 
     return l
 
-def load_env(fn, scale=1.0, invert=False):
+def load_env(fn, scale=1.0, invert=False, offset=0.0):
     if os.path.splitext(fn)[1].lower() == ".hdr":
-        return _load_env_hdr(fn, scale, invert)
+        return _load_env_hdr(fn, scale, invert, offset)
     else:
         assert False, "Unknown envlight extension %s" % os.path.splitext(fn)[1]
 

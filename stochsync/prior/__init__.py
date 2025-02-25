@@ -3,13 +3,13 @@ from .sd import (
     AngleDependentStableDiffusionPrior,
     ViewDependentStableDiffusionPrior,
     ElevDependentStableDiffusionPrior,
-    UltimateStableDiffusionPrior
+    UltimateStableDiffusionPrior,
 )
 from .inpainting import InpaintingPrior
 from .controlnet import ControlNetPrior, SD2DepthPrior
 from .mvdream import MVDreamPrior
-
 from .deepfloyd import DeepFloydPrior
+from .flux import FluxDepthCannyPrior
 
 PRIORs = {
     "sd": StableDiffusionPrior,
@@ -22,4 +22,5 @@ PRIORs = {
     "controlnet": ControlNetPrior,
     "mvdream": MVDreamPrior,
     "df": DeepFloydPrior,
+    "flux": FluxDepthCannyPrior,
 }

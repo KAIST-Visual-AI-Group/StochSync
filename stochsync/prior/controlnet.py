@@ -19,12 +19,33 @@ from .. import shared_modules as sm
 from .base import Prior, NEGATIVE_PROMPT
 
 
+# def preprocess_depth(depth, mask):
+#     disp = depth.clone()
+#     disp[mask] = 1 / (disp[mask] + 1e-15)
+#     _min = disp[mask].min()
+#     _max = disp[mask].max()
+#     disp[mask] = (disp[mask] - _min) / (_max - _min)
+#     disp[~mask] = 0
+#     return disp
+
 def preprocess_depth(depth, mask):
     disp = depth.clone()
     disp[mask] = 1 / (disp[mask] + 1e-15)
-    _min = disp[mask].min()
-    _max = disp[mask].max()
-    disp[mask] = (disp[mask] - _min) / (_max - _min)
+    _shape = disp.shape
+    if mask.dim() == 3:
+        mask = mask.unsqueeze(1)
+
+    B = _shape[0]
+    disp_flat = disp.view(B, -1)
+    mask_flat = mask.view(B, -1)
+
+    inf_tensor = torch.full_like(disp_flat, float('inf'))
+    neg_inf_tensor = torch.full_like(disp_flat, float('-inf'))
+
+    _min = torch.where(mask_flat, disp_flat, inf_tensor).min(dim=1).values
+    _max = torch.where(mask_flat, disp_flat, neg_inf_tensor).max(dim=1).values
+
+    disp = (disp - _min.view(-1, 1, 1, 1)) / ((_max - _min + 1e-7).view(-1, 1, 1, 1))
     disp[~mask] = 0
     return disp
 
