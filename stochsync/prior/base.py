@@ -329,7 +329,6 @@ class Prior(ABC):
         x_t = x_t.detach().to(self.dtype)
 
         # linearly interpolate between 1000 and 0
-        print(try_fast, edge_preserve, num_steps)
         if try_fast and edge_preserve and num_steps < 50:
             print_warning(
                 "Fast sampling is disabled because edge preservation is enabled. "

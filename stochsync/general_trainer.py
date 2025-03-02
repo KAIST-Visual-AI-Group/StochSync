@@ -94,8 +94,8 @@ class GeneralTrainer:
         sm.noise_sampler = NOISE_SAMPLERs[self.cfg.noise_sampler](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
 
-        print_warning("Measuring NFE.")
-        self.NFE = 0
+        # print_warning("Measuring NFE.")
+        # self.NFE = 0
 
         # original_predict = sm.prior.pipeline.unet.__class__.__call__
 

@@ -42,7 +42,7 @@ We propose $\texttt{StochSync}$, a method for generating images in arbitrary spa
 ### Tested Environment
 - **Python:** 3.9
 - **CUDA:** CUDA 12.1
-- **GPU:** Tested on NVIDIA GTX3090Ti and A6000
+- **GPU:** Tested on NVIDIA RTX3090 and RTX A6000
 
 ### Installation Steps
 
@@ -54,8 +54,8 @@ We propose $\texttt{StochSync}$, a method for generating images in arbitrary spa
 
 2. **Create Conda Environment:**
     ```bash
-    conda create -n distillanywhere python=3.9 -y
-    conda activate distillanywhere
+    conda create -n stochsync python=3.9 -y
+    conda activate stochsync
     ```
 
 3. **Install Core Dependencies:**
@@ -63,7 +63,7 @@ We propose $\texttt{StochSync}$, a method for generating images in arbitrary spa
     First, install PyTorch and xformers compatible with your CUDA environment. For example:
     
     ```bash
-    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 xformers --force-reinstall --index-url https://download.pytorch.org/whl/cu121
+    pip install torch==2.1.0 torchvision==0.16.0 torchaudio==2.1.0 xformers --index-url https://download.pytorch.org/whl/cu121
     ```
     
 4. **Install Python Dependencies:**
@@ -87,7 +87,7 @@ We provide several example configurations in the `config/` directory. Below are 
 - **Format**:
 
     ```bash
-    python main.py --config "your_config.yaml" root_dir="root_dir_for_results" tag="run_name" text_prompt="your text prompt here"
+    python main.py --config "your_config.yaml" root_dir="root_dir_for_results" tag="run_name" text_prompt="your text prompt here" [other application-specific options]
     ```
 
 - **360° Panorama Generation:**
