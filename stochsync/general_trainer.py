@@ -307,8 +307,8 @@ class GeneralTrainer:
                 sm.model.render_eval(self.eval_dir)
 
             # save NFE under the root directory
-            with open(os.path.join(self.cfg.root_dir, "NFE.txt"), "w") as f:
-                f.write(f"{self.NFE}\n")
+            # with open(os.path.join(self.cfg.root_dir, "NFE.txt"), "w") as f:
+            #     f.write(f"{self.NFE}\n")
 
             return output_filename
         
