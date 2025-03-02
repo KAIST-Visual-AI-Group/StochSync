@@ -293,9 +293,6 @@ class MeshModel(BaseModel):
         )
 
         image = self.render(cameras)["image"]
-        # encode then decode to remove artifacts
-        # image = sm.prior.encode_image_if_needed(image)
-        # image = sm.prior.decode_latent(image)
 
         return image
 

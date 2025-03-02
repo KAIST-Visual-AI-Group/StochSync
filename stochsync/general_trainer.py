@@ -180,10 +180,6 @@ class GeneralTrainer:
                 latent_noisy = sm.prior.add_noise(latent, t_curr, noise=noise)
             latent_noisy = latent_noisy.to(sm.prior.dtype)
 
-            print_warning("Temporary debugging images for Prof. M.H.")
-            rgb_noisy = sm.prior.decode_latent(latent_noisy)
-            save_tensor(rgb_noisy, f"{self.cfg.root_dir}/debug/rgb_noisy_{step}.png", save_type="cat_image", row_size=2)
-
             if self.cfg.use_ode:
                 if step >= self.cfg.max_steps - self.cfg.seam_removal_steps:
                     print_warning("Edge-preserving sampling")
@@ -272,7 +268,6 @@ class GeneralTrainer:
 
         # 8. Calculate the pseudo noises
         with torch.no_grad():
-            # print_info("Rendering the image again to calculate pseudo noise...")
             if sm.noise_sampler.__class__ in SAMPLERs_REQUIRING_PREV_EPS:
                 image = g(camera)
                 tmp_latent = sm.prior.encode_image_if_needed(image)

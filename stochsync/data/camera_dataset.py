@@ -116,12 +116,18 @@ class SeqTurnaroundCameraDataset(CameraDataset):
         num_cameras: int = 60
         batch_size: int = 1
         dist: float = 2.0
-        elev: float = 30.0
+        elev_min: float = -10.0
+        elev_max: float = 30.0
 
     def __init__(self, cfg) -> None:
         super().__init__(cfg)
         self.cfg = self.Config(**cfg)
-        self.azimuths = np.linspace(0, 360, self.cfg.num_cameras, endpoint=False)
+        self.azimuths = np.linspace(0, 360 * 2, self.cfg.num_cameras, endpoint=False)
+        self.azimuths = self.azimuths % 360
+
+        fluctuation = (1 - np.cos(np.linspace(0, 6 * np.pi, self.cfg.num_cameras))) / 2
+        self.elevations = self.cfg.elev_min + (self.cfg.elev_max - self.cfg.elev_min) * fluctuation
+
         self.count = 0
         assert self.cfg.batch_size == 1, "Batch size must be 1"
 
@@ -130,7 +136,8 @@ class SeqTurnaroundCameraDataset(CameraDataset):
 
     def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor]:
         azim = self.azimuths[idx]
-        return self.params_to_cameras([self.cfg.dist], [self.cfg.elev], [azim])
+        elev = self.elevations[idx]
+        return self.params_to_cameras([self.cfg.dist], [elev], [azim])
 
     def generate_sample(self) -> Tuple[torch.Tensor, torch.Tensor]:
         data = self.__getitem__(self.count)

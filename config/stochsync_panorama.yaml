@@ -1,6 +1,7 @@
 root_dir: ./results/
 tag: stochsync_panorama
-text_prompt: "Graffiti-covered alleyway on a sunny afternoon"
+text_prompt: "A vibrant urban alleyway filled with colorful graffiti, bold designs, and stylized lettering on wall, extremely detailed and realistic."
+seed: 42
 
 #===============================================================================
 # Trainer settings
@@ -68,7 +69,7 @@ mixed_precision: true
 # Time sampler
 #===============================================================================
 time_sampler: linear_annealing 
-t_max: 999
+t_max: 900
 t_min: 270
 
 #===============================================================================

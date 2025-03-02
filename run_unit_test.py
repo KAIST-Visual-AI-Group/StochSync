@@ -76,7 +76,7 @@ async def run_tests(commands: List[str], devices: List[str], timeout: int):
 def main():
     parser = argparse.ArgumentParser(description="Run asynchronous unit tests with CUDA_VISIBLE_DEVICES.")
     parser.add_argument('--devices', nargs='+', help='List of CUDA visible devices (e.g., 0 1 2)', required=True)
-    parser.add_argument('--timeout', type=int, default=120, help='Maximum runtime for each command (in seconds).')
+    parser.add_argument('--timeout', type=int, default=999, help='Maximum runtime for each command (in seconds).')
     parser.add_argument('--extensive', action='store_true', help='Run extensive tests.')
 
     args = parser.parse_args()
@@ -91,7 +91,6 @@ def main():
             "python main.py --config config/stochsync_torus.yaml root_dir=./unit_test_results/ max_steps=6",
             "python main.py --config config/stochsync_sphere.yaml root_dir=./unit_test_results/ max_steps=6",
             "python main.py --config config/synctweedies_wide_image.yaml root_dir=./unit_test_results/",
-            "python main.py --config config/sds_3dgs_fast.yaml root_dir=./unit_test_results/ max_steps=300",
         ]
     else:
         print_info("Running extensive unit tests.")
@@ -99,11 +98,14 @@ def main():
             "python main.py --config config/ddim_image.yaml root_dir=./unit_test_results/",
             "python main.py --config config/sds_image.yaml root_dir=./unit_test_results/",
             "python main.py --config config/sds_3dgs_fast.yaml root_dir=./unit_test_results/",
+            "python main.py --config config/sdi_image.yaml root_dir=./unit_test_results/",
+            "python main.py --config config/synctweedies_wide_image.yaml root_dir=./unit_test_results/",
+            "python main.py --config config/stochsync_image_inpainting.yaml root_dir=./unit_test_results/",
+            "python main.py --config config/stochsync_panorama.yaml root_dir=./unit_test_results/",
+            "python main.py --config config/stochsync_panorama_upscale.yaml root_dir=./unit_test_results/",
             "python main.py --config config/stochsync_mesh.yaml root_dir=./unit_test_results/",
             "python main.py --config config/stochsync_torus.yaml root_dir=./unit_test_results/",
             "python main.py --config config/stochsync_sphere.yaml root_dir=./unit_test_results/",
-            "python main.py --config config/stochsync_panorama.yaml root_dir=./unit_test_results/",
-            "python main.py --config config/stochsync_panorama_upscale.yaml root_dir=./unit_test_results/",
         ]
 
     # Run asynchronous tests

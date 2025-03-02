@@ -25,16 +25,15 @@ class Renderer:
     @ignore_kwargs
     @dataclass
     class Config:
-        root_dir: str = "./results/default"
-        force_overwrite: bool = False
+        root_dir: str = "./results/"
         dataset: Any = "seq_turnaround"
         background: Any = "solid"
-        model: Any = "latent_mesh"
-        prior: Any = "sd"
+        model: Any = "mesh"
         logger: Any = "renderer"
 
-        # Model parameters
-        model_path: Optional[str] = None
+        mesh_path: str = "./data/mesh/face.obj"
+        initialization: str = "image"
+        texture_path: str = "./data/mesh/face_texture.png"
 
         # Dataset parameters
         dist: float = 2.0
@@ -42,31 +41,26 @@ class Renderer:
         fov: float = 72
         width: int = 256
         height: int = 256
-        num_cameras: int = 60
+        num_cameras: int = 180
 
         # Logging parameters
         output: str = "rendered.mp4"
         output_type: str = "video"
-        fps: int = 20
+        fps: int = 15
 
     def __init__(self, cfg_dict):
         self.cfg = self.Config(**cfg_dict)
-        cfg_dict.update(asdict(self.cfg))  # Update the config dict with the default values
+        cfg_dict.update(
+            asdict(self.cfg)
+        )  # Update the config dict with the default values
         os.makedirs(self.cfg.root_dir, exist_ok=True)
 
         output = os.path.join(self.cfg.root_dir, self.cfg.output)
         if os.path.exists(output):
-            if self.cfg.force_overwrite:
-                print_warning(
-                    f"Output file {output} already exists. Overwriting..."
-                )
-            else:
-                print_error(f"Output file {output} already exists. Exiting...")
-                exit(1)
+            print_warning(f"Output file {output} already exists. Overwriting...")
         sm.dataset = DATASETs[self.cfg.dataset](cfg_dict)
         sm.background = BACKGROUNDs[self.cfg.background](cfg_dict)
         sm.model = MODELs[self.cfg.model](cfg_dict)
-        # sm.prior = PRIORs[self.cfg.prior](cfg_dict)
         sm.logger = LOGGERs[self.cfg.logger](cfg_dict)
         sm.model.prepare_optimization()
 
@@ -91,11 +85,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--config", type=str)
     args, extra = parser.parse_known_args()
-    
+
     if args.config:
         cfg = load_config(args.config, cli_args=extra)
     else:
         cfg = load_config(cli_args=extra)
+    
+    cfg.root_dir = os.path.join(cfg.root_dir.replace(" ", "_"), cfg.tag)
     renderer = Renderer(cfg)
     renderer()
     print_info(f"Rendering complete. Output saved to {renderer.cfg.output}")

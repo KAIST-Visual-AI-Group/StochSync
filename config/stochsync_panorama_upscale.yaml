@@ -1,6 +1,7 @@
 root_dir: ./results/
 tag: stochsync_panorama_upscale
-text_prompt: "Graffiti-covered alleyway on a sunny afternoon"
+text_prompt: "A vibrant urban alleyway filled with colorful graffiti, bold designs, and stylized lettering on wall, extremely detailed and realistic."
+seed: 42
 
 #===============================================================================
 # Trainer settings
