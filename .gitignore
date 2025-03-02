@@ -20,13 +20,13 @@ GIQA
 *.ipynb
 
 # Ignore data files
-*.png
-*.jpg
-*.jpeg
-*.obj
-*.mtl
-*.mp4
-*.gif
+# *.png
+# *.jpg
+# *.jpeg
+# *.obj
+# *.mtl
+# *.mp4
+# *.gif
 *.pt
 
 # Byte-compiled / optimized / DLL files
