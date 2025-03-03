@@ -42,7 +42,7 @@ We propose $\texttt{StochSync}$, a method for generating images in arbitrary spa
 ### Tested Environment
 - **Python:** 3.9
 - **CUDA:** CUDA 12.1
-- **GPU:** Tested on NVIDIA RTX3090 and RTX A6000
+- **GPU:** Tested on NVIDIA RTX 3090 and RTX A6000
 
 ### Installation Steps
 
