@@ -123,9 +123,9 @@ Below are placeholders for example results from various applications:
 
 ---
 
-## Unit Testing
+## Testing
 
-We provide comprehensive unit tests to validate the functionality of our modules. To run the unit tests, execute:
+We provide comprehensive tests to validate the functionality of our modules. To run the tests, execute:
 
 ```bash
 python run_unit_test.py --extensive --devices {list of gpu indices to use}
