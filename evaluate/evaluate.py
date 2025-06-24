@@ -13,6 +13,7 @@ import shutil
 from cleanfid import fid
 from clip_eval import ClipEvaluator
 from giqa_eval import GIQAEvaluator
+from is_eval import ISEvaluator
 from stochsync.utils.print_utils import print_info, print_error, print_warning, print_with_box
 from stochsync.utils.path_utils import gather_paths, filter_paths, collect_keys
 from natsort import natsorted
@@ -43,6 +44,7 @@ def evaluate_clip(fdir, prompt, model):
 def eval_experiment(ref_pattern, fake_pattern, output=None):
     clip_evaluator = ClipEvaluator().cuda()
     giqa_evaluator = GIQAEvaluator()
+    is_evaluator = ISEvaluator()
     print_with_box(
         f"Reference: {ref_pattern}\n" f"Fake: {fake_pattern}",
         title="Evaluation Setup",
@@ -69,12 +71,7 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
         exp_keys = list(exp_keys)
         fake_paths = filter_paths(fake_dict, *exp_keys, "*").values()
 
-        # measure fid and kid
-        # os.makedirs("temp_ref_dir", exist_ok=True)
-        # os.makedirs("temp_fake_dir", exist_ok=True)
-        # temp_ref_dir = "temp_ref_dir"
-        # temp_fake_dir = "temp_fake_dir"
-        # if True:
+        # measure FID, KID, GIQA, IS
         with tempfile.TemporaryDirectory() as temp_ref_dir, tempfile.TemporaryDirectory() as temp_fake_dir, tempfile.TemporaryDirectory() as temp_feature_dir:
             for ref_path in ref_paths:
                 # concatenate the path into a single filename to prevent collision
@@ -88,14 +85,13 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
                     fake_path,
                     os.path.join(temp_fake_dir, os.path.basename(fake_path_str)),
                 )
-
             fid_score = evaluate_fid(temp_fake_dir, temp_ref_dir)
             kid_score = evaluate_kid(temp_fake_dir, temp_ref_dir)
-            giqa_scores = giqa_evaluator(temp_ref_dir, temp_fake_dir, temp_feature_dir)
-        # print(giqa_scores)
-        print_info(f"FID: {fid_score}, KID: {kid_score}, GIQA: {giqa_scores}")
+            giqa_scores = giqa_evaluator(temp_ref_dir, temp_fake_dir, temp_feature_dir) * 1000
+            is_score = is_evaluator(temp_fake_dir)
+        print_info(f"FID: {fid_score}, KID: {kid_score}, GIQA: {giqa_scores}, IS: {is_score}")
 
-        # measure clip
+        # measure CLIP
         clip_scores = []
         for prompt_key in prompts:
             with tempfile.TemporaryDirectory() as temp_fake_dir:
@@ -113,9 +109,7 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
                     continue
 
                 prompt = prompt_key.replace("_", " ")
-                # print_info(f"Prompt: {prompt}")
                 clip_score = evaluate_clip(temp_fake_dir, prompt, clip_evaluator)
-                # print(f"Prompt: {prompt}, Clip: {clip_score}")
                 clip_scores.append(clip_score)
         print_info(f"Number of prompts: {len(clip_scores)}")
         clip_score = sum(clip_scores) / len(clip_scores)
@@ -126,16 +120,17 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
             "fid": fid_score,
             "kid": kid_score,
             "giqa": giqa_scores,
+            "is": is_score,
             "clip": clip_score,
         }
 
     print_with_box(
         f"Results\n"
-        + f"{'Experiment':<20}{'FID':<10}{'KID':<10}{'GIQA':<10}{'Clip':<10}\n"
+        + f"{'Experiment':<20}{'FID':<10}{'KID':<10}{'GIQA':<10}{'IS':<10}{'Clip':<10}\n"
         + f"{'-'*50}\n"
         + "\n".join(
             [
-                f"{exp:<20}{scores['fid']:<10.4f}{scores['kid']:<10.4f}{scores['giqa']:<10.4f}{scores['clip']:<10.4f}"
+                f"{exp:<20}{scores['fid']:<10.4f}{scores['kid']:<10.4f}{scores['giqa']:<10.4f}{scores['is']:<10.4f}{scores['clip']:<10.4f}"
                 for exp, scores in result_dict.items()
             ]
         ),
@@ -145,9 +140,9 @@ def eval_experiment(ref_pattern, fake_pattern, output=None):
     if output:
         with open(output, "w", newline="") as csvfile:
             writer = csv.writer(csvfile)
-            writer.writerow(["Experiment", "FID", "KID", "GIQA", "Clip"])
+            writer.writerow(["Experiment", "FID", "KID", "GIQA", "IS", "Clip"])
             for exp, scores in result_dict.items():
-                writer.writerow([exp, scores["fid"], scores["kid"], scores["giqa"], scores["clip"]])
+                writer.writerow([exp, scores["fid"], scores["kid"], scores["giqa"], scores["is"], scores["clip"]])
         print_info(f"Results saved in {output}")
 
 

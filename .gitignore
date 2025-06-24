@@ -14,7 +14,6 @@ config/ddim/img_wide*
 baselines/
 weights/
 make_data.py
-GIQA
 
 # Ignore jupyter notebook files
 *.ipynb
