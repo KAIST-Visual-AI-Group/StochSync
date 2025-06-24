@@ -142,11 +142,7 @@ We provide a unified script to compute **Clean-FID**, **CLIP text-image alignmen
 ### 1. Extra Dependencies
 
 ```bash
-# basic metrics
 pip install clean-fid clip
-
-# GIQA   (clone into the folder expected by our runner)
-git clone https://github.com/cientgu/GIQA.git evaluate/giqa_runner/GIQA
 ```
 
 ### 2. Running the Evaluator
