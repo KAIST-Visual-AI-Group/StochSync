@@ -135,6 +135,73 @@ Test results will be stored in the directory: `unit_test_results/{application}`.
 
 ---
 
+## Evaluation
+
+We provide a unified script to compute **Clean-FID**, **CLIP text-image alignment**, and **GIQA** metrics for any set of generated images.
+
+### 1. Extra Dependencies
+
+```bash
+# basic metrics
+pip install clean-fid clip
+
+# GIQA   (clone into the folder expected by our runner)
+git clone https://github.com/cientgu/GIQA.git evaluate/giqa_runner/GIQA
+```
+
+### 2. Running the Evaluator
+
+```bash
+python evaluate/evaluate.py \
+    -r "path/to/reference/images/*.png" \
+    -f "path/to/generated/images/prompt_:0:/*.png" \
+    -o path/to/output.txt
+```
+
+**Argument details**
+
+| flag | meaning                                                                                                                                                                                 |
+|------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `-r` | Glob pattern pointing to reference images.                                                                                                                                              |
+| `-f` | Glob for generated images. Replace the substring that encodes the text prompt with the special token :0:. This lets the script recover the prompt string when computing the CLIP score. |
+| `-o` | Output file for the aggregated metric table.                                                                                                                                            |
+
+Example: if your generated files have the following structure,
+
+```bash
+reference/
+└── panorama/
+    ├── graffiti_alley/
+    │   ├── 000000.png
+    │   ├── 000001.png
+    │   └── …
+    ├── golden_sunset/
+    │   ├── 000000.png
+    │   └── …
+    └ …
+
+results/
+└── run_01/                 
+    ├── graffiti_alley/     # ← use text prompts as folder names
+    │   ├── 000000.png
+    │   ├── 000001.png
+    │   └── …
+    ├── golden_sunset/
+    │   ├── 000000.png
+    │   └── …
+    └ …
+```
+
+write `-r "reference/panorama/*/*.png -f "results/run_01/:0:/*.png"` for evaluation.
+
+The script automatically:
+
+1.	groups images by prompt,
+2.	computes Clean-FID and GIQA against the matching reference set,
+3.	measures the average CLIP alignment (text ↔︎ image).
+
+---
+
 ## Citation
 
 If you find our work useful, please consider citing our paper:
